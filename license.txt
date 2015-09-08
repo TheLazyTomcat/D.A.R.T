@@ -1,0 +1,2 @@
+There are several licenses aplied to individual parts of this project.
+Refer to readme.txt file for details about licensing.
