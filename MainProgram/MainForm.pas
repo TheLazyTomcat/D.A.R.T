@@ -296,11 +296,16 @@ begin
 case FilesManager.Status of
   mstReady:       FilesManager.StartProcessing;
   mstProcessing:  FilesManager.StopProcessing;
-  mstTerminating: If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
-                                'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
-                                'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
-                                'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
-                    FilesManager.StopProcessing;
+  mstTerminating: begin
+                    FilesManager.PauseProcessing;
+                    If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
+                                  'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
+                                  'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
+                                  'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
+                      FilesManager.StopProcessing
+                    else
+                      FilesManager.ResumeProcessing;  
+                  end;
 end;
 end;
 

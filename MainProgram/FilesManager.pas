@@ -72,6 +72,8 @@ type
     procedure Clear; virtual;
     Function CompletedItems: Boolean; virtual;
     procedure StartProcessing; virtual;
+    procedure PauseProcessing; virtual;
+    procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
     procedure EndProcessingAndWait; virtual;
     property Pointers[Index: Integer]: PFileListItem read GetPointer;
@@ -375,7 +377,7 @@ If (Status = mstReady) and (Length(fFileList) > 0) then
         If OverallSize > 0 then
           fFileList[i].GlobalProgressRange := fFileList[i].Size / OverallSize
         else
-          fFileList[i].GlobalProgressRange := 0;
+          fFileList[i].GlobalProgressRange := 1 / Length(fFileList);
         If i > Low(fFileList) then
           fFileList[i].GlobalProgressOffset := fFileList[i - 1].GlobalProgressOffset + fFileList[i - 1].GlobalProgressRange
         else
@@ -392,6 +394,22 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TFilesManager.PauseProcessing;
+begin
+If Assigned(fRepairer) then
+  fRepairer.Pause;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TFilesManager.ResumeProcessing;
+begin
+If Assigned(fRepairer) then
+  fRepairer.Resume;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TFilesManager.StopProcessing;
 begin
 If Assigned(fRepairer) then
@@ -403,8 +421,9 @@ If Assigned(fRepairer) then
                     end;
     mstTerminating: begin
                       fFileList[fProcessingFile].Status := fstReady;
-                      DoFileStatus(fProcessingFile);    
+                      DoFileStatus(fProcessingFile);
                       TerminateThread(fRepairer.Handle,0);
+                      ResumeProcessing;
                       fRepairer := nil;
                       fStatus := mstReady;
                       DoStatus;
@@ -416,6 +435,7 @@ end;
 
 procedure TFilesManager.EndProcessingAndWait;
 begin
+ResumeProcessing;
 If Assigned(fRepairer) then
   begin
     fStatus := mstTerminating;
