@@ -11,8 +11,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, XPMan, ExtCtrls, Menus,
-  FilesManager, ImgList;
+  Dialogs, StdCtrls, ComCtrls, XPMan, ExtCtrls, Menus, ImgList,
+  FilesManager;
 
 type
   TfMainForm = class(TForm)
@@ -52,9 +52,7 @@ type
     procedure mfSettingsClick(Sender: TObject);
     procedure mfErrorInfoClick(Sender: TObject);
     procedure mfClearCompletedClick(Sender: TObject);
-
-    procedure btnProcessingClick(Sender: TObject);
-
+    procedure btnProcessingClick(Sender: TObject); 
     procedure tmrAnimTimerTimer(Sender: TObject);
   private
     { Private declarations }
@@ -146,6 +144,8 @@ procedure TfMainForm.FormCreate(Sender: TObject);
 begin
 stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
+prbOverallProgress.DoubleBuffered := True;
+prbFileProgress.DoubleBuffered := True;
 FilesManager := TFilesManager.Create;
 FilesManager.OnProgress := OnProgress;
 FilesManager.OnFileStatus := OnFileStatus;

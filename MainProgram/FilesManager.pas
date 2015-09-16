@@ -372,7 +372,10 @@ If (Status = mstReady) and (Length(fFileList) > 0) then
         end;
     For i := Low(fFileList) to High(fFileList) do
       begin
-        fFileList[i].GlobalProgressRange := fFileList[i].Size / OverallSize;
+        If OverallSize > 0 then
+          fFileList[i].GlobalProgressRange := fFileList[i].Size / OverallSize
+        else
+          fFileList[i].GlobalProgressRange := 0;
         If i > Low(fFileList) then
           fFileList[i].GlobalProgressOffset := fFileList[i - 1].GlobalProgressOffset + fFileList[i - 1].GlobalProgressRange
         else

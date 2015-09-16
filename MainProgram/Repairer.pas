@@ -334,11 +334,11 @@ var
   ThreadFormatSettings: TFormatSettings;
 
 const
-  MethodNames: array[0..8] of String =
+  MethodNames: array[0..9] of String =
     ('CheckInputFileSignature','FindSignature','LoadEndOfCentralDirectory',
      'LoadCentralDirectory','LoadCentralDirectory.LoadCentralDirectoryHeader',
      'LoadLocalHeaders','LoadLocalHeaders.LoadLocalHeader','ProcessFile',
-     'ProcessFile_Rebuild');
+     'ProcessFile_Rebuild','ProcessFile_Extract');
 
 {==============================================================================}
 {   TRepairer - Class Implementation                                           }
@@ -348,7 +348,7 @@ const
 {   TRepairer - Protected methods                                              }
 {------------------------------------------------------------------------------}
 
-procedure TRepairer.ValidateProcessingSettings();
+procedure TRepairer.ValidateProcessingSettings;
 begin
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   begin
@@ -1047,7 +1047,10 @@ If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   ReconstructLocalHeaders;
 ReconstructCentralDirectoryHeaders;
 ReconstructEndOfCentralDirectory;
-RebuildInputFile;
+If Length(fInputFileStructure.Entries) > 0 then
+  RebuildInputFile
+else
+  DoError(8,'Input file does not contain any valid entries.');
 DoProgress(psProcessing,1.0);
 end;
 
@@ -1068,7 +1071,10 @@ If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   ReconstructLocalHeaders;
 ReconstructCentralDirectoryHeaders;
 ReconstructEndOfCentralDirectory;
-ExtractInputFile;
+If Length(fInputFileStructure.Entries) > 0 then
+  ExtractInputFile
+else
+  DoError(9,'Input file does not contain any valid entries.');
 DoProgress(psProcessing,1.0);
 end;
 
@@ -1080,6 +1086,8 @@ DoProgress(psProcessing,0.0);
 try
   fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
   try
+    If fInputFileStream.Size <= 0 then
+      DoError(7,'Input file does not contain any data.');
     If not fProcessingSettings.IgnoreFileSignature then
       CheckInputFileSignature;
     case fProcessingSettings.RepairMethod of
@@ -1093,8 +1101,14 @@ try
     fInputFileStream.Free;
   end;
 except
+  on RE: ERepairerException do
+    begin
+      fErrorData.ExceptionClass := RE.ClassName;
+      DoProgress(psError,-1.0);
+    end;
   on E: Exception do
     begin
+      fErrorData.Text := E.Message;
       fErrorData.ExceptionClass := E.ClassName;
       DoProgress(psError,-1.0);
     end;
@@ -1142,15 +1156,12 @@ end;
 
 procedure TRepairer.DoError(MethodIdx: Integer; ErrorText: String; Values: array of const);
 begin
-fErrorData.Source := Pointer(Self);
-fErrorData.SourceClass := Self.ClassName;
 fErrorData.MethodIdx := MethodIdx;
 If (MethodIdx >= Low(MethodNames)) and (MethodIdx <= High(MethodNames)) then
   fErrorData.MethodName := MethodNames[MethodIdx]
 else
   fErrorData.MethodName := 'unknown method';
-fErrorData.Text := Format(ErrorText,Values,ThreadFormatSettings);
-fErrorData.ThreadID := GetCurrentThreadID;
+fErrorData.Text := Format(ErrorText,Values,ThreadFormatSettings); 
 InterlockedExchange(fTerminated,-1);
 raise ERepairerException.Create('Exception');
 end;
@@ -1175,6 +1186,11 @@ fInputFileName := InputFileName;
 InitFileStructure;
 FillChar(fErrorData,SizeOf(TErrorInfo),0);
 InitializeProgressInfo;
+fErrorData.Source := Pointer(Self);
+fErrorData.SourceClass := Self.ClassName;
+fErrorData.MethodIdx := -1;
+fErrorData.MethodName := 'unknown method';
+fErrorData.ThreadID := GetCurrentThreadID;
 end;
 
 //------------------------------------------------------------------------------

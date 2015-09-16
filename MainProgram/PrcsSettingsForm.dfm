@@ -197,7 +197,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Top = 288
       Width = 145
       Height = 17
-      Caption = 'Ignore localHeader offset'
+      Caption = 'Ignore local header offset'
       TabOrder = 11
       OnClick = CheckBoxClick
     end

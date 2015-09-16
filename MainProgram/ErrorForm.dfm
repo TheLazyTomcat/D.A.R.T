@@ -22,6 +22,8 @@ object fErrorForm: TfErrorForm
     Width = 385
     Height = 49
     AutoSize = False
+    Color = clBtnFace
+    ParentColor = False
     WordWrap = True
   end
   object lblFileName: TLabel

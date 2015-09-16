@@ -103,14 +103,12 @@ cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
 cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
-cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
 cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
 cbIgnoreNumberOfEntries.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
 cbIgnoreCentralDirectoryOffset.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
 cbIgnoreComment.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreComment;
 //central directory
 cbCDIgnoreCentralDirectory.Checked := fProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
-cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
 cbCDIgnoreSignature.Checked := fProcessingSettings.CentralDirectory.IgnoreSignature;
 cbCDIgnoreVersions.Checked := fProcessingSettings.CentralDirectory.IgnoreVersions;
 cbCDIgnoreFlags.Checked := fProcessingSettings.CentralDirectory.IgnoreFlags;
@@ -191,6 +189,8 @@ try
 finally
   fSelecting := False;
 end;
+cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
+cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
 fAccepted := False;
 ShowModal;
 FormToSettings;
