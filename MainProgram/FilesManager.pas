@@ -243,8 +243,8 @@ If Status in [mstProcessing,mstTerminating] then
             fRepairer := nil;
             fStatus := mstReady;
             fProcessingFile := -1;
-            DoStatus;
           end;
+        DoStatus;
       end;
   end;
 end;
@@ -363,13 +363,6 @@ If (Status = mstReady) and (Length(fFileList) > 0) then
           Status := fstReady;
           Progress := 0.0;
           Inc(OverallSize,Size);
-          ErrorInfo.Source := nil;
-          ErrorInfo.SourceClass := '';
-          ErrorInfo.MethodIdx := -1;
-          ErrorInfo.MethodName := '';
-          ErrorInfo.Text := '';
-          ErrorInfo.ThreadID := 0;
-          ErrorInfo.ExceptionClass := '';
           DoFileStatus(i);
         end;
     For i := Low(fFileList) to High(fFileList) do
@@ -423,6 +416,7 @@ If Assigned(fRepairer) then
                       fFileList[fProcessingFile].Status := fstReady;
                       DoFileStatus(fProcessingFile);
                       TerminateThread(fRepairer.Handle,0);
+                      fRepairer.OnProgress := nil;
                       ResumeProcessing;
                       fRepairer := nil;
                       fStatus := mstReady;

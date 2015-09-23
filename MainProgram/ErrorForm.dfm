@@ -18,9 +18,9 @@ object fErrorForm: TfErrorForm
   TextHeight = 13
   object lblText: TLabel
     Left = 8
-    Top = 48
+    Top = 40
     Width = 385
-    Height = 49
+    Height = 57
     AutoSize = False
     Color = clBtnFace
     ParentColor = False

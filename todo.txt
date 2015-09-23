@@ -1,2 +1,1 @@
 FPC/Lazarus build
-change error propagation and managing in repairer

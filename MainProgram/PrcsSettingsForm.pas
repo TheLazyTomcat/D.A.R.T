@@ -18,7 +18,6 @@ type
   TfPrcsSettingsForm = class(TForm)
     diaSaveDialog: TSaveDialog;
     grbGeneral: TGroupBox;
-    lblFile_l: TLabel;
     lblFile: TLabel;
     rbRebuild: TRadioButton;
     rbExtract: TRadioButton;
@@ -69,7 +68,7 @@ type
   private
     fFilePath:            String;
     fProcessingSettings:  TProcessingSettings;
-    fSelecting:           Boolean;    
+    fLoading:             Boolean;
     fAccepted:            Boolean;
   public
     procedure SettingsToForm;
@@ -183,11 +182,11 @@ begin
 fFilePath := FilePath;
 fProcessingSettings := ProcessingSettings;
 lblFile.Caption := ExtractFileName(FilePath);
-fSelecting := True;
+fLoading := True;
 try
   SettingsToForm;
 finally
-  fSelecting := False;
+  fLoading := False;
 end;
 cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
 cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
@@ -212,7 +211,7 @@ If Sender is TRadioButton then
           end;
       1:  begin
             lbleData.EditLabel.Caption := 'Extract into:';
-            fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'extracted\';
+            fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFilePath,''));
           end;
     end;
     lbleData.Text := fProcessingSettings.RepairData;
@@ -223,7 +222,7 @@ end;
 
 procedure TfPrcsSettingsForm.CheckBoxClick(Sender: TObject);
 begin
-If (Sender is TCheckBox) and not fSelecting then
+If (Sender is TCheckBox) and not fLoading then
   begin
     case TCheckBox(Sender).Tag of
       100:  begin
@@ -246,27 +245,29 @@ If (Sender is TCheckBox) and not fSelecting then
               cbCDIgnoreLocalHeaderOffset.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreExtraField.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreFileComment.Enabled := not cbCDIgnoreCentralDirectory.Checked;
-              If TCheckBox(Sender).Checked then
-                begin
-                  If cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
-                    cbLHIgnoreSizes.Checked := False;
-                end;
+              If TCheckBox(Sender).Checked and cbLHIgnoreCompressionMethod.Checked then
+                cbLHIgnoreSizes.Checked := False;
             end;
        204: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreSizes.Checked := False;
        208: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreCompressionMethod.Checked := False;
        303: If cbCDIgnoreCentralDirectory.Checked then
-              cbLHIgnoreSizes.Checked := not TCheckBox(Sender).Checked
+              begin
+                If TCheckBox(Sender).Checked then
+                  cbLHIgnoreSizes.Checked := False;
+              end
             else
-              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked then
-                cbLHIgnoreSizes.Checked := not TCheckBox(Sender).Checked;
+              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
+                cbLHIgnoreSizes.Checked := False;
        307: If cbCDIgnoreCentralDirectory.Checked then
-              cbLHIgnoreCompressionMethod.Checked := not TCheckBox(Sender).Checked
+              begin
+                If TCheckBox(Sender).Checked then
+                  cbLHIgnoreCompressionMethod.Checked := False;
+              end
             else
-              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked then
-                cbLHIgnoreCompressionMethod.Checked := not TCheckBox(Sender).Checked
-    else
+              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
+                cbLHIgnoreCompressionMethod.Checked := False;
     end;
   end;
 end;

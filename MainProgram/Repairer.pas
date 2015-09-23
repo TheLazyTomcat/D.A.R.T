@@ -376,9 +376,9 @@ fInputFileStream.Seek(0,soFromBeginning);
 If fInputFileStream.Read(Signature,SizeOf(LongWord)) >= SizeOf(LongWord) then
   begin
     If Signature <> LocalFileHeaderSignature then
-      DoError(0,'Bad file signature (%x.8).',[Signature]);
+      DoError(0,'Bad file signature (0x%x.8).',[Signature]);
   end
-else DoError(0,'File is too small to contain valid signature (%d).',[fInputFileStream.Size]);
+else DoError(0,'File is too small to contain valid signature (%d bytes).',[fInputFileStream.Size]);
 end;
 
 //------------------------------------------------------------------------------
@@ -494,7 +494,7 @@ var
           BinPart.Signature := CentralDirectoryFileHeaderSignature
         else
           If BinPart.Signature <> CentralDirectoryFileHeaderSignature then
-            DoError(4,'Bad central directory header signature (%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(4,'Bad central directory header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.CentralDirectory.IgnoreVersions then
           begin
             BinPart.VersionMadeBy := 20;
@@ -621,7 +621,7 @@ var
           BinPart.Signature := LocalFileHeaderSignature
         else
           If BinPart.Signature <> LocalFileHeaderSignature then
-            DoError(6,'Bad local header signature (%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(6,'Bad local header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.LocalHeader.IgnoreVersions then
           begin
             BinPart.VersionNeededToExtract := 20;
@@ -1101,11 +1101,6 @@ try
     fInputFileStream.Free;
   end;
 except
-  on RE: ERepairerException do
-    begin
-      fErrorData.ExceptionClass := RE.ClassName;
-      DoProgress(psError,-1.0);
-    end;
   on E: Exception do
     begin
       fErrorData.Text := E.Message;
@@ -1147,7 +1142,7 @@ begin
 If ProgressStage <> psProcessing then
   If Data > 1.0 then Data := 1.0;
 If (ProgressStage <> psError) and (InterlockedExchange(fTerminated,0) <> 0) then
-  DoError(-1,'Processing terminated. Data can be in inconsistent state.',[]);
+  DoError(-1,'Processing terminated. Data can be in inconsistent state.');
 Data := fProgressInfo.Offset[Integer(ProgressStage)] + (fProgressInfo.Range[Integer(ProgressStage)] * Data);
 If Assigned(fOnProgress) then fOnProgress(Self,Data);
 end;
@@ -1161,9 +1156,8 @@ If (MethodIdx >= Low(MethodNames)) and (MethodIdx <= High(MethodNames)) then
   fErrorData.MethodName := MethodNames[MethodIdx]
 else
   fErrorData.MethodName := 'unknown method';
-fErrorData.Text := Format(ErrorText,Values,ThreadFormatSettings); 
 InterlockedExchange(fTerminated,-1);
-raise ERepairerException.Create('Exception');
+raise ERepairerException.Create(Format(ErrorText,Values,ThreadFormatSettings));
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -1229,7 +1223,7 @@ end;
 
 procedure TRepairerThread.sync_DoProgress;
 begin
-fOnProgress(Self,sync_Progress);
+If Assigned(fOnProgress) then fOnProgress(Self,sync_Progress);
 end;
 
 //------------------------------------------------------------------------------
@@ -1239,8 +1233,7 @@ begin
 sync_Progress := Progress;
 If Progress < 0.0 then
   fErrorData := fRepairer.ErrorData;
-If Assigned(fOnProgress) then
-  Synchronize(sync_DoProgress);
+Synchronize(sync_DoProgress);
 end;
 
 //------------------------------------------------------------------------------
