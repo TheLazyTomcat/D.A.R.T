@@ -179,11 +179,17 @@ end;
 
 procedure TfMainForm.lvFilesDblClick(Sender: TObject);
 begin
-If (lvFiles.ItemIndex >= 0) and (FilesManager.Status = mstReady) then
-  case FilesManager[lvFiles.ItemIndex].Status of
-    fstError: fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
-  else
-    fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+If FilesManager.Status = mstReady then
+  begin
+    If lvFiles.ItemIndex >= 0 then
+      begin
+        case FilesManager[lvFiles.ItemIndex].Status of
+          fstError: fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+        else
+          fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+        end;
+      end
+    else mfAdd.OnClick(nil);
   end;
 end;
 
