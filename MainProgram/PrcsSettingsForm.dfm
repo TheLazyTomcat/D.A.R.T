@@ -111,13 +111,13 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 2
       OnClick = CheckBoxClick
     end
-    object cbCDIgnoreFlags: TCheckBox
+    object cbCDClearEncryptionFlags: TCheckBox
       Tag = 203
       Left = 8
       Top = 96
-      Width = 177
+      Width = 129
       Height = 17
-      Caption = 'Ignore general purpose bit flags'
+      Caption = 'Clear encryption flags'
       TabOrder = 3
       OnClick = CheckBoxClick
     end
@@ -249,13 +249,13 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 1
       OnClick = CheckBoxClick
     end
-    object cbLHIgnoreFlags: TCheckBox
+    object cbLHClearEncryptionFlags: TCheckBox
       Tag = 302
       Left = 8
       Top = 72
-      Width = 177
+      Width = 129
       Height = 17
-      Caption = 'Ignore general purpose bit flags'
+      Caption = 'Clear encryption flags'
       TabOrder = 2
       OnClick = CheckBoxClick
     end

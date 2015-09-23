@@ -138,7 +138,7 @@ type
     IgnoreCentralDirectory:       Boolean;
     IgnoreSignature:              Boolean;
     IgnoreVersions:               Boolean;
-    IgnoreFlags:                  Boolean;
+    ClearEncryptionFlags:         Boolean;
     IgnoreCompressionMethod:      Boolean;
     IgnoreModTime:                Boolean;
     IgnoreModDate:                Boolean;
@@ -154,7 +154,7 @@ type
   TLocalHeaderProcessingSettings = record
     IgnoreSignature:          Boolean;
     IgnoreVersions:           Boolean;
-    IgnoreFlags:              Boolean;
+    ClearEncryptionFlags:     Boolean;
     IgnoreCompressionMethod:  Boolean;
     IgnoreModTime:            Boolean;
     IgnoreModDate:            Boolean;
@@ -189,7 +189,7 @@ const
       IgnoreCentralDirectory:       False;
       IgnoreSignature:              True;
       IgnoreVersions:               True;
-      IgnoreFlags:                  True;
+      ClearEncryptionFlags:         True;
       IgnoreCompressionMethod:      True;
       IgnoreModTime:                False;
       IgnoreModDate:                False;
@@ -203,7 +203,7 @@ const
     LocalHeader: (
       IgnoreSignature:              True;
       IgnoreVersions:               True;
-      IgnoreFlags:                  True;
+      ClearEncryptionFlags:         True;
       IgnoreCompressionMethod:      True;
       IgnoreModTime:                False;
       IgnoreModDate:                False;
@@ -260,6 +260,7 @@ type
     procedure ReconstructLocalHeaders; virtual;
     procedure ReconstructCentralDirectoryHeaders; virtual;
     procedure ReconstructEndOfCentralDirectory; virtual;
+    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
     procedure ProcessFile_Rebuild; virtual;
@@ -312,7 +313,7 @@ type
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, CRC32, ZLibEx;
+  Windows, SysUtils, StrUtils, CRC32, ZLibExAPI, ZLibEx;
 
 type
 {$IFDEF x64}
@@ -334,11 +335,11 @@ var
   ThreadFormatSettings: TFormatSettings;
 
 const
-  MethodNames: array[0..9] of String =
+  MethodNames: array[0..10] of String =
     ('CheckInputFileSignature','FindSignature','LoadEndOfCentralDirectory',
      'LoadCentralDirectory','LoadCentralDirectory.LoadCentralDirectoryHeader',
      'LoadLocalHeaders','LoadLocalHeaders.LoadLocalHeader','ProcessFile',
-     'ProcessFile_Rebuild','ProcessFile_Extract');
+     'ProcessFile_Rebuild','ProcessFile_Extract','DecompressBuffer');
 
 {==============================================================================}
 {   TRepairer - Class Implementation                                           }
@@ -502,8 +503,8 @@ var
             BinPart.VersionNeededToExtract := 20;
             BinPart.OSNeededForExtraction := 0;
           end;
-        If fProcessingSettings.CentralDirectory.IgnoreFlags then
-          BinPart.GeneralPurposeBitFlag := 0;
+        If fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;
         If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -627,8 +628,8 @@ var
             BinPart.VersionNeededToExtract := 20;
             BinPart.OSNeededForExtraction := 0;
           end;
-        If fProcessingSettings.LocalHeader.IgnoreFlags then
-          BinPart.GeneralPurposeBitFlag := 0;
+        If fProcessingSettings.LocalHeader.ClearEncryptionFlags then
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;;
         If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -732,7 +733,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
           LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
         end;
-      If fProcessingSettings.LocalHeader.IgnoreFlags and not fProcessingSettings.CentralDirectory.IgnoreFlags then
+      If fProcessingSettings.LocalHeader.ClearEncryptionFlags and not fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
         LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
       If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
         LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
@@ -768,7 +769,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           CentralDirectoryHeader.BinPart.OSNeededForExtraction := LocalHeader.BinPart.OSNeededForExtraction;
         end;
       If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
-        (fProcessingSettings.CentralDirectory.IgnoreFlags and not fProcessingSettings.LocalHeader.IgnoreFlags) then
+        (fProcessingSettings.CentralDirectory.ClearEncryptionFlags and not fProcessingSettings.LocalHeader.ClearEncryptionFlags) then
         CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := LocalHeader.BinPart.GeneralPurposeBitFlag;
       If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreCompressionMethod and not fProcessingSettings.LocalHeader.IgnoreCompressionMethod) then
@@ -838,6 +839,57 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer);
+var
+  ZStream:    TZStreamRec;
+  SizeDelta:  Integer;
+  ResultCode: Integer;
+
+  Function RaiseDecompressionError(aResultCode: Integer): Integer;
+  begin
+    Result := aResultCode;
+    If aResultCode < 0 then
+      begin
+        If Assigned(ZStream.msg) then
+          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PChar(ZStream.msg))
+        else
+          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
+      end;
+  end;
+
+begin
+If InSize >= 0 then
+  begin
+    FillChar(ZStream,SizeOf(TZStreamRec),0);
+    RaiseDecompressionError(ZInflateInit2(ZStream,-15));
+    SizeDelta := InSize + 255 and not 255;
+    OutBuff := nil;
+    OutSize := SizeDelta;
+    try
+      try
+        ZStream.next_in := InBuff;
+        ZStream.avail_in := InSize;
+        repeat
+          ReallocMem(OutBuff,OutSize);
+          ZStream.next_out := Pointer(PtrUInt(OutBuff) + ZStream.total_out);
+          ZStream.avail_out := Cardinal(OutSize) - ZStream.total_out;
+          ResultCode := RaiseDecompressionError(ZInflate(ZStream,zfSyncFlush));
+          Inc(OutSize, SizeDelta);
+        until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
+        OutSize := ZStream.total_out;
+        ReallocMem(OutBuff,OutSize);
+      finally
+        RaiseDecompressionError(ZInflateEnd(ZStream));
+      end;
+    except
+      If Assigned(OutBuff) then FreeMem(OutBuff,OutSize);
+      raise;
+    end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.RebuildInputFile;
 var
   RebuildFileStream:        TFileStream;
@@ -891,7 +943,7 @@ try
           fInputFileStream.ReadBuffer(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
           If DecompressForProcessing then
             begin
-              ZDecompress2(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,-15);
+              DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize);
               try
                 If UtilityData.NeedsCRC32 then
                   begin
