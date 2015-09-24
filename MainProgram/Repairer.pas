@@ -260,6 +260,8 @@ type
     procedure ReconstructLocalHeaders; virtual;
     procedure ReconstructCentralDirectoryHeaders; virtual;
     procedure ReconstructEndOfCentralDirectory; virtual;
+    procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
+    procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
@@ -313,7 +315,7 @@ type
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, CRC32, ZLibExAPI, ZLibEx;
+  Windows, SysUtils, StrUtils, Math, CRC32, ZLibExAPI, ZLibEx;
 
 type
 {$IFDEF x64}
@@ -321,6 +323,10 @@ type
 {$ELSE}
   PtrUInt = LongWord;
 {$ENDIF}
+
+const
+  // Size of the buffer used in progress-aware stream reading and writing,
+  BufferSize = $100000; {1MiB}
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -839,6 +845,42 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer.ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single);
+var
+  i,Max:  Integer;
+begin
+DoProgress(psEntriesProcessing,ProgressOffset);
+Max := Ceil(Size / BufferSize);
+For i := 1 to Max do
+  begin
+    Stream.ReadBuffer(Buffer^,Min(BufferSize,Size));
+    Buffer := Pointer(PtrUInt(Buffer) + BufferSize);
+    Dec(Size,BufferSize);
+    DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
+  end;
+DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single);
+var
+  i,Max:  Integer;
+begin
+DoProgress(psEntriesProcessing,ProgressOffset);
+Max := Ceil(Size / BufferSize);
+For i := 1 to Max do
+  begin
+    Stream.WriteBuffer(Buffer^,Min(BufferSize,Size));
+    Buffer := Pointer(PtrUInt(Buffer) + BufferSize);
+    Dec(Size,BufferSize);
+    DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
+  end;
+DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single);
 var
   ZStream:    TZStreamRec;
@@ -947,8 +989,7 @@ try
         GetMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         try
           fInputFileStream.Seek(UtilityData.DataOffset,soFromBeginning);
-          fInputFileStream.ReadBuffer(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
-          DoProgress(psEntriesProcessing,EntryProgressOffset + (EntryProgressRange * 0.4));
+          ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
           If DecompressForProcessing then
             begin
               DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2);
@@ -986,7 +1027,7 @@ try
           RebuildFileStream.WriteBuffer(PAnsiChar(LocalHeader.FileName)^,LocalHeader.BinPart.FileNameLength);
           RebuildFileStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
           // write data
-          RebuildFileStream.WriteBuffer(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
+          ProgressStreamWrite(RebuildFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
         finally
           FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         end;
@@ -1069,8 +1110,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
             GetMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
             try
               fInputFileStream.Seek(UtilityData.DataOffset,soFromBeginning);
-              fInputFileStream.ReadBuffer(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
-              DoProgress(psEntriesProcessing,EntryProgressOffset + (EntryProgressRange * 0.4));
+              ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
               case LocalHeader.BinPart.CompressionMethod of
                 8:  begin
                       DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2);
@@ -1081,7 +1121,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
                       end;
                     end;
               else
-                EntryOutputFileStream.WriteBuffer(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
+                ProgressStreamWrite(EntryOutputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
               end;
             EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
             DoProgress(psEntriesProcessing,EntryProgressOffset);
