@@ -10,15 +10,13 @@ program SCS_Unlocker;
 uses
   FastMM4,
   Forms,
-  MainForm in '..\MainForm.pas' {fMainForm},
-  CRC32 in '..\Libs\CRC32.pas',
-  Repairer in '..\Repairer.pas',
-  FilesManager in '..\FilesManager.pas',
-  MulticastEvent in '..\Libs\MulticastEvent.pas',
-  WndAlloc in '..\Libs\WndAlloc.pas',
-  UtilityWindow in '..\Libs\UtilityWindow.pas',
-  ErrorForm in '..\ErrorForm.pas' {fErrorForm},
-  PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm};
+
+  Repairer      in '..\Repairer.pas',
+  FilesManager  in '..\FilesManager.pas',
+
+  MainForm          in '..\MainForm.pas' {fMainForm},
+  PrcsSettingsForm  in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
+  ErrorForm         in '..\ErrorForm.pas' {fErrorForm};
 
 {$R *.res}
 

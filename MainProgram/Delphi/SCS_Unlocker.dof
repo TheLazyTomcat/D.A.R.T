@@ -94,7 +94,7 @@ OutputDir=.\Release\win_x86
 UnitOutputDir=.\DCU
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=..\Libs\delphizlib.128;..\Libs\FastMM
+SearchPath=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
 Packages=vcl;rtl;vclx;VclSmp;vclshlctrls;AdvCircularProgressPkgD7;TMSMenusD7;AdvShaperPkgD7;alpb;sulab;butcmps;EZJTexturePanelD6;FormShapePkgD7;GradientLabelPkgD7;ic;l3d;lfr;fw;mmjl;ash;tqpb;shlab;vaf;ish;xib;TPNGButton;wbme;verinf;aled;DelphiX70
 Conditionals=Windows;x86;Delphi
 DebugSourceDirs=
@@ -111,7 +111,7 @@ AutoIncBuild=1
 MajorVer=2
 MinorVer=0
 Release=0
-Build=20
+Build=22
 Debug=0
 PreRelease=0
 Special=0
@@ -122,7 +122,7 @@ CodePage=1250
 [Version Info Keys]
 CompanyName=František Milt
 FileDescription=SCS Unlocker application
-FileVersion=2.0.0.20
+FileVersion=2.0.0.22
 InternalName=SCS Unlocker 2.x
 LegalCopyright=© 2015 František Milt
 LegalTrademarks=SCS Unlocker 2
@@ -137,10 +137,11 @@ Item0=Windows;x86;Delphi
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=3
-Item0=..\Libs\delphizlib.128;..\Libs\FastMM
-Item1=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128;E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\FastMM
-Item2=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128
+Count=4
+Item0=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
+Item1=..\Libs\delphizlib.128;..\Libs\FastMM
+Item2=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128;E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\FastMM
+Item3=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=.\DCU
