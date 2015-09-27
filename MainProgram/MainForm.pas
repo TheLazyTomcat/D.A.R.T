@@ -7,11 +7,13 @@
 -------------------------------------------------------------------------------}
 unit MainForm;
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, XPMan, ExtCtrls, Menus, ImgList,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
+  ComCtrls, ExtCtrls, Menus, {$IFNDEF FPC}ImgList, XPMan,{$ENDIF}
   FilesManager;
 
 type
@@ -25,7 +27,9 @@ type
     lblFileProgress: TLabel;
     prbFileProgress: TProgressBar;
     stbStatusBar: TStatusBar;
+  {$IFNDEF FPC}
     oXPManifest: TXPManifest;
+  {$ENDIF}
     mnuFiles: TPopupMenu;
     mfAdd: TMenuItem;
     mfRemove: TMenuItem;
@@ -40,7 +44,7 @@ type
     imlFileIcons: TImageList;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormClose(Sender: TObject; var {%H-}Action: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure lvFilesDblClick(Sender: TObject);
     procedure lvFilesInfoTip(Sender: TObject; Item: TListItem;
@@ -71,7 +75,11 @@ implementation
 uses
   ErrorForm, PrcsSettingsForm;
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 procedure TfMainForm.OnProgress(Sender: TObject; FileIndex: Integer);
 var
@@ -172,7 +180,7 @@ end;
 
 procedure TfMainForm.FormResize(Sender: TObject);
 begin
-lvFiles.Columns.Items[1].Width := lvFiles.Width - (lvFiles.Columns.Items[0].Width + lvFiles.Columns.Items[2].Width + 25);
+lvFiles.Columns.Items[1].Width := lvFiles.Width - (Int64(lvFiles.Columns.Items[0].Width) + lvFiles.Columns.Items[2].Width + 25);
 end;
 
 //------------------------------------------------------------------------------
@@ -200,7 +208,7 @@ procedure TfMainForm.lvFilesInfoTip(Sender: TObject; Item: TListItem;
 begin
 InfoTip := FilesManager[Item.Index].Path;
 end;
-   
+
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.mnuFilesPopup(Sender: TObject);

@@ -9,6 +9,8 @@ unit Repairer;
 
 interface
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 uses
   Classes;
 
@@ -262,7 +264,7 @@ type
     procedure ReconstructEndOfCentralDirectory; virtual;
     procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
-    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single); virtual;
+    procedure DecompressBuffer({%H-}InBuff: Pointer; {%H-}InSize: Integer; out {%H-}OutBuff: Pointer; out {%H-}OutSize: Integer; {%H-}ProgressOffset, {%H-}ProgressRange: Single); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
     procedure ProcessFile_Rebuild; virtual;
@@ -277,11 +279,11 @@ type
     procedure InitFileStructure; virtual;
     procedure Start; virtual;
     procedure Stop; virtual;
-  published
     property ProcessingSettings: TProcessingSettings read fProcessingSettings;
-    property InputFileName: String read fInputFileName;
     property InputFileStructure: TFileStructure read fInputFileStructure;
     property ErrorData: TErrorInfo read fErrorData;
+  published
+    property InputFileName: String read fInputFileName;
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
 
@@ -307,15 +309,16 @@ type
     procedure Start; virtual;
     procedure Pause; virtual;
     procedure Stop; virtual;
+    property ErrorData: TErrorInfo read fErrorData;
   published
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
-    property ErrorData: TErrorInfo read fErrorData;
   end;
 
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, Math, CRC32, ZLibExAPI, ZLibEx;
+  Windows, SysUtils, StrUtils, Math, CRC32
+  {$IFNDEF FPC}, ZLibExAPI, ZLibEx{$ENDIF};
 
 type
 {$IFDEF x64}
@@ -380,7 +383,7 @@ var
   Signature:  LongWord;
 begin
 fInputFileStream.Seek(0,soFromBeginning);
-If fInputFileStream.Read(Signature,SizeOf(LongWord)) >= SizeOf(LongWord) then
+If fInputFileStream.Read({%H-}Signature,SizeOf(LongWord)) >= SizeOf(LongWord) then
   begin
     If Signature <> LocalFileHeaderSignature then
       DoError(0,'Bad file signature (0x%x.8).',[Signature]);
@@ -419,7 +422,7 @@ try
     BytesRead := fInputFileStream.Read(Buffer^,BuffSize);
     If BytesRead >= SizeOf(LongWord) then
       For i := 0 to (BytesRead - SizeOf(LongWord)) do
-        If PLongWord(PtrUInt(Buffer) + i)^ = Signature then
+        If {%H-}PLongWord({%H-}PtrUInt(Buffer) + i)^ = Signature then
           begin
             Result := fInputFileStream.Position - BytesRead + i;
             Exit;
@@ -854,7 +857,7 @@ Max := Ceil(Size / BufferSize);
 For i := 1 to Max do
   begin
     Stream.ReadBuffer(Buffer^,Min(BufferSize,Size));
-    Buffer := Pointer(PtrUInt(Buffer) + BufferSize);
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + BufferSize);
     Dec(Size,BufferSize);
     DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
   end;
@@ -872,7 +875,7 @@ Max := Ceil(Size / BufferSize);
 For i := 1 to Max do
   begin
     Stream.WriteBuffer(Buffer^,Min(BufferSize,Size));
-    Buffer := Pointer(PtrUInt(Buffer) + BufferSize);
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + BufferSize);
     Dec(Size,BufferSize);
     DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
   end;
@@ -882,6 +885,11 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single);
+{$IFDEF FPC}
+begin
+DoError(10,'Decompression not implemented yet.');
+end;
+{$ELSE}
 var
   ZStream:    TZStreamRec;
   SizeDelta:  Integer;
@@ -932,6 +940,7 @@ If InSize >= 0 then
   end;
 DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -948,7 +957,11 @@ var
   EntryProgressRange:       Single;
 begin
 DoProgress(psEntriesProcessing,0.0);
+{$IFDEF FPC}
+RebuildFileStream := TFileStream.Create(UTF8ToAnsi(fProcessingSettings.RepairData),fmCreate or fmShareDenyWrite);
+{$ELSE}
 RebuildFileStream := TFileStream.Create(fProcessingSettings.RepairData,fmCreate or fmShareDenyWrite);
+{$ENDIF}
 try
   EntryProgressOffset := 0.0;
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
@@ -1077,8 +1090,13 @@ EntryProgressOffset := 0.0;
 For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
   with fInputFileStructure.Entries[i] do
     begin
+    {$IFDEF FPC}
+      FullFileName := IncludeTrailingPathDelimiter(UTF8ToAnsi(fProcessingSettings.RepairData)) +
+                      AnsiReplaceStr(LocalHeader.FileName,'/','\');
+    {$ELSE}
       FullFileName := IncludeTrailingPathDelimiter(fProcessingSettings.RepairData) +
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
+    {$ENDIF}
       ForceDirectories(ExtractFilePath(FullFileName));
       If ExtractFileName(FullFileName) <> '' then
         begin
@@ -1191,7 +1209,11 @@ procedure TRepairer.ProcessFile;
 begin
 DoProgress(psProcessing,0.0);
 try
+{$IFDEF FPC}
+  fInputFileStream := TFileStream.Create(UTF8ToAnsi(InputFileName),fmOpenRead or fmShareDenyWrite);
+{$ELSE}
   fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+{$ENDIF}
   try
     If fInputFileStream.Size <= 0 then
       DoError(7,'Input file does not contain any data.');
@@ -1373,14 +1395,18 @@ end;
 
 procedure TRepairerThread.Start;
 begin
+{$WARN SYMBOL_DEPRECATED OFF}
 Resume;
+{$WARN SYMBOL_DEPRECATED ON}
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TRepairerThread.Pause;
 begin
+{$WARN SYMBOL_DEPRECATED OFF}
 Suspend;
+{$WARN SYMBOL_DEPRECATED ON}
 end;
 
 //------------------------------------------------------------------------------
@@ -1393,7 +1419,9 @@ end;
 //==============================================================================
 
 initialization
-  GetLocaleFormatSettings(LOCALE_USER_DEFAULT,ThreadFormatSettings);
+{$WARN SYMBOL_PLATFORM OFF}
+  GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}ThreadFormatSettings);
+{$WARN SYMBOL_PLATFORM ON}
 
 
 end.

@@ -9,6 +9,8 @@ unit FilesManager;
 
 interface
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 uses
   Classes, Repairer;
 
@@ -398,7 +400,7 @@ end;
 procedure TFilesManager.ResumeProcessing;
 begin
 If Assigned(fRepairer) then
-  fRepairer.Resume;
+  fRepairer.Start;
 end;
 
 //------------------------------------------------------------------------------

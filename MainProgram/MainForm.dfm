@@ -178,12 +178,18 @@ object fMainForm: TfMainForm
     Top = 458
     Width = 688
     Height = 19
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clBtnText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
     Panels = <
       item
         Alignment = taRightJustify
         Text = #169' 2015 Franti'#353'ek Milt, version 2.0'
         Width = 500
       end>
+    UseSystemFont = False
   end
   object btnProcessing: TButton
     Left = 8

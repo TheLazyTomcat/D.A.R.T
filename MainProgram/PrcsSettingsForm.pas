@@ -7,11 +7,12 @@
 -------------------------------------------------------------------------------}
 unit PrcsSettingsForm;
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, 
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls,
   Repairer;
 
 type
@@ -84,12 +85,20 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 uses
+{$IFDEF FPC}
+  FileUtil;
+{$ELSE}
 {$WARN UNIT_PLATFORM OFF}
   FileCtrl;
 {$WARN UNIT_PLATFORM ON}
+{$ENDIF}
 
 procedure TfPrcsSettingsForm.SettingsToForm;
 begin
@@ -296,19 +305,38 @@ var
 begin
 case btnBrowse.Tag of
   0:  begin
+      {$IFDEF FPC}
+        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) then
+      {$ELSE}
         If DirectoryExists(ExtractFileDir(fFilePath)) then
+      {$ENDIF}
           diaSaveDialog.InitialDir := ExtractFileDir(fFilePath);
         If diaSaveDialog.Execute then
           lbleData.Text := diaSaveDialog.FileName;
       end;
   1:  begin
+      {$IFDEF FPC}
+        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) or
+           DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(fFilePath + '..')))  then
+      {$ELSE}
         If DirectoryExists(ExtractFileDir(fFilePath)) or
            DirectoryExists(ExtractFileDir(ExpandFileName(fFilePath + '..'))) then
+      {$ENDIF}
           TempStr := ExtractFileDir(fFilePath)
         else
           TempStr := ExtractFileDir(ParamStr(0));
+      {$IFDEF FPC}
+        with TSelectDirectoryDialog.Create(Self) do
+          begin
+            Title := 'Select folder for archive extraction.';
+            InitialDir := TempStr;
+            If Execute then
+              lbleData.Text := FileName;
+          end;
+      {$ELSE}
         If SelectDirectory('Select folder for archive extraction.','',TempStr) then
           lbleData.Text := IncludeTrailingPathDelimiter(TempStr);
+      {$ENDIF}
       end;
 end;
 end;
