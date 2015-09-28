@@ -14,12 +14,12 @@ which each part starts.
   Description .............................................  39
   Installation ............................................  59
   How to use the program ..................................  69
-  Known issues ............................................  88
-  Source code .............................................  95
-  Licensing ............................................... 104
-  Authors, contacts ....................................... 112
-  Links ................................................... 118
-  Copyright ............................................... 124
+  Known issues ............................................  94
+  Source code ............................................. 101
+  Licensing ............................................... 110
+  Authors, contacts ....................................... 118
+  Links ................................................... 124
+  Copyright ............................................... 130
 
 
 
@@ -82,6 +82,12 @@ for advanced users. General use would be as follows:
     set individual settings that will be used when the file will be processed
   - click on "Start processing" button and wait for the end of processing
   - done
+  
+WARNING - It is possible for the program to finish processing successfully 
+          despite the fact that unlocking was unsuccessful. In such case, select
+          "Ignore end of central directory" and "Ignore central directory" 
+          settings for this file and try process it again. If that does not help 
+          either, ask in a forum mentioned in "Links" section.    
 
 
 
