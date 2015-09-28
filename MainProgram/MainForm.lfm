@@ -103,6 +103,7 @@ object fMainForm: TfMainForm
     FFFFC003FFFFC003FFFFC003FFFFC003FFFFC003FFFFC003FFFFE007FFFFF18F
     FFFFF18FFFFFF08FFFFFF81FFFFFFC1FFFFF
   }
+  KeyPreview = True
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy

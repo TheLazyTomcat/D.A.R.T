@@ -56,7 +56,7 @@ type
     procedure mfSettingsClick(Sender: TObject);
     procedure mfErrorInfoClick(Sender: TObject);
     procedure mfClearCompletedClick(Sender: TObject);
-    procedure btnProcessingClick(Sender: TObject); 
+    procedure btnProcessingClick(Sender: TObject);
     procedure tmrAnimTimerTimer(Sender: TObject);
   private
     { Private declarations }

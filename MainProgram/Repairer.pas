@@ -928,8 +928,8 @@ If InSize >= 0 then
           ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(OutBuff) + ZStream.total_out);
           ZStream.avail_out := Cardinal(OutSize) - ZStream.total_out;
           ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_SYNC_FLUSH));
-          Inc(OutSize, SizeDelta);
           DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * ZStream.total_in / InSize));
+          Inc(OutSize, SizeDelta);
         until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
         OutSize := ZStream.total_out;
         ReallocMem(OutBuff,OutSize);
