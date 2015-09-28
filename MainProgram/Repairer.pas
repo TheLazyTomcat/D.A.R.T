@@ -317,8 +317,8 @@ type
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, Math, CRC32
-  {$IFNDEF FPC}, ZLibExAPI, ZLibEx{$ENDIF};
+  Windows, SysUtils, StrUtils, Math, CRC32,
+  {$IFDEF FPC}PasZLib {$ELSE}ZLibExAPI {$ENDIF};
 
 type
 {$IFDEF x64}
@@ -885,13 +885,12 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single);
-{$IFDEF FPC}
-begin
-DoError(10,'Decompression not implemented yet.');
-end;
-{$ELSE}
+{$IFNDEF FPC}
+type
+  TZStream = TZStreamRec;
+{$ENDIF}
 var
-  ZStream:    TZStreamRec;
+  ZStream:    TZStream;
   SizeDelta:  Integer;
   ResultCode: Integer;
 
@@ -900,10 +899,14 @@ var
     Result := aResultCode;
     If aResultCode < 0 then
       begin
+      {$IFDEF FPC}
+        DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg);
+      {$ELSE}
         If Assigned(ZStream.msg) then
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PChar(ZStream.msg))
         else
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
+      {$ENDIF}
       end;
   end;
 
@@ -911,8 +914,8 @@ begin
 DoProgress(psEntriesProcessing,ProgressOffset);
 If InSize >= 0 then
   begin
-    FillChar(ZStream,SizeOf(TZStreamRec),0);
-    RaiseDecompressionError(ZInflateInit2(ZStream,-15));
+    FillChar({%H-}ZStream,SizeOf(TZStream),0);
+    RaiseDecompressionError(InflateInit2(ZStream,-15));
     SizeDelta := InSize + 255 and not 255;
     OutBuff := nil;
     OutSize := SizeDelta;
@@ -922,16 +925,16 @@ If InSize >= 0 then
         ZStream.avail_in := InSize;
         repeat
           ReallocMem(OutBuff,OutSize);
-          ZStream.next_out := Pointer(PtrUInt(OutBuff) + ZStream.total_out);
+          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(OutBuff) + ZStream.total_out);
           ZStream.avail_out := Cardinal(OutSize) - ZStream.total_out;
-          ResultCode := RaiseDecompressionError(ZInflate(ZStream,zfSyncFlush));
+          ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_SYNC_FLUSH));
           Inc(OutSize, SizeDelta);
           DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * ZStream.total_in / InSize));
         until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
         OutSize := ZStream.total_out;
         ReallocMem(OutBuff,OutSize);
       finally
-        RaiseDecompressionError(ZInflateEnd(ZStream));
+        RaiseDecompressionError(InflateEnd(ZStream));
       end;
     except
       If Assigned(OutBuff) then FreeMem(OutBuff,OutSize);
@@ -940,7 +943,6 @@ If InSize >= 0 then
   end;
 DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
 end;
-{$ENDIF}
 
 //------------------------------------------------------------------------------
 
