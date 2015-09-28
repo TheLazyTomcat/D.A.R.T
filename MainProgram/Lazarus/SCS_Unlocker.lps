@@ -47,12 +47,9 @@
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="917"/>
-        <CursorPos X="29" Y="934"/>
+        <TopLine Value="942"/>
+        <CursorPos X="7" Y="889"/>
         <UsageCount Value="28"/>
-        <Bookmarks Count="1">
-          <Item0 X="9" Y="887" ID="1"/>
-        </Bookmarks>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
@@ -69,7 +66,6 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="10"/>
         <CursorPos Y="20"/>
         <UsageCount Value="15"/>
         <Loaded Value="True"/>
@@ -175,7 +171,7 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="9" HistoryIndex="8">
+    <JumpHistory Count="8" HistoryIndex="7">
       <Position1>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="313" TopLine="308"/>
@@ -206,12 +202,8 @@
       </Position7>
       <Position8>
         <Filename Value="..\MainForm.pas"/>
-        <Caret Line="88" Column="84" TopLine="144"/>
-      </Position8>
-      <Position9>
-        <Filename Value="..\MainForm.pas"/>
         <Caret Line="161" Column="3" TopLine="148"/>
-      </Position9>
+      </Position8>
     </JumpHistory>
   </ProjectSession>
 </CONFIG>

@@ -264,7 +264,7 @@ type
     procedure ReconstructEndOfCentralDirectory; virtual;
     procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
-    procedure DecompressBuffer({%H-}InBuff: Pointer; {%H-}InSize: Integer; out {%H-}OutBuff: Pointer; out {%H-}OutSize: Integer; {%H-}ProgressOffset, {%H-}ProgressRange: Single); virtual;
+    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
     procedure ProcessFile_Rebuild; virtual;
