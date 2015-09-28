@@ -180,7 +180,7 @@ object fMainForm: TfMainForm
     Panels = <    
       item
         Alignment = taRightJustify
-        Text = '© 2015 František Milt, version 2.0'
+        Text = '© František Milt'
         Width = 500
       end>
     SimplePanel = False

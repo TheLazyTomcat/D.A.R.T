@@ -62,6 +62,7 @@ type
     { Private declarations }
   public
     FilesManager: TFilesManager;
+    procedure LoadCopyrightInfo;
     procedure OnProgress(Sender: TObject; FileIndex: Integer);
     procedure OnFileStatus(Sender: TObject; FileIndex: Integer);
     procedure OnStatus(Sender: TObject);
@@ -73,13 +74,29 @@ var
 implementation
 
 uses
-  ErrorForm, PrcsSettingsForm;
+  ErrorForm, PrcsSettingsForm, WinFileInfo;
 
 {$IFDEF FPC}
   {$R *.lfm}
 {$ELSE}
   {$R *.dfm}
-{$ENDIF}  
+{$ENDIF}
+
+procedure TfMainForm.LoadCopyrightInfo;
+begin
+with TWinFileInfo.Create(WFI_LS_LoadVersionInfo or WFI_LS_LoadFixedFileInfo or WFI_LS_DecodeFixedFileInfo) do
+  begin
+    stbStatusBar.Panels[0].Text := {$IFDEF FPC}AnsiToUTF8({$ENDIF}
+      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
+      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' ' +
+      {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64'{$ELSE}+ '32'{$ENDIF} +
+      ' #' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
+      {$IFDEF Debug}+ ' debug'{$ENDIF}{$IFDEF FPC}){$ENDIF} ;
+    Free;
+  end;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TfMainForm.OnProgress(Sender: TObject; FileIndex: Integer);
 var
@@ -154,6 +171,7 @@ stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
 prbOverallProgress.DoubleBuffered := True;
 prbFileProgress.DoubleBuffered := True;
+LoadCopyrightInfo;
 FilesManager := TFilesManager.Create;
 FilesManager.OnProgress := OnProgress;
 FilesManager.OnFileStatus := OnFileStatus;

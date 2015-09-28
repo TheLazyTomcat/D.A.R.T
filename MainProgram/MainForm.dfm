@@ -187,7 +187,7 @@ object fMainForm: TfMainForm
     Panels = <
       item
         Alignment = taRightJustify
-        Text = #169' 2015 Franti'#353'ek Milt, version 2.0'
+        Text = #169' Franti'#353'ek Milt'
         Width = 500
       end>
     UseSystemFont = False
