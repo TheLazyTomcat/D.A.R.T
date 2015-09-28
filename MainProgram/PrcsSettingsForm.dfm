@@ -1,5 +1,5 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 573
+  Left = 590
   Top = 126
   BorderStyle = bsDialog
   Caption = 'Processing settings'
@@ -111,13 +111,13 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 2
       OnClick = CheckBoxClick
     end
-    object cbCDIgnoreFlags: TCheckBox
+    object cbCDClearEncryptionFlags: TCheckBox
       Tag = 203
       Left = 8
       Top = 96
-      Width = 177
+      Width = 129
       Height = 17
-      Caption = 'Ignore general purpose bit flags'
+      Caption = 'Clear encryption flags'
       TabOrder = 3
       OnClick = CheckBoxClick
     end
@@ -197,7 +197,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Top = 288
       Width = 145
       Height = 17
-      Caption = 'Ignore localHeader offset'
+      Caption = 'Ignore local header offset'
       TabOrder = 11
       OnClick = CheckBoxClick
     end
@@ -249,13 +249,13 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 1
       OnClick = CheckBoxClick
     end
-    object cbLHIgnoreFlags: TCheckBox
+    object cbLHClearEncryptionFlags: TCheckBox
       Tag = 302
       Left = 8
       Top = 72
-      Width = 177
+      Width = 129
       Height = 17
-      Caption = 'Ignore general purpose bit flags'
+      Caption = 'Clear encryption flags'
       TabOrder = 2
       OnClick = CheckBoxClick
     end
@@ -359,27 +359,13 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Height = 9
       Shape = bsTopLine
     end
-    object lblFile_l: TLabel
-      Left = 11
-      Top = 24
-      Width = 22
-      Height = 13
-      Alignment = taRightJustify
-      Caption = 'File:'
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = [fsBold]
-      ParentFont = False
-    end
     object lblFile: TLabel
-      Left = 40
+      Left = 8
       Top = 24
       Width = 26
       Height = 13
       Caption = 'lblFile'
-      Constraints.MaxWidth = 361
+      Constraints.MaxWidth = 393
     end
     object cbIgnoreFileSignature: TCheckBox
       Left = 8

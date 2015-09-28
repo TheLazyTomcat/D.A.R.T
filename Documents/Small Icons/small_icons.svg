@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
@@ -96,25 +96,25 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
        id="rect2815"
        width="226.2128"
        height="226.2128"
        x="53.8895"
        y="55.932713"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\ready.png"
-       inkscape:export-xdpi="6.3656883"
-       inkscape:export-ydpi="6.3656883" />
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\ready.png"
+       inkscape:export-xdpi="6.3656878"
+       inkscape:export-ydpi="6.3656878" />
     <rect
        y="55.308929"
        x="342.27908"
        height="226.2128"
        width="226.2128"
        id="rect3696"
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\error.png"
-       inkscape:export-xdpi="6.3656883"
-       inkscape:export-ydpi="6.3656883" />
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\error.png"
+       inkscape:export-xdpi="6.3656874"
+       inkscape:export-ydpi="6.3656874" />
     <g
        id="g3686"
        transform="translate(34.93368,0)">
@@ -174,15 +174,15 @@
       </g>
     </g>
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
        id="rect3698"
        width="226.2128"
        height="226.2128"
        x="49.085701"
        y="303.58759"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\done.png"
-       inkscape:export-xdpi="6.3656883"
-       inkscape:export-ydpi="6.3656883" />
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\done.png"
+       inkscape:export-xdpi="6.3656878"
+       inkscape:export-ydpi="6.3656878" />
     <g
        id="g3702"
        style="fill:#00ff00"
@@ -212,15 +212,18 @@
        height="226.2128"
        width="226.2128"
        id="rect3706"
-       style="fill:#ececec;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+       style="fill:#ececec;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\unknown.png"
+       inkscape:export-xdpi="6.3656874"
+       inkscape:export-ydpi="6.3656874" />
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
        id="rect3708"
        width="226.2128"
        height="226.2128"
        x="7.9138775"
        y="551.86621"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\process_0.png"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\process_0.png"
        inkscape:export-xdpi="6.3656874"
        inkscape:export-ydpi="6.3656874" />
     <path
@@ -259,10 +262,10 @@
        height="226.2128"
        width="226.2128"
        id="rect3724"
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\process_1.png"
-       inkscape:export-xdpi="6.3656874"
-       inkscape:export-ydpi="6.3656874" />
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\process_1.png"
+       inkscape:export-xdpi="6.3656869"
+       inkscape:export-ydpi="6.3656869" />
     <path
        transform="matrix(0.85245901,0,0,0.85245901,-12.506964,106.43508)"
        d="m 393.0039,653.74396 a 38.052757,38.052757 0 1 1 -76.10552,0 38.052757,38.052757 0 1 1 76.10552,0 z"
@@ -294,13 +297,13 @@
        style="fill:#ffff00;fill-opacity:1;fill-rule:nonzero;stroke:none"
        sodipodi:type="arc" />
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:0.99585062"
        id="rect3732"
        width="226.2128"
        height="226.2128"
        x="54.076256"
        y="807.63068"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\process_3.png"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\process_3.png"
        inkscape:export-xdpi="6.3656874"
        inkscape:export-ydpi="6.3656874" />
     <path
@@ -339,10 +342,10 @@
        height="226.2128"
        width="226.2128"
        id="rect3740"
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\process_4.png"
-       inkscape:export-xdpi="6.3656874"
-       inkscape:export-ydpi="6.3656874" />
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\process_4.png"
+       inkscape:export-xdpi="6.3656869"
+       inkscape:export-ydpi="6.3656869" />
     <path
        transform="matrix(0.85245901,0,0,0.85245901,69.836711,362.19952)"
        d="m 393.0039,653.74396 a 38.052757,38.052757 0 1 1 -76.10552,0 38.052757,38.052757 0 1 1 76.10552,0 z"
@@ -374,13 +377,13 @@
        style="fill:#adb000;fill-opacity:1;fill-rule:nonzero;stroke:none"
        sodipodi:type="arc" />
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
        id="rect3748"
        width="226.2128"
        height="226.2128"
        x="488.25198"
        y="550.61865"
-       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\process_2.png"
+       inkscape:export-filename="E:\Programy\Programs\SCS Unlocker\Dev\Documents\Small Icons\process_2.png"
        inkscape:export-xdpi="6.3656874"
        inkscape:export-ydpi="6.3656874" />
     <path

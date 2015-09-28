@@ -9,6 +9,8 @@ unit FilesManager;
 
 interface
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 uses
   Classes, Repairer;
 
@@ -72,6 +74,8 @@ type
     procedure Clear; virtual;
     Function CompletedItems: Boolean; virtual;
     procedure StartProcessing; virtual;
+    procedure PauseProcessing; virtual;
+    procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
     procedure EndProcessingAndWait; virtual;
     property Pointers[Index: Integer]: PFileListItem read GetPointer;
@@ -241,8 +245,8 @@ If Status in [mstProcessing,mstTerminating] then
             fRepairer := nil;
             fStatus := mstReady;
             fProcessingFile := -1;
-            DoStatus;
           end;
+        DoStatus;
       end;
   end;
 end;
@@ -361,18 +365,14 @@ If (Status = mstReady) and (Length(fFileList) > 0) then
           Status := fstReady;
           Progress := 0.0;
           Inc(OverallSize,Size);
-          ErrorInfo.Source := nil;
-          ErrorInfo.SourceClass := '';
-          ErrorInfo.MethodIdx := -1;
-          ErrorInfo.MethodName := '';
-          ErrorInfo.Text := '';
-          ErrorInfo.ThreadID := 0;
-          ErrorInfo.ExceptionClass := '';
           DoFileStatus(i);
         end;
     For i := Low(fFileList) to High(fFileList) do
       begin
-        fFileList[i].GlobalProgressRange := fFileList[i].Size / OverallSize;
+        If OverallSize > 0 then
+          fFileList[i].GlobalProgressRange := fFileList[i].Size / OverallSize
+        else
+          fFileList[i].GlobalProgressRange := 1 / Length(fFileList);
         If i > Low(fFileList) then
           fFileList[i].GlobalProgressOffset := fFileList[i - 1].GlobalProgressOffset + fFileList[i - 1].GlobalProgressRange
         else
@@ -389,6 +389,22 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TFilesManager.PauseProcessing;
+begin
+If Assigned(fRepairer) then
+  fRepairer.Pause;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TFilesManager.ResumeProcessing;
+begin
+If Assigned(fRepairer) then
+  fRepairer.Start;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TFilesManager.StopProcessing;
 begin
 If Assigned(fRepairer) then
@@ -400,8 +416,10 @@ If Assigned(fRepairer) then
                     end;
     mstTerminating: begin
                       fFileList[fProcessingFile].Status := fstReady;
-                      DoFileStatus(fProcessingFile);    
+                      DoFileStatus(fProcessingFile);
                       TerminateThread(fRepairer.Handle,0);
+                      fRepairer.OnProgress := nil;
+                      ResumeProcessing;
                       fRepairer := nil;
                       fStatus := mstReady;
                       DoStatus;
@@ -413,6 +431,7 @@ end;
 
 procedure TFilesManager.EndProcessingAndWait;
 begin
+ResumeProcessing;
 If Assigned(fRepairer) then
   begin
     fStatus := mstTerminating;

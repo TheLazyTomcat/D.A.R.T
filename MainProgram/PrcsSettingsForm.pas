@@ -7,18 +7,18 @@
 -------------------------------------------------------------------------------}
 unit PrcsSettingsForm;
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, 
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls,
   Repairer;
 
 type
   TfPrcsSettingsForm = class(TForm)
     diaSaveDialog: TSaveDialog;
     grbGeneral: TGroupBox;
-    lblFile_l: TLabel;
     lblFile: TLabel;
     rbRebuild: TRadioButton;
     rbExtract: TRadioButton;
@@ -38,7 +38,7 @@ type
     cbCDIgnoreCentralDirectory: TCheckBox;
     cbCDIgnoreSignature: TCheckBox;
     cbCDIgnoreVersions: TCheckBox;
-    cbCDIgnoreFlags: TCheckBox;
+    cbCDClearEncryptionFlags: TCheckBox;
     cbCDIgnoreCompressionMethod: TCheckBox;
     cbCDIgnoreModTime: TCheckBox;
     cbCDIgnoreModDate: TCheckBox;
@@ -52,7 +52,7 @@ type
     grbLocalHeaders: TGroupBox;
     cbLHIgnoreSignature: TCheckBox;
     cbLHIgnoreVersions: TCheckBox;
-    cbLHIgnoreFlags: TCheckBox;
+    cbLHClearEncryptionFlags: TCheckBox;
     cbLHIgnoreCompressionMethod: TCheckBox;
     cbLHIgnoreModTime: TCheckBox;
     cbLHIgnoreModDate: TCheckBox;
@@ -69,7 +69,7 @@ type
   private
     fFilePath:            String;
     fProcessingSettings:  TProcessingSettings;
-    fSelecting:           Boolean;    
+    fLoading:             Boolean;
     fAccepted:            Boolean;
   public
     procedure SettingsToForm;
@@ -85,12 +85,20 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 uses
+{$IFDEF FPC}
+  FileUtil;
+{$ELSE}
 {$WARN UNIT_PLATFORM OFF}
   FileCtrl;
 {$WARN UNIT_PLATFORM ON}
+{$ENDIF}
 
 procedure TfPrcsSettingsForm.SettingsToForm;
 begin
@@ -103,17 +111,15 @@ cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
 cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
-cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
 cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
 cbIgnoreNumberOfEntries.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
 cbIgnoreCentralDirectoryOffset.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
 cbIgnoreComment.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreComment;
 //central directory
 cbCDIgnoreCentralDirectory.Checked := fProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
-cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
 cbCDIgnoreSignature.Checked := fProcessingSettings.CentralDirectory.IgnoreSignature;
 cbCDIgnoreVersions.Checked := fProcessingSettings.CentralDirectory.IgnoreVersions;
-cbCDIgnoreFlags.Checked := fProcessingSettings.CentralDirectory.IgnoreFlags;
+cbCDClearEncryptionFlags.Checked := fProcessingSettings.CentralDirectory.ClearEncryptionFlags;
 cbCDIgnoreCompressionMethod.Checked := fProcessingSettings.CentralDirectory.IgnoreCompressionMethod;
 cbCDIgnoreModTime.Checked := fProcessingSettings.CentralDirectory.IgnoreModTime;
 cbCDIgnoreModDate.Checked := fProcessingSettings.CentralDirectory.IgnoreModDate;
@@ -127,7 +133,7 @@ cbCDIgnoreFileComment.Checked := fProcessingSettings.CentralDirectory.IgnoreFile
 //local headers
 cbLHIgnoreSignature.Checked := fProcessingSettings.LocalHeader.IgnoreSignature;
 cbLHIgnoreVersions.Checked := fProcessingSettings.LocalHeader.IgnoreVersions;
-cbLHIgnoreFlags.Checked := fProcessingSettings.LocalHeader.IgnoreFlags;
+cbLHClearEncryptionFlags.Checked := fProcessingSettings.LocalHeader.ClearEncryptionFlags;
 cbLHIgnoreCompressionMethod.Checked := fProcessingSettings.LocalHeader.IgnoreCompressionMethod;
 cbLHIgnoreModTime.Checked := fProcessingSettings.LocalHeader.IgnoreModTime;
 cbLHIgnoreModDate.Checked := fProcessingSettings.LocalHeader.IgnoreModDate;
@@ -155,7 +161,7 @@ fProcessingSettings.EndOfCentralDirectory.IgnoreComment := cbIgnoreComment.Check
 fProcessingSettings.CentralDirectory.IgnoreCentralDirectory := cbCDIgnoreCentralDirectory.Checked;
 fProcessingSettings.CentralDirectory.IgnoreSignature := cbCDIgnoreSignature.Checked;
 fProcessingSettings.CentralDirectory.IgnoreVersions := cbCDIgnoreVersions.Checked;
-fProcessingSettings.CentralDirectory.IgnoreFlags := cbCDIgnoreFlags.Checked;
+fProcessingSettings.CentralDirectory.ClearEncryptionFlags := cbCDClearEncryptionFlags.Checked;
 fProcessingSettings.CentralDirectory.IgnoreCompressionMethod := cbCDIgnoreCompressionMethod.Checked;
 fProcessingSettings.CentralDirectory.IgnoreModTime := cbCDIgnoreModTime.Checked;
 fProcessingSettings.CentralDirectory.IgnoreModDate := cbCDIgnoreModDate.Checked;
@@ -169,7 +175,7 @@ fProcessingSettings.CentralDirectory.IgnoreFileComment := cbCDIgnoreFileComment.
 //local headers
 fProcessingSettings.LocalHeader.IgnoreSignature := cbLHIgnoreSignature.Checked;
 fProcessingSettings.LocalHeader.IgnoreVersions := cbLHIgnoreVersions.Checked;
-fProcessingSettings.LocalHeader.IgnoreFlags := cbLHIgnoreFlags.Checked;
+fProcessingSettings.LocalHeader.ClearEncryptionFlags := cbLHClearEncryptionFlags.Checked;
 fProcessingSettings.LocalHeader.IgnoreCompressionMethod := cbLHIgnoreCompressionMethod.Checked;
 fProcessingSettings.LocalHeader.IgnoreModTime := cbLHIgnoreModTime.Checked;
 fProcessingSettings.LocalHeader.IgnoreModDate := cbLHIgnoreModDate.Checked;
@@ -185,12 +191,14 @@ begin
 fFilePath := FilePath;
 fProcessingSettings := ProcessingSettings;
 lblFile.Caption := ExtractFileName(FilePath);
-fSelecting := True;
+fLoading := True;
 try
   SettingsToForm;
 finally
-  fSelecting := False;
+  fLoading := False;
 end;
+cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
+cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
 fAccepted := False;
 ShowModal;
 FormToSettings;
@@ -212,7 +220,7 @@ If Sender is TRadioButton then
           end;
       1:  begin
             lbleData.EditLabel.Caption := 'Extract into:';
-            fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'extracted\';
+            fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFilePath,''));
           end;
     end;
     lbleData.Text := fProcessingSettings.RepairData;
@@ -223,7 +231,7 @@ end;
 
 procedure TfPrcsSettingsForm.CheckBoxClick(Sender: TObject);
 begin
-If (Sender is TCheckBox) and not fSelecting then
+If (Sender is TCheckBox) and not fLoading then
   begin
     case TCheckBox(Sender).Tag of
       100:  begin
@@ -235,7 +243,7 @@ If (Sender is TCheckBox) and not fSelecting then
       200:  begin
               cbCDIgnoreSignature.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreVersions.Enabled := not cbCDIgnoreCentralDirectory.Checked;
-              cbCDIgnoreFlags.Enabled := not cbCDIgnoreCentralDirectory.Checked;
+              cbCDClearEncryptionFlags.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreCompressionMethod.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreModTime.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreModDate.Enabled := not cbCDIgnoreCentralDirectory.Checked;
@@ -246,27 +254,29 @@ If (Sender is TCheckBox) and not fSelecting then
               cbCDIgnoreLocalHeaderOffset.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreExtraField.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreFileComment.Enabled := not cbCDIgnoreCentralDirectory.Checked;
-              If TCheckBox(Sender).Checked then
-                begin
-                  If cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
-                    cbLHIgnoreSizes.Checked := False;
-                end;
+              If TCheckBox(Sender).Checked and cbLHIgnoreCompressionMethod.Checked then
+                cbLHIgnoreSizes.Checked := False;
             end;
        204: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreSizes.Checked := False;
        208: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreCompressionMethod.Checked := False;
        303: If cbCDIgnoreCentralDirectory.Checked then
-              cbLHIgnoreSizes.Checked := not TCheckBox(Sender).Checked
+              begin
+                If TCheckBox(Sender).Checked then
+                  cbLHIgnoreSizes.Checked := False;
+              end
             else
-              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked then
-                cbLHIgnoreSizes.Checked := not TCheckBox(Sender).Checked;
+              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
+                cbLHIgnoreSizes.Checked := False;
        307: If cbCDIgnoreCentralDirectory.Checked then
-              cbLHIgnoreCompressionMethod.Checked := not TCheckBox(Sender).Checked
+              begin
+                If TCheckBox(Sender).Checked then
+                  cbLHIgnoreCompressionMethod.Checked := False;
+              end
             else
-              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked then
-                cbLHIgnoreCompressionMethod.Checked := not TCheckBox(Sender).Checked
-    else
+              If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
+                cbLHIgnoreCompressionMethod.Checked := False;
     end;
   end;
 end;
@@ -295,19 +305,38 @@ var
 begin
 case btnBrowse.Tag of
   0:  begin
+      {$IFDEF FPC}
+        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) then
+      {$ELSE}
         If DirectoryExists(ExtractFileDir(fFilePath)) then
+      {$ENDIF}
           diaSaveDialog.InitialDir := ExtractFileDir(fFilePath);
         If diaSaveDialog.Execute then
           lbleData.Text := diaSaveDialog.FileName;
       end;
   1:  begin
+      {$IFDEF FPC}
+        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) or
+           DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(fFilePath + '..')))  then
+      {$ELSE}
         If DirectoryExists(ExtractFileDir(fFilePath)) or
            DirectoryExists(ExtractFileDir(ExpandFileName(fFilePath + '..'))) then
+      {$ENDIF}
           TempStr := ExtractFileDir(fFilePath)
         else
           TempStr := ExtractFileDir(ParamStr(0));
+      {$IFDEF FPC}
+        with TSelectDirectoryDialog.Create(Self) do
+          begin
+            Title := 'Select folder for archive extraction.';
+            InitialDir := TempStr;
+            If Execute then
+              lbleData.Text := FileName;
+          end;
+      {$ELSE}
         If SelectDirectory('Select folder for archive extraction.','',TempStr) then
           lbleData.Text := IncludeTrailingPathDelimiter(TempStr);
+      {$ENDIF}
       end;
 end;
 end;

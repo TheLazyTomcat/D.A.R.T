@@ -94,7 +94,7 @@ OutputDir=.\Release\win_x86
 UnitOutputDir=.\DCU
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=
+SearchPath=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
 Packages=vcl;rtl;vclx;VclSmp;vclshlctrls;AdvCircularProgressPkgD7;TMSMenusD7;AdvShaperPkgD7;alpb;sulab;butcmps;EZJTexturePanelD6;FormShapePkgD7;GradientLabelPkgD7;ic;l3d;lfr;fw;mmjl;ash;tqpb;shlab;vaf;ish;xib;TPNGButton;wbme;verinf;aled;DelphiX70
 Conditionals=Windows;x86;Delphi
 DebugSourceDirs=
@@ -106,12 +106,12 @@ Launcher=
 UseLauncher=0
 DebugCWD=
 [Version Info]
-IncludeVerInfo=0
-AutoIncBuild=0
-MajorVer=1
+IncludeVerInfo=1
+AutoIncBuild=1
+MajorVer=2
 MinorVer=0
 Release=0
-Build=0
+Build=29
 Debug=0
 PreRelease=0
 Special=0
@@ -120,22 +120,28 @@ DLL=0
 Locale=1029
 CodePage=1250
 [Version Info Keys]
-CompanyName=
-FileDescription=
-FileVersion=1.0.0.0
-InternalName=
-LegalCopyright=
-LegalTrademarks=
-OriginalFilename=
-ProductName=
-ProductVersion=1.0.0.0
-Comments=
+CompanyName=František Milt
+FileDescription=SCS Unlocker application
+FileVersion=2.0.0.29
+InternalName=SCS Unlocker 2.x
+LegalCopyright=© 2015 František Milt
+LegalTrademarks=SCS Unlocker 2
+OriginalFilename=SCS_Unlocker.exe
+ProductName=SCS Unlocker 2
+ProductVersion=2.0.0
+Comments=Tool for unlocking SCS truck games mods
 [HistoryLists\hlConditionals]
 Count=1
 Item0=Windows;x86;Delphi
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+[HistoryLists\hlSearchPath]
+Count=4
+Item0=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
+Item1=..\Libs\delphizlib.128;..\Libs\FastMM
+Item2=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128;E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\FastMM
+Item3=E:\Programy\Programs\SCS Unlocker\Dev\MainProgram\Libs\delphizlib.128
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=.\DCU

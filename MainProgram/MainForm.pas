@@ -7,12 +7,14 @@
 -------------------------------------------------------------------------------}
 unit MainForm;
 
+{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, XPMan, ExtCtrls, Menus,
-  FilesManager, ImgList;
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
+  ComCtrls, ExtCtrls, Menus, {$IFNDEF FPC}ImgList, XPMan,{$ENDIF}
+  FilesManager;
 
 type
   TfMainForm = class(TForm)
@@ -25,7 +27,9 @@ type
     lblFileProgress: TLabel;
     prbFileProgress: TProgressBar;
     stbStatusBar: TStatusBar;
+  {$IFNDEF FPC}
     oXPManifest: TXPManifest;
+  {$ENDIF}
     mnuFiles: TPopupMenu;
     mfAdd: TMenuItem;
     mfRemove: TMenuItem;
@@ -40,7 +44,7 @@ type
     imlFileIcons: TImageList;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormClose(Sender: TObject; var {%H-}Action: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure lvFilesDblClick(Sender: TObject);
     procedure lvFilesInfoTip(Sender: TObject; Item: TListItem;
@@ -52,9 +56,7 @@ type
     procedure mfSettingsClick(Sender: TObject);
     procedure mfErrorInfoClick(Sender: TObject);
     procedure mfClearCompletedClick(Sender: TObject);
-
     procedure btnProcessingClick(Sender: TObject);
-
     procedure tmrAnimTimerTimer(Sender: TObject);
   private
     { Private declarations }
@@ -73,7 +75,11 @@ implementation
 uses
   ErrorForm, PrcsSettingsForm;
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 procedure TfMainForm.OnProgress(Sender: TObject; FileIndex: Integer);
 var
@@ -146,6 +152,8 @@ procedure TfMainForm.FormCreate(Sender: TObject);
 begin
 stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
+prbOverallProgress.DoubleBuffered := True;
+prbFileProgress.DoubleBuffered := True;
 FilesManager := TFilesManager.Create;
 FilesManager.OnProgress := OnProgress;
 FilesManager.OnFileStatus := OnFileStatus;
@@ -172,18 +180,24 @@ end;
 
 procedure TfMainForm.FormResize(Sender: TObject);
 begin
-lvFiles.Columns.Items[1].Width := lvFiles.Width - (lvFiles.Columns.Items[0].Width + lvFiles.Columns.Items[2].Width + 25);
+lvFiles.Columns.Items[1].Width := lvFiles.Width - (Int64(lvFiles.Columns.Items[0].Width) + lvFiles.Columns.Items[2].Width + 25);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.lvFilesDblClick(Sender: TObject);
 begin
-If (lvFiles.ItemIndex >= 0) and (FilesManager.Status = mstReady) then
-  case FilesManager[lvFiles.ItemIndex].Status of
-    fstError: fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
-  else
-    fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+If FilesManager.Status = mstReady then
+  begin
+    If lvFiles.ItemIndex >= 0 then
+      begin
+        case FilesManager[lvFiles.ItemIndex].Status of
+          fstError: fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+        else
+          fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+        end;
+      end
+    else mfAdd.OnClick(nil);
   end;
 end;
 
@@ -194,7 +208,7 @@ procedure TfMainForm.lvFilesInfoTip(Sender: TObject; Item: TListItem;
 begin
 InfoTip := FilesManager[Item.Index].Path;
 end;
-   
+
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.mnuFilesPopup(Sender: TObject);
@@ -296,11 +310,16 @@ begin
 case FilesManager.Status of
   mstReady:       FilesManager.StartProcessing;
   mstProcessing:  FilesManager.StopProcessing;
-  mstTerminating: If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
-                                'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
-                                'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
-                                'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
-                    FilesManager.StopProcessing;
+  mstTerminating: begin
+                    FilesManager.PauseProcessing;
+                    If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
+                                  'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
+                                  'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
+                                  'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
+                      FilesManager.StopProcessing
+                    else
+                      FilesManager.ResumeProcessing;  
+                  end;
 end;
 end;
 
