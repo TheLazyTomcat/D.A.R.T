@@ -245,24 +245,25 @@ procedure TfMainForm.mfAddClick(Sender: TObject);
 var
   i:  Integer;
 begin
-If diaOpenDialog.Execute then
-  begin
-    lvFiles.Items.BeginUpdate;
-    try
-      For i := 0 to Pred(diaOpenDialog.Files.Count) do
-        If FilesManager.IndexOf(diaOpenDialog.Files[i]) < 0 then
-          begin
-            with lvFiles.Items.Add do
-              begin
-                SubItems.Add('');
-                SubItems.Add('');
-              end;
-            FilesManager.Add(diaOpenDialog.Files[i])
-          end;
-    finally
-      lvFiles.Items.EndUpdate;
+If FilesManager.Status = mstReady then
+  If diaOpenDialog.Execute then
+    begin
+      lvFiles.Items.BeginUpdate;
+      try
+        For i := 0 to Pred(diaOpenDialog.Files.Count) do
+          If FilesManager.IndexOf(diaOpenDialog.Files[i]) < 0 then
+            begin
+              with lvFiles.Items.Add do
+                begin
+                  SubItems.Add('');
+                  SubItems.Add('');
+                end;
+              FilesManager.Add(diaOpenDialog.Files[i])
+            end;
+      finally
+        lvFiles.Items.EndUpdate;
+      end;
     end;
-  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -271,24 +272,26 @@ procedure TfMainForm.mfRemoveClick(Sender: TObject);
 var
   i:  Integer;
 begin
-If MessageDlg(Format('Are you sure you want remove selected files (%d)?',[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
-  For i := Pred(FilesManager.Count) downto 0 do
-    If lvFiles.Items[i].Selected then
-      begin
-        lvFiles.Items.Delete(i);
-        FilesManager.Delete(i);
-      end;
+If (FilesManager.Status = mstReady) and (lvFiles.SelCount > 0) then
+  If MessageDlg(Format('Are you sure you want remove selected files (%d)?',[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
+    For i := Pred(FilesManager.Count) downto 0 do
+      If lvFiles.Items[i].Selected then
+        begin
+          lvFiles.Items.Delete(i);
+          FilesManager.Delete(i);
+        end;
 end;
    
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.mfClearClick(Sender: TObject);
 begin
-If MessageDlg('Are you sure you want clear the entire list?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
-  begin
-    lvFiles.Clear;
-    FilesManager.Clear;
-  end;
+If (FilesManager.Status = mstReady) and (lvFiles.Items.Count > 0) then
+  If MessageDlg('Are you sure you want clear the entire list?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
+    begin
+      lvFiles.Clear;
+      FilesManager.Clear;
+    end;
 end;
    
 //------------------------------------------------------------------------------
