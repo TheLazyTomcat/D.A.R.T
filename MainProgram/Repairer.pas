@@ -11,6 +11,12 @@ interface
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
 
+{$DEFINE zlib_DLL}
+
+{$IFNDEF FPC}
+  {$UNDEF zlib_DLL}
+{$ENDIF}
+
 uses
   Classes;
 
@@ -318,7 +324,11 @@ implementation
 
 uses
   Windows, SysUtils, StrUtils, Math, CRC32,
-  {$IFDEF FPC}PasZLib {$ELSE}ZLibExAPI {$ENDIF};
+{$IFDEF FPC}
+  {$IFDEF zlib_DLL}zlib_dll {$ELSE}PasZLib {$ENDIF}
+{$ELSE}
+  ZLibExAPI
+{$ENDIF};
 
 type
 {$IFDEF x64}
@@ -330,6 +340,31 @@ type
 const
   // Size of the buffer used in progress-aware stream reading and writing,
   BufferSize = $100000; {1MiB}
+
+//==============================================================================
+
+{$IFDEF zlib_DLL}
+
+{$IFDEF x64}
+  {$R 'Resources\zlib64.res'}
+{$ELSE}
+  {$R 'Resources\zlib32.res'}
+{$ENDIF}
+
+const
+  ZLibDLLFile = 'zlib1.dll';
+
+procedure ExtractLibrary;
+begin
+If not FileExists(ExtractFilePath(ParamStr(0)) + ZLibDLLFile) then
+  with TResourceStream.Create(hInstance,'zlibdll',RT_RCDATA) do
+    begin
+      SaveToFile(ExtractFilePath(ParamStr(0)) + ZLibDLLFile);
+      Free;
+    end;
+end;
+
+{$ENDIF}
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -899,14 +934,17 @@ var
     Result := aResultCode;
     If aResultCode < 0 then
       begin
-      {$IFDEF FPC}
-        DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg);
-      {$ELSE}
+      {$IF not defined(FPC) or defined(zlib_DLL)}
         If Assigned(ZStream.msg) then
-          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PChar(ZStream.msg))
+          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
         else
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
-      {$ENDIF}
+      {$ELSE}
+        If Length(ZStream.msg) > 0 then
+          DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg)
+        else
+          DoError(10,'zlib: ' + zError(2 - aResultCode));
+      {$IFEND}
       end;
   end;
 
@@ -1424,6 +1462,14 @@ initialization
 {$WARN SYMBOL_PLATFORM OFF}
   GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}ThreadFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}
+{$IFDEF zlib_DLL}
+  ExtractLibrary;
+  zlib_dll.Initialize;
+{$ENDIF}
 
+finalization
+{$IFDEF zlib_DLL}
+  zlib_dll.Finalize;
+{$ENDIF}
 
 end.
