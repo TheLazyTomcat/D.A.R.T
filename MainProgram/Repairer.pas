@@ -11,6 +11,18 @@ interface
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
 
+{$DEFINE zlib_lib}
+{.$DEFINE zlib_lib_dll}
+
+{$IFDEF FPC}
+  {$IFNDEF zlib_lib}
+    {$UNDEF zlib_lib_dll}
+  {$ENDIF}
+{$ELSE}
+  {$UNDEF zlib_lib}
+  {$UNDEF zlib_lib_dll}
+{$ENDIF}
+
 uses
   Classes;
 
@@ -317,8 +329,16 @@ type
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, Math, CRC32,
-  {$IFDEF FPC}PasZLib {$ELSE}ZLibExAPI {$ENDIF};
+  Windows, SysUtils, StrUtils, Math, CRC32
+{$IFDEF FPC}
+  {$IFNDEF zlib_lib},PasZLib{$ENDIF}
+{$ELSE}
+  ,ZLibExAPI
+{$ENDIF};
+
+{$IFDEF zlib_lib}
+  {$I 'libs\lazarus.zlib.128\zlib_lib.pas'}
+{$ENDIF}
 
 type
 {$IFDEF x64}
@@ -537,15 +557,21 @@ var
             BinPart.CompressedSize := 0;
             BinPart.UncompressedSize := 0;
           end;
-        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
-          BinPart.InternalFileAttributes := 0;
-        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
-          BinPart.ExternalFileAttributes := 0;
         If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
           BinPart.RelativeOffsetOfLocalHeader := 0;
         // load file name
         SetLength(FileName,BinPart.FilenameLength);
         fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+        // file attributes must be done here because file name is required
+        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
+          BinPart.InternalFileAttributes := 0;
+        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
+          begin
+            If ExtractFileName(AnsiReplaceStr(FileName,'/','\')) <> '' then
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
+            else
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+          end;
         // load extra field
         If fProcessingSettings.CentralDirectory.IgnoreExtraField then
           begin
@@ -899,14 +925,17 @@ var
     Result := aResultCode;
     If aResultCode < 0 then
       begin
-      {$IFDEF FPC}
-        DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg);
-      {$ELSE}
+      {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PChar(ZStream.msg))
+          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
         else
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
-      {$ENDIF}
+      {$ELSE}
+        If Length(ZStream.msg) > 0 then
+          DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg)
+        else
+          DoError(10,'zlib: ' + zError(2 - aResultCode));
+      {$IFEND}
       end;
   end;
 
@@ -1424,6 +1453,14 @@ initialization
 {$WARN SYMBOL_PLATFORM OFF}
   GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}ThreadFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}
+{$IFDEF zlib_lib_dll}
+  ExtractLibrary;
+  Initialize;
+{$ENDIF}
 
+{$IFDEF zlib_lib_dll}
+finalization
+  Finalize;
+{$ENDIF}
 
 end.
