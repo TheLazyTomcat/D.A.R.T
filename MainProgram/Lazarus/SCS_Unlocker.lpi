@@ -18,7 +18,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
-      <BuildNr Value="10"/>
+      <BuildNr Value="19"/>
       <Language Value="0405"/>
       <StringTable Comments="Tool for unlocking SCS truck games mods" CompanyName="František Milt" FileDescription="SCS Unlocker application" InternalName="SCS Unlocker 2.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="SCS Unlocker 2" OriginalFilename="SCS_Unlocker.exe" ProductName="SCS Unlocker 2" ProductVersion="2.0.0"/>
     </VersionInfo>
@@ -33,7 +33,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Libs;..\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -72,7 +72,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Libs;..\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -118,7 +118,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Libs;..\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -162,7 +162,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="6">
+    <Units Count="7">
       <Unit0>
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -196,6 +196,10 @@
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit5>
+      <Unit6>
+        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -206,7 +210,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;..\Libs"/>
+      <OtherUnitFiles Value="..;..\Libs;..\Libs\lazarus.zlib.128"/>
       <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
