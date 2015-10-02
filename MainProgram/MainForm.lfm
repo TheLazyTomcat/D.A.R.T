@@ -165,11 +165,13 @@ object fMainForm: TfMainForm
     MultiSelect = True
     ParentShowHint = False
     PopupMenu = mnuFiles
+    ReadOnly = True
     RowSelect = True
     ShowHint = True
     SmallImages = imlFileIcons
     TabOrder = 0
     ViewStyle = vsReport
+    OnClick = mnuFilesPopup
     OnDblClick = lvFilesDblClick
   end
   object stbStatusBar: TStatusBar
