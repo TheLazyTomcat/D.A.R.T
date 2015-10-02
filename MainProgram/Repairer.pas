@@ -11,10 +11,16 @@ interface
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
 
-{$DEFINE zlib_DLL}
+{$DEFINE zlib_lib}
+{.$DEFINE zlib_lib_dll}
 
-{$IFNDEF FPC}
-  {$UNDEF zlib_DLL}
+{$IFDEF FPC}
+  {$IFNDEF zlib_lib}
+    {$UNDEF zlib_lib_dll}
+  {$ENDIF}
+{$ELSE}
+  {$UNDEF zlib_lib}
+  {$UNDEF zlib_lib_dll}
 {$ENDIF}
 
 uses
@@ -323,12 +329,16 @@ type
 implementation
 
 uses
-  Windows, SysUtils, StrUtils, Math, CRC32,
+  Windows, SysUtils, StrUtils, Math, CRC32
 {$IFDEF FPC}
-  {$IFDEF zlib_DLL}zlib_dll {$ELSE}PasZLib {$ENDIF}
+  {$IFNDEF zlib_lib},PasZLib{$ENDIF}
 {$ELSE}
-  ZLibExAPI
+  ,ZLibExAPI
 {$ENDIF};
+
+{$IFDEF zlib_lib}
+  {$I 'libs\lazarus.zlib.128\zlib_lib.pas'}
+{$ENDIF}
 
 type
 {$IFDEF x64}
@@ -340,31 +350,6 @@ type
 const
   // Size of the buffer used in progress-aware stream reading and writing,
   BufferSize = $100000; {1MiB}
-
-//==============================================================================
-
-{$IFDEF zlib_DLL}
-
-{$IFDEF x64}
-  {$R 'Resources\zlib64.res'}
-{$ELSE}
-  {$R 'Resources\zlib32.res'}
-{$ENDIF}
-
-const
-  ZLibDLLFile = 'zlib1.dll';
-
-procedure ExtractLibrary;
-begin
-If not FileExists(ExtractFilePath(ParamStr(0)) + ZLibDLLFile) then
-  with TResourceStream.Create(hInstance,'zlibdll',RT_RCDATA) do
-    begin
-      SaveToFile(ExtractFilePath(ParamStr(0)) + ZLibDLLFile);
-      Free;
-    end;
-end;
-
-{$ENDIF}
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -934,7 +919,7 @@ var
     Result := aResultCode;
     If aResultCode < 0 then
       begin
-      {$IF not defined(FPC) or defined(zlib_DLL)}
+      {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
         else
@@ -1462,14 +1447,14 @@ initialization
 {$WARN SYMBOL_PLATFORM OFF}
   GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}ThreadFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}
-{$IFDEF zlib_DLL}
+{$IFDEF zlib_lib_dll}
   ExtractLibrary;
-  zlib_dll.Initialize;
+  Initialize;
 {$ENDIF}
 
+{$IFDEF zlib_lib_dll}
 finalization
-{$IFDEF zlib_DLL}
-  zlib_dll.Finalize;
+  Finalize;
 {$ENDIF}
 
 end.

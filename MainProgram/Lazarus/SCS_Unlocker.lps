@@ -4,12 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="26">
+    <Units Count="29">
       <Unit0>
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="12" Y="15"/>
-        <UsageCount Value="35"/>
+        <TopLine Value="7"/>
+        <CursorPos Y="31"/>
+        <UsageCount Value="42"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -20,7 +21,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="42"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -30,7 +31,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="18" Y="331"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="42"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -41,49 +42,49 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2"/>
         <CursorPos X="78" Y="15"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="42"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="6"/>
-        <CursorPos X="2" Y="14"/>
-        <UsageCount Value="35"/>
+        <TopLine Value="8"/>
+        <CursorPos X="50" Y="13"/>
+        <UsageCount Value="42"/>
         <Bookmarks Count="3">
-          <Item0 X="7" Y="15" ID="1"/>
-          <Item1 Y="356" ID="2"/>
-          <Item2 X="2" Y="932" ID="3"/>
+          <Item0 X="2" Y="916" ID="3"/>
+          <Item1 X="10" Y="11" ID="1"/>
+          <Item2 X="4" Y="343" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="228"/>
-        <CursorPos X="20" Y="232"/>
-        <UsageCount Value="35"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="420"/>
+        <CursorPos Y="443"/>
+        <UsageCount Value="42"/>
+        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="106"/>
-        <CursorPos X="19" Y="37"/>
-        <UsageCount Value="25"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="129"/>
+        <CursorPos X="6" Y="91"/>
+        <UsageCount Value="32"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\MainForm.pas"/>
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="268"/>
-        <CursorPos Y="280"/>
-        <UsageCount Value="18"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="174"/>
+        <CursorPos Y="194"/>
+        <UsageCount Value="22"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit7>
@@ -92,122 +93,139 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="3644"/>
         <CursorPos Y="3657"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit8>
       <Unit9>
         <Filename Value="D:\Lazarus\lcl\include\customlistview.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1154"/>
         <CursorPos Y="1173"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit9>
       <Unit10>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="236"/>
         <CursorPos X="18" Y="249"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit10>
       <Unit11>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="76"/>
         <CursorPos X="3" Y="78"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit11>
       <Unit12>
         <Filename Value="D:\Lazarus\components\lazutils\lazfileutils.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="69"/>
         <CursorPos X="22" Y="82"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit12>
       <Unit13>
         <Filename Value="D:\Lazarus\components\lazutils\winlazfileutils.inc"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="21" Y="9"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit13>
       <Unit14>
         <Filename Value="D:\Lazarus\lcl\include\application.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1252"/>
         <CursorPos Y="1265"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit14>
       <Unit15>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\packages\paszlib\src\paszlib.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="3" Y="21"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit15>
       <Unit16>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\packages\paszlib\src\zbase.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="302"/>
         <CursorPos X="16" Y="321"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit16>
       <Unit17>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\win\wininc\redef.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="996"/>
         <CursorPos X="10" Y="1009"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit17>
       <Unit18>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\inc\systemh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1012"/>
         <CursorPos X="18" Y="1025"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit18>
       <Unit19>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\i386\i386.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1187"/>
         <CursorPos X="10" Y="1352"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit19>
       <Unit20>
         <Filename Value="D:\Lazarus\lcl\include\winapi.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="902"/>
         <CursorPos Y="915"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit20>
       <Unit21>
         <Filename Value="..\ZLibDLL.pas"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="20"/>
       </Unit21>
       <Unit22>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\packages\zlib\src\zlib.pp"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="364"/>
-        <CursorPos X="20" Y="472"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="1233"/>
+        <UsageCount Value="10"/>
       </Unit22>
       <Unit23>
         <Filename Value="..\test.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="7" Y="13"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="19"/>
       </Unit23>
       <Unit24>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\inc\ctypes.pp"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="58"/>
         <CursorPos X="15" Y="71"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit24>
       <Unit25>
         <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\win\wininc\func.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="48"/>
         <CursorPos X="10" Y="61"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit25>
+      <Unit26>
+        <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\inc\cmem.pp"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="9"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="test.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="12" Y="5"/>
+        <UsageCount Value="22"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="D:\Lazarus\lcl\include\customform.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2105"/>
+        <CursorPos Y="2117"/>
+        <UsageCount Value="10"/>
+      </Unit28>
     </Units>
     <CustomDefines Count="6">
       <Define0 Value="FPC"/>
@@ -217,127 +235,103 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="24" HistoryIndex="23">
       <Position1>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="359" TopLine="346"/>
+        <Filename Value="SCS_Unlocker.lpr"/>
+        <Caret Line="31" TopLine="7"/>
       </Position1>
       <Position2>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="360" TopLine="346"/>
+        <Caret Line="332" Column="9" TopLine="319"/>
       </Position2>
       <Position3>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="362" Column="7" TopLine="349"/>
+        <Filename Value="SCS_Unlocker.lpr"/>
+        <Caret Line="31" TopLine="7"/>
       </Position3>
       <Position4>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="359" TopLine="349"/>
+        <Caret Line="332" Column="12" TopLine="319"/>
       </Position4>
       <Position5>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="360" TopLine="349"/>
+        <Filename Value="SCS_Unlocker.lpr"/>
+        <Caret Line="31" TopLine="7"/>
       </Position5>
       <Position6>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="362" TopLine="349"/>
+        <Caret Line="332" Column="12" TopLine="319"/>
       </Position6>
       <Position7>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="363" TopLine="349"/>
+        <Caret Line="332" Column="12" TopLine="319"/>
       </Position7>
       <Position8>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="365" TopLine="349"/>
+        <Caret Line="332" Column="13" TopLine="328"/>
       </Position8>
       <Position9>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1464" TopLine="1447"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="280" TopLine="174"/>
       </Position9>
       <Position10>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="91" TopLine="78"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="194" TopLine="174"/>
       </Position10>
       <Position11>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="92" TopLine="78"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="434" TopLine="420"/>
       </Position11>
       <Position12>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="94" TopLine="78"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="435" TopLine="420"/>
       </Position12>
       <Position13>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="95" TopLine="78"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="442" TopLine="420"/>
       </Position13>
       <Position14>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="96" TopLine="78"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="187" TopLine="174"/>
       </Position14>
       <Position15>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1464" TopLine="1088"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="192" TopLine="174"/>
       </Position15>
       <Position16>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="15" Column="7" TopLine="2"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="193" TopLine="174"/>
       </Position16>
       <Position17>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="356" TopLine="343"/>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="443" TopLine="420"/>
       </Position17>
       <Position18>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="15" Column="7" TopLine="2"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="195" TopLine="174"/>
       </Position18>
       <Position19>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="356" TopLine="343"/>
+        <Caret Line="1455" Column="23" TopLine="1434"/>
       </Position19>
       <Position20>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="94" TopLine="78"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="194" TopLine="174"/>
       </Position20>
       <Position21>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="95" TopLine="78"/>
+        <Filename Value="SCS_Unlocker.lpr"/>
+        <Caret Line="31" TopLine="7"/>
       </Position21>
       <Position22>
-        <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <Caret Line="96" TopLine="78"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="345" Column="18" TopLine="330"/>
       </Position22>
       <Position23>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="356" TopLine="343"/>
+        <Caret Line="332" Column="10" TopLine="319"/>
       </Position23>
       <Position24>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="359" TopLine="343"/>
+        <Caret Line="14" Column="3" TopLine="115"/>
       </Position24>
-      <Position25>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="324" Column="13" TopLine="320"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="941" Column="74" TopLine="929"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="281" Column="5" TopLine="267"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="937" Column="39" TopLine="905"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="14" Column="18" TopLine="6"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="933" TopLine="920"/>
-      </Position30>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
@@ -350,16 +344,11 @@
         <Line Value="17"/>
       </Item1>
     </BreakPoints>
-    <Watches Count="3">
+    <Watches Count="1">
       <Item1>
-        <Expression Value="InflateInit2_"/>
+        <Expression Value="a"/>
+        <DisplayStyle Value="wdfHex"/>
       </Item1>
-      <Item2>
-        <Expression Value="Inflate_"/>
-      </Item2>
-      <Item3>
-        <Expression Value="InflateEnd_"/>
-      </Item3>
     </Watches>
   </Debugging>
 </CONFIG>
