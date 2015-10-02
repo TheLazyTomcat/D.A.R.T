@@ -557,15 +557,21 @@ var
             BinPart.CompressedSize := 0;
             BinPart.UncompressedSize := 0;
           end;
-        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
-          BinPart.InternalFileAttributes := 0;
-        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
-          BinPart.ExternalFileAttributes := 0;
         If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
           BinPart.RelativeOffsetOfLocalHeader := 0;
         // load file name
         SetLength(FileName,BinPart.FilenameLength);
         fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+        // file attributes must be done here because file name is required
+        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
+          BinPart.InternalFileAttributes := 0;
+        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
+          begin
+            If ExtractFileName(AnsiReplaceStr(FileName,'/','\')) <> '' then
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
+            else
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+          end;
         // load extra field
         If fProcessingSettings.CentralDirectory.IgnoreExtraField then
           begin

@@ -18,7 +18,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
-      <BuildNr Value="18"/>
+      <BuildNr Value="19"/>
       <Language Value="0405"/>
       <StringTable Comments="Tool for unlocking SCS truck games mods" CompanyName="František Milt" FileDescription="SCS Unlocker application" InternalName="SCS Unlocker 2.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="SCS Unlocker 2" OriginalFilename="SCS_Unlocker.exe" ProductName="SCS Unlocker 2" ProductVersion="2.0.0"/>
     </VersionInfo>
@@ -191,17 +191,14 @@
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Repairer"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="FilesManager"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="zlib_dll"/>
       </Unit6>
     </Units>
   </ProjectOptions>

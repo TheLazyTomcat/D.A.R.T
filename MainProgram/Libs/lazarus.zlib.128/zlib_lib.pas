@@ -13,9 +13,6 @@
 ===============================================================================}
 
 const
-{$IFDEF zlib_lib_dll}
-  zlib_file    = 'zlib1.dll';
-{$ENDIF}
   zlib_version = '1.2.8';
 
   Z_SYNC_FLUSH =  2;
@@ -57,6 +54,9 @@ type
 
 {$IFDEF zlib_lib_dll}
 
+const
+  zlib_file    = 'zlib1.dll';
+
 {$IFDEF x64}
   {$R 'Resources\zlib64.res'}
 {$ELSE}
@@ -84,6 +84,32 @@ If not FileExists(ExtractFilePath(ParamStr(0)) + ZLibDLLFile) then
       SaveToFile(ExtractFilePath(ParamStr(0)) + ZLibDLLFile);
       Free;
     end;
+end;
+
+//==============================================================================
+// library (un)loading
+
+var
+  LibModule:  HModule = 0;
+
+procedure Initialize;
+begin
+LibModule := LoadLibrary(zlib_file);
+If LibModule <> 0 then
+  begin
+    InflateInit2_ := TZInflateInit2(GetProcAddress(LibModule,'inflateInit2_'));
+    Inflate_ := TZInflate(GetProcAddress(LibModule,'inflate'));
+    InflateEnd_ := TZInflateEnd(GetProcAddress(LibModule,'inflateEnd'));
+  end
+else raise Exception.CreateFmt('Module %s could not be loaded (%d).',[zlib_file,GetLastError]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure Finalize;
+begin
+If LibModule <> 0 then
+  FreeLibrary(LibModule);
 end;
 
 {$ELSE} //**********************************************************************
@@ -153,31 +179,3 @@ Function InflateEnd(var Stream: TZStream): Integer;
 begin
 Result := InflateEnd_(@Stream);
 end;
-
-{$IFDEF zlib_lib_dll}
-//==============================================================================
-// library (un)loading
-
-var
-  LibModule:  HModule = 0;
-
-procedure Initialize;
-begin
-LibModule := LoadLibrary(zlib_file);
-If LibModule <> 0 then
-  begin
-    InflateInit2_ := TZInflateInit2(GetProcAddress(LibModule,'inflateInit2_'));
-    Inflate_ := TZInflate(GetProcAddress(LibModule,'inflate'));
-    InflateEnd_ := TZInflateEnd(GetProcAddress(LibModule,'inflateEnd'));
-  end
-else raise Exception.CreateFmt('Module %s could not be loaded (%d).',[zlib_file,GetLastError]);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure Finalize;
-begin
-If LibModule <> 0 then
-  FreeLibrary(LibModule);
-end;
-{$ENDIF}

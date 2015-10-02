@@ -4,13 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="29">
+    <Units Count="31">
       <Unit0>
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="7"/>
+        <IsVisibleTab Value="True"/>
         <CursorPos Y="31"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -21,7 +21,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="44"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -31,7 +31,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="18" Y="331"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="44"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -42,31 +42,22 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2"/>
         <CursorPos X="78" Y="15"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="44"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="8"/>
-        <CursorPos X="50" Y="13"/>
-        <UsageCount Value="42"/>
-        <Bookmarks Count="3">
-          <Item0 X="2" Y="916" ID="3"/>
-          <Item1 X="10" Y="11" ID="1"/>
-          <Item2 X="4" Y="343" ID="2"/>
-        </Bookmarks>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="558"/>
+        <CursorPos X="43" Y="569"/>
+        <UsageCount Value="44"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="420"/>
+        <EditorIndex Value="-1"/>
         <CursorPos Y="443"/>
-        <UsageCount Value="42"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="44"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
@@ -74,7 +65,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="6" Y="91"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="34"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\MainForm.pas"/>
@@ -82,9 +73,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="174"/>
         <CursorPos Y="194"/>
-        <UsageCount Value="22"/>
+        <UsageCount Value="23"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit7>
@@ -226,6 +216,20 @@
         <CursorPos Y="2117"/>
         <UsageCount Value="10"/>
       </Unit28>
+      <Unit29>
+        <Filename Value="..\Libs\lazarus.zlib.128\zlib_lib.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="129"/>
+        <CursorPos X="5" Y="181"/>
+        <UsageCount Value="10"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\win\wininc\defines.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="34"/>
+        <CursorPos X="6" Y="449"/>
+        <UsageCount Value="10"/>
+      </Unit30>
     </Units>
     <CustomDefines Count="6">
       <Define0 Value="FPC"/>
@@ -235,103 +239,39 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="24" HistoryIndex="23">
+    <JumpHistory Count="8" HistoryIndex="7">
       <Position1>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
       </Position1>
       <Position2>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="9" TopLine="319"/>
+        <Filename Value="SCS_Unlocker.lpr"/>
+        <Caret Line="31" TopLine="7"/>
       </Position2>
       <Position3>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
       </Position3>
       <Position4>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="12" TopLine="319"/>
-      </Position4>
-      <Position5>
-        <Filename Value="SCS_Unlocker.lpr"/>
-        <Caret Line="31" TopLine="7"/>
-      </Position5>
-      <Position6>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="12" TopLine="319"/>
-      </Position6>
-      <Position7>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="12" TopLine="319"/>
-      </Position7>
-      <Position8>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="13" TopLine="328"/>
-      </Position8>
-      <Position9>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="280" TopLine="174"/>
-      </Position9>
-      <Position10>
+      </Position4>
+      <Position5>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="194" TopLine="174"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="434" TopLine="420"/>
-      </Position11>
-      <Position12>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="435" TopLine="420"/>
-      </Position12>
-      <Position13>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="442" TopLine="420"/>
-      </Position13>
-      <Position14>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="187" TopLine="174"/>
-      </Position14>
-      <Position15>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="192" TopLine="174"/>
-      </Position15>
-      <Position16>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="193" TopLine="174"/>
-      </Position16>
-      <Position17>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="443" TopLine="420"/>
-      </Position17>
-      <Position18>
+      </Position5>
+      <Position6>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="195" TopLine="174"/>
-      </Position18>
-      <Position19>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1455" Column="23" TopLine="1434"/>
-      </Position19>
-      <Position20>
+      </Position6>
+      <Position7>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="194" TopLine="174"/>
-      </Position20>
-      <Position21>
+      </Position7>
+      <Position8>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="345" Column="18" TopLine="330"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="332" Column="10" TopLine="319"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\Repairer.pas"/>
-        <Caret Line="14" Column="3" TopLine="115"/>
-      </Position24>
+      </Position8>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
