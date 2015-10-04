@@ -244,10 +244,12 @@ object fMainForm: TfMainForm
     end
     object mfSettings: TMenuItem
       Caption = 'File processing settings...'
+      ShortCut = 32851
       OnClick = mfSettingsClick
     end
     object mfErrorInfo: TMenuItem
       Caption = 'Error informations...'
+      ShortCut = 32837
       OnClick = mfErrorInfoClick
     end
     object N2: TMenuItem
@@ -255,6 +257,7 @@ object fMainForm: TfMainForm
     end
     object mfClearCompleted: TMenuItem
       Caption = 'Clear completed'
+      ShortCut = 32835
       OnClick = mfClearCompletedClick
     end
   end

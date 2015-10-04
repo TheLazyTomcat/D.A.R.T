@@ -32,9 +32,17 @@ uses
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
-//--- Signatures ---------------------------------------------------------------
+//--- Bit flags ----------------------------------------------------------------
 const
+  ZBF_Encrypted        = $00000001; // bit 0
+  ZBF_DataDescriptor   = $00000008; // bit 3
+  ZBF_StrongEncryption = $00000040; // bit 6
+
+
+//--- Signatures ---------------------------------------------------------------
+
   LocalFileHeaderSignature            = $04034b50;
+  DataDescriptorSignature             = $08074b50;
   CentralDirectoryFileHeaderSignature = $02014b50;
   EndOfCentralDirectorySignature      = $06054b50;
 
@@ -59,6 +67,15 @@ type
     BinPart:    TLocalFileHeaderRecord;
     FileName:   AnsiString;
     ExtraField: AnsiString;
+  end;
+
+//--- Data descriptor record ---------------------------------------------------
+
+  TDataDescriptorRecord = packed record
+    Signature:        LongWord;
+    CRC32:            LongWord;
+    CompressedSize:   LongWord;
+    UncompressedSize: LongWord;
   end;
 
 //--- Central directory file header --------------------------------------------
@@ -123,6 +140,7 @@ type
 
   TEntry = record
     LocalHeader:            TLocalFileHeader;
+    DataDescriptor:         TDataDescriptorRecord;
     CentralDirectoryHeader: TCentralDirectoryFileHeader;
     UtilityData:            TUtilityData;
   end;
@@ -533,7 +551,7 @@ var
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not LongWord(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -648,8 +666,10 @@ var
   i:              Integer;
 
   procedure LoadLocalHeader(Index: Integer);
+  var
+    DescriptorOffset:  Int64;
   begin
-    with fInputFileStructure.Entries[Index].LocalHeader do
+    with fInputFileStructure.Entries[Index],fInputFileStructure.Entries[Index].LocalHeader do
       begin
         fInputFileStream.ReadBuffer(BinPart,SizeOf(TLocalFileHeaderRecord));
         // binary part checks
@@ -664,7 +684,7 @@ var
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.LocalHeader.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;;
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not LongWord(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -702,8 +722,43 @@ var
             SetLength(ExtraField,BinPart.ExtraFieldLength);
             fInputFileStream.ReadBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
           end;
+        fInputFileStructure.Entries[Index].UtilityData.DataOffset := fInputFileStream.Position;
+        // read data descriptor if present
+        If (BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
+          begin
+            If fProcessingSettings.LocalHeader.IgnoreSizes then
+              DescriptorOffset := FindSignature(DataDescriptorSignature,False,fInputFileStream.Position)
+            else
+              DescriptorOffset := fInputFileStream.Position + BinPart.CompressedSize;
+            If (DescriptorOffset > 0) and ((DescriptorOffset + SizeOf(TDataDescriptorRecord)) <= fInputFileStream.Size) then
+              begin
+                fInputFileStream.Seek(DescriptorOffset,soFromBeginning);
+                fInputFileStream.ReadBuffer(DataDescriptor,SizeOf(TDataDescriptorRecord));
+                If fProcessingSettings.LocalHeader.IgnoreSignature then
+                  DataDescriptor.Signature := DataDescriptorSignature
+                else
+                  begin
+                    If DataDescriptor.Signature <> DataDescriptorSignature then
+                      DoError(6,'Bad data descriptor signature (0x%x.8) for entry #%d.',[DataDescriptor.Signature,Index])
+                  end;
+                If fProcessingSettings.LocalHeader.IgnoreCRC32 then
+                  DataDescriptor.CRC32 := 0
+                else
+                  BinPart.CRC32 := DataDescriptor.CRC32;
+                If fProcessingSettings.LocalHeader.IgnoreSizes then
+                  begin
+                    DataDescriptor.CompressedSize := 0;
+                    DataDescriptor.UncompressedSize := 0;
+                  end
+                else
+                  begin
+                    BinPart.CompressedSize := DataDescriptor.CompressedSize;
+                    BinPart.UncompressedSize := DataDescriptor.UncompressedSize;
+                  end;
+              end
+            else DoError(6,'Data descriptor was not found (%d).',[DescriptorOffset]);
+          end;
       end;
-    fInputFileStructure.Entries[Index].UtilityData.DataOffset := fInputFileStream.Position; 
   end;
 
 begin
@@ -777,11 +832,16 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
       If fProcessingSettings.LocalHeader.IgnoreModDate and not fProcessingSettings.CentralDirectory.IgnoreModDate then
         LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
       If fProcessingSettings.LocalHeader.IgnoreCRC32 and not fProcessingSettings.CentralDirectory.IgnoreCRC32 then
-        LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        begin
+          LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+          DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        end;
       If fProcessingSettings.LocalHeader.IgnoreSizes and not fProcessingSettings.CentralDirectory.IgnoreSizes then
         begin
           LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           LocalHeader.BinPart.UncompressedSize:= CentralDirectoryHeader.BinPart.UncompressedSize;
+          DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+          DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
     end;
 end;
@@ -1013,6 +1073,7 @@ try
                 else
                   LocalHeader.BinPart.CompressedSize := LongWord(fInputFileStream.Size - UtilityData.DataOffset);
               end;
+            DataDescriptor.CompressedSize := LocalHeader.BinPart.CompressedSize;
             CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
           end;
         If fProcessingSettings.AssumeCompressionMethods then
@@ -1041,11 +1102,13 @@ try
                 If UtilityData.NeedsCRC32 then
                   begin
                     LocalHeader.BinPart.CRC32 := BufferCRC32(UncompressedBuffer^,UncompressedSize);
+                    DataDescriptor.CRC32 := LocalHeader.BinPart.CRC32;
                     CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
                   end;
                 If UtilityData.NeedsSizes then
                   begin
                     LocalHeader.BinPart.UncompressedSize := UncompressedSize;
+                    DataDescriptor.UncompressedSize := UncompressedSize;
                     CentralDirectoryHeader.BinPart.UncompressedSize := UncompressedSize;
                   end;
               finally
@@ -1057,11 +1120,13 @@ try
               If UtilityData.NeedsCRC32 then
                 begin
                   LocalHeader.BinPart.CRC32 := BufferCRC32(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
+                  DataDescriptor.CRC32 := LocalHeader.BinPart.CRC32;
                   CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
                 end;
               If UtilityData.NeedsSizes then
                 begin
                   LocalHeader.BinPart.UncompressedSize := LocalHeader.BinPart.CompressedSize;
+                  DataDescriptor.UncompressedSize := DataDescriptor.CompressedSize;
                   CentralDirectoryHeader.BinPart.UncompressedSize :=  CentralDirectoryHeader.BinPart.CompressedSize;
                 end;
             end;
@@ -1072,6 +1137,9 @@ try
           RebuildFileStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
           // write data
           ProgressStreamWrite(RebuildFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
+          // write data descriptor
+          If (LocalHeader.BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
+            RebuildFileStream.WriteBuffer(DataDescriptor,SizeOf(TDataDescriptorRecord));
         finally
           FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         end;

@@ -178,6 +178,11 @@ FilesManager.OnFileStatus := OnFileStatus;
 FilesManager.OnStatus := OnStatus;
 OnStatus(nil);
 diaOpenDialog.InitialDir := ExtractFileDir(ParamStr(0));
+{$IFNDEF FPC}
+mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
+mfErrorInfo.ShortCut := ShortCut(Ord('E'),[ssAlt]);
+mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
+{$ENDIF}
 end;
    
 //------------------------------------------------------------------------------
@@ -298,7 +303,7 @@ end;
 
 procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
-If lvFiles.ItemIndex >= 0 then
+If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) then
   fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
 end;
      
@@ -306,7 +311,7 @@ end;
 
 procedure TfMainForm.mfErrorInfoClick(Sender: TObject);
 begin
-If lvFiles.ItemIndex >= 0 then
+If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError) then
   fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
 end;
     
@@ -316,32 +321,35 @@ procedure TfMainForm.mfClearCompletedClick(Sender: TObject);
 var
   i:  Integer;
 begin
-For i := Pred(FilesManager.Count) downto 0 do
-  If FilesManager[i].Status = fstDone then
-    begin
-      lvFiles.Items.Delete(i);
-      FilesManager.Delete(i);
-    end;
+If (FilesManager.Status = mstReady) and FilesManager.CompletedItems then
+  For i := Pred(FilesManager.Count) downto 0 do
+    If FilesManager[i].Status = fstDone then
+      begin
+        lvFiles.Items.Delete(i);
+        FilesManager.Delete(i);
+      end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.btnProcessingClick(Sender: TObject);
 begin
-case FilesManager.Status of
-  mstReady:       FilesManager.StartProcessing;
-  mstProcessing:  FilesManager.StopProcessing;
-  mstTerminating: begin
-                    FilesManager.PauseProcessing;
-                    If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
-                                  'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
-                                  'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
-                                  'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
-                      FilesManager.StopProcessing
-                    else
-                      FilesManager.ResumeProcessing;  
-                  end;
-end;
+If FilesManager.Count > 0 then
+  case FilesManager.Status of
+    mstReady:       FilesManager.StartProcessing;
+    mstProcessing:  FilesManager.StopProcessing;
+    mstTerminating: begin
+                      FilesManager.PauseProcessing;
+                      If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
+                                    'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
+                                    'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
+                                    'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
+                        FilesManager.StopProcessing
+                      else
+                        FilesManager.ResumeProcessing;
+                    end;
+  end
+else MessageDlg('There are no files selected for processing.',mtInformation,[mbOK],0);
 end;
 
 //------------------------------------------------------------------------------
