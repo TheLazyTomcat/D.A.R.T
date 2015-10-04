@@ -9,7 +9,7 @@
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
         <CursorPos Y="31"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="45"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -20,7 +20,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="45"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -30,7 +30,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="18" Y="331"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="45"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -41,22 +41,23 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2"/>
         <CursorPos X="78" Y="15"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="45"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="558"/>
-        <CursorPos X="43" Y="569"/>
-        <UsageCount Value="44"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="23"/>
+        <CursorPos X="27" Y="36"/>
+        <UsageCount Value="45"/>
+        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos Y="443"/>
-        <UsageCount Value="44"/>
+        <UsageCount Value="45"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
@@ -64,7 +65,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="6" Y="91"/>
-        <UsageCount Value="34"/>
+        <UsageCount Value="35"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\MainForm.pas"/>
@@ -73,8 +74,8 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2"/>
-        <CursorPos X="3" Y="16"/>
+        <TopLine Value="72"/>
+        <CursorPos X="72" Y="92"/>
         <UsageCount Value="23"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -240,7 +241,7 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="9" HistoryIndex="8">
+    <JumpHistory Count="11" HistoryIndex="10">
       <Position1>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
@@ -277,6 +278,14 @@
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="197" TopLine="193"/>
       </Position9>
+      <Position10>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="161" Column="63" TopLine="269"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="288" Column="33" TopLine="270"/>
+      </Position11>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

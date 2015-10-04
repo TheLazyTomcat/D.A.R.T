@@ -74,7 +74,7 @@ var
 implementation
 
 uses
-  ErrorForm, PrcsSettingsForm, WinFileInfo;
+  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo;
 
 {$IFDEF FPC}
   {$R *.lfm}
@@ -89,9 +89,9 @@ with TWinFileInfo.Create(WFI_LS_LoadVersionInfo or WFI_LS_LoadFixedFileInfo or W
     stbStatusBar.Panels[0].Text := {$IFDEF FPC}AnsiToUTF8({$ENDIF}
       VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
       VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' ' +
-      {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64'{$ELSE}+ '32'{$ENDIF} +
+      {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64 '{$ELSE}+ '32 '{$ENDIF} + zlib_method_str +
       ' #' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
-      {$IFDEF Debug}+ ' debug'{$ENDIF}{$IFDEF FPC}){$ENDIF} ;
+      {$IFDEF Debug}+ ' debug'{$ENDIF}{$IFDEF FPC}){$ENDIF};
     Free;
   end;
 end;
@@ -156,6 +156,7 @@ end;
 
 procedure TfMainForm.OnStatus(Sender: TObject);
 begin
+mnuFiles.OnPopup(nil);
 case FilesManager.Status of
   mstReady:       btnProcessing.Caption := 'Start processing';
   mstProcessing:  btnProcessing.Caption := 'Stop processing';
@@ -275,16 +276,23 @@ end;
 
 procedure TfMainForm.mfRemoveClick(Sender: TObject);
 var
-  i:  Integer;
+  i:        Integer;
+  MsgText:  String;
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount > 0) then
-  If MessageDlg(Format('Are you sure you want remove selected files (%d)?',[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
-    For i := Pred(FilesManager.Count) downto 0 do
-      If lvFiles.Items[i].Selected then
-        begin
-          lvFiles.Items.Delete(i);
-          FilesManager.Delete(i);
-        end;
+  begin
+    If lvFiles.SelCount > 1 then
+      MsgText := 'Are you sure you want remove selected files (%d)?'
+    else
+      MsgText := 'Are you sure you want remove selected file?';
+    If MessageDlg(Format(MsgText,[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
+      For i := Pred(FilesManager.Count) downto 0 do
+        If lvFiles.Items[i].Selected then
+          begin
+            lvFiles.Items.Delete(i);
+            FilesManager.Delete(i);
+          end;
+  end;
 end;
    
 //------------------------------------------------------------------------------

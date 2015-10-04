@@ -26,6 +26,22 @@ interface
 uses
   Classes;
 
+// Text constant identifying what method is used to call zlib ------------------
+const
+{$IFDEF FPC}
+  {$IFDEF zlib_lib}
+    {$IFDEF zlib_lib_dll}
+      zlib_method_str = 'D';
+    {$ELSE}
+      zlib_method_str = 'S';
+    {$ENDIF}
+  {$ELSE}
+    zlib_method_str = 'P';
+  {$ENDIF}
+{$ELSE}
+  zlib_method_str = 'E';
+{$ENDIF}
+
 {==============================================================================}
 {------------------------------------------------------------------------------}
 {                               ZIP related stuff                              }
