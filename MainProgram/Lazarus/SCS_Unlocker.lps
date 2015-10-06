@@ -46,11 +46,10 @@
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="23"/>
-        <CursorPos X="27" Y="36"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="812"/>
+        <CursorPos X="100" Y="823"/>
         <UsageCount Value="45"/>
-        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
@@ -241,7 +240,7 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="11" HistoryIndex="10">
+    <JumpHistory Count="10" HistoryIndex="9">
       <Position1>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
@@ -280,12 +279,8 @@
       </Position9>
       <Position10>
         <Filename Value="..\MainForm.pas"/>
-        <Caret Line="161" Column="63" TopLine="269"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\MainForm.pas"/>
         <Caret Line="288" Column="33" TopLine="270"/>
-      </Position11>
+      </Position10>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

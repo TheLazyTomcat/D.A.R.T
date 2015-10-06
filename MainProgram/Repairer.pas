@@ -200,6 +200,7 @@ type
   end;
 
   TLocalHeaderProcessingSettings = record
+    IgnoreLocalHeaders:       Boolean;
     IgnoreSignature:          Boolean;
     IgnoreVersions:           Boolean;
     ClearEncryptionFlags:     Boolean;
@@ -208,7 +209,9 @@ type
     IgnoreModDate:            Boolean;
     IgnoreCRC32:              Boolean;
     IgnoreSizes:              Boolean;
+    IgnoreFileName:           Boolean;
     IgnoreExtraField:         Boolean;
+    IgnoreDataDescriptor:     Boolean;
   end;
 
   TProcessingSettings = record
@@ -249,6 +252,7 @@ const
       IgnoreExtraField:             True;
       IgnoreFileComment:            True);
     LocalHeader: (
+      IgnoreLocalHeaders:           False;
       IgnoreSignature:              True;
       IgnoreVersions:               True;
       ClearEncryptionFlags:         True;
@@ -257,7 +261,9 @@ const
       IgnoreModDate:                False;
       IgnoreCRC32:                  True;
       IgnoreSizes:                  True;
-      IgnoreExtraField:             True));
+      IgnoreFileName:               False;
+      IgnoreExtraField:             True;
+      IgnoreDataDescriptor:         False));
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -414,12 +420,16 @@ const
 
 procedure TRepairer.ValidateProcessingSettings;
 begin
+If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+  fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
+  fProcessingSettings.LocalHeader.IgnoreLocalHeaders := False;
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   begin
     If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
       fProcessingSettings.LocalHeader.IgnoreSizes := False;
     If fProcessingSettings.LocalHeader.IgnoreSizes then
       fProcessingSettings.LocalHeader.IgnoreCompressionMethod := False;
+    fProcessingSettings.LocalHeader.IgnoreFileName := False;  
   end
 else
   begin
@@ -440,7 +450,7 @@ fInputFileStream.Seek(0,soFromBeginning);
 If fInputFileStream.Read({%H-}Signature,SizeOf(LongWord)) >= SizeOf(LongWord) then
   begin
     If Signature <> LocalFileHeaderSignature then
-      DoError(0,'Bad file signature (0x%x.8).',[Signature]);
+      DoError(0,'Bad file signature (0x%.8x).',[Signature]);
   end
 else DoError(0,'File is too small to contain valid signature (%d bytes).',[fInputFileStream.Size]);
 end;
@@ -558,7 +568,7 @@ var
           BinPart.Signature := CentralDirectoryFileHeaderSignature
         else
           If BinPart.Signature <> CentralDirectoryFileHeaderSignature then
-            DoError(4,'Bad central directory header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(4,'Bad central directory header signature (0x%.8x) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.CentralDirectory.IgnoreVersions then
           begin
             BinPart.VersionMadeBy := 20;
@@ -567,7 +577,7 @@ var
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not LongWord(ZBF_Encrypted or ZBF_StrongEncryption);
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not Word(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -693,14 +703,14 @@ var
           BinPart.Signature := LocalFileHeaderSignature
         else
           If BinPart.Signature <> LocalFileHeaderSignature then
-            DoError(6,'Bad local header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(6,'Bad local header signature (0x%.8x) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.LocalHeader.IgnoreVersions then
           begin
             BinPart.VersionNeededToExtract := 20;
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.LocalHeader.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not LongWord(ZBF_Encrypted or ZBF_StrongEncryption);
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not Word(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -725,8 +735,17 @@ var
             BinPart.UncompressedSize := 0;
           end;
         // file name
-        SetLength(FileName,BinPart.FileNameLength);
-        fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+        If fProcessingSettings.LocalHeader.IgnoreFileName then
+          begin
+            fInputFileStream.Seek(BinPart.FileNameLength,soFromCurrent);
+            BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
+            FileName := CentralDirectoryHeader.FileName;
+          end
+        else
+          begin
+            SetLength(FileName,BinPart.FileNameLength);
+            fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+          end;
         // extra field
         If fProcessingSettings.LocalHeader.IgnoreExtraField then
           begin
@@ -740,7 +759,8 @@ var
           end;
         fInputFileStructure.Entries[Index].UtilityData.DataOffset := fInputFileStream.Position;
         // read data descriptor if present
-        If (BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
+        If ((BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0) and
+          not fProcessingSettings.LocalHeader.IgnoreDataDescriptor then
           begin
             If fProcessingSettings.LocalHeader.IgnoreSizes then
               DescriptorOffset := FindSignature(DataDescriptorSignature,False,fInputFileStream.Position)
@@ -755,7 +775,7 @@ var
                 else
                   begin
                     If DataDescriptor.Signature <> DataDescriptorSignature then
-                      DoError(6,'Bad data descriptor signature (0x%x.8) for entry #%d.',[DataDescriptor.Signature,Index])
+                      DoError(6,'Bad data descriptor signature (0x%.8x) for entry #%d.',[DataDescriptor.Signature,Index])
                   end;
                 If fProcessingSettings.LocalHeader.IgnoreCRC32 then
                   DataDescriptor.CRC32 := 0
@@ -773,54 +793,92 @@ var
                   end;
               end
             else DoError(6,'Data descriptor was not found (%d).',[DescriptorOffset]);
+          end
+        else
+          begin
+            BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not ZBF_DataDescriptor;
+            CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag and not ZBF_DataDescriptor;
           end;
+      end;
+  end;
+
+  procedure CopyCentralToLocal(Index: Integer);
+  begin
+    with fInputFileStructure.Entries[Index] do
+      begin
+        LocalHeader.BinPart.Signature := LocalFileHeaderSignature;
+        LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
+        LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
+        LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
+        LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
+        LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
+        LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
+        LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+        LocalHeader.BinPart.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+        LocalHeader.BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
+        LocalHeader.BinPart.ExtraFieldLength := CentralDirectoryHeader.BinPart.ExtraFieldLength;
+        LocalHeader.FileName := CentralDirectoryHeader.FileName;
+        LocalHeader.ExtraField := CentralDirectoryHeader.ExtraField;
+        UtilityData.DataOffset := Int64(CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader) +
+                                  SizeOf(TLocalFileHeaderRecord) +
+                                  LocalHeader.BinPart.FileNameLength +
+                                  LocalHeader.BinPart.ExtraFieldLength;
       end;
   end;
 
 begin
 DoProgress(psLocalHeadersLoading,0.0);
-If Length(fInputFileStructure.Entries) > 0 then
+If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
   begin
-    fInputFileStream.Seek(0,soFromBeginning);
     For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
-      with fInputFileStructure.Entries[i].CentralDirectoryHeader do
-        begin
-          If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
-            fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-            begin
-              WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
-              If WorkingOffset >= 0 then
-                begin
-                  BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
-                  fInputFileStream.Seek(WorkingOffset,soFromBeginning);
-                end
-              else DoError(5,'No local header found for entry #%d.',[i]);
-            end
-          else fInputFileStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soFromBeginning);
-          LoadLocalHeader(i);
-          DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
-          If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-            If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
-              DoError(5,'Mismatch in local and central directory file name for entry #%d.',[i]);
-        end;
+      CopyCentralToLocal(i);
   end
 else
   begin
-    i := 0;
-    WorkingOffset := FindSignature(LocalFileHeaderSignature,False);
-    If WorkingOffset >= 0 then
-      repeat
-        If (i + 1) > Length(fInputFileStructure.Entries) then
-          SetLength(fInputFileStructure.Entries,Length(fInputFileStructure.Entries) + 1024);
-        fInputFileStructure.Entries[i].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;          
-        fInputFileStream.Seek(WorkingOffset,soFromBeginning);
-        with fInputFileStructure.EndOfCentralDirectory.BinPart do
-          DoProgress(psLocalHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fInputFileStream.Size - CentralDirectoryOffset));
-        LoadLocalHeader(i);
-        WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
-        Inc(i);
-      until WorkingOffset < 0;
-    SetLength(fInputFileStructure.Entries,i);
+    If Length(fInputFileStructure.Entries) > 0 then
+      begin
+        fInputFileStream.Seek(0,soFromBeginning);
+        For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
+          with fInputFileStructure.Entries[i].CentralDirectoryHeader do
+            begin
+              If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
+                fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+                begin
+                  WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
+                  If WorkingOffset >= 0 then
+                    begin
+                      BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
+                      fInputFileStream.Seek(WorkingOffset,soFromBeginning);
+                    end
+                  else DoError(5,'No local header found for entry #%d.',[i]);
+                end
+              else fInputFileStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soFromBeginning);
+              LoadLocalHeader(i);
+              DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
+              If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+                If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
+                  DoError(5,'Mismatch in local and central directory file name for entry #%d.',[i]);
+            end;
+      end
+    else
+      begin
+        i := 0;
+        WorkingOffset := FindSignature(LocalFileHeaderSignature,False);
+        If WorkingOffset >= 0 then
+          repeat
+            If (i + 1) > Length(fInputFileStructure.Entries) then
+              SetLength(fInputFileStructure.Entries,Length(fInputFileStructure.Entries) + 1024);
+            fInputFileStructure.Entries[i].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
+            fInputFileStream.Seek(WorkingOffset,soFromBeginning);
+            with fInputFileStructure.EndOfCentralDirectory.BinPart do
+              DoProgress(psLocalHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fInputFileStream.Size - CentralDirectoryOffset));
+            LoadLocalHeader(i);
+            WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
+            Inc(i);
+          until WorkingOffset < 0;
+        SetLength(fInputFileStructure.Entries,i);
+      end;
   end;
 DoProgress(psLocalHeadersLoading,1.0);  
 end;
