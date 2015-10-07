@@ -107,6 +107,7 @@ object fMainForm: TfMainForm
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnDropFiles = FormDropFiles
   OnResize = FormResize
   Position = poScreenCenter
   LCLVersion = '1.4.2.0'

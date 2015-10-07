@@ -12,11 +12,19 @@ unit MainForm;
 interface
 
 uses
-  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
-  ComCtrls, ExtCtrls, Menus, {$IFNDEF FPC}ImgList, XPMan,{$ENDIF}
+  {$IFNDEF FPC}Messages,{$ENDIF} SysUtils, Variants, Classes, Graphics,
+  Controls, Forms, Dialogs, StdCtrls, ComCtrls, ExtCtrls, Menus,
+  {$IFNDEF FPC}ImgList, XPMan,{$ENDIF}
   FilesManager;
 
 type
+{$IFNDEF FPC}
+  TListView = class(ComCtrls.TListView)
+  protected
+    procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
+  end;
+{$ENDIF}
+
   TfMainForm = class(TForm)
     lblFiles: TLabel;
     lvFiles: TListView;
@@ -58,6 +66,9 @@ type
     procedure mfClearCompletedClick(Sender: TObject);
     procedure btnProcessingClick(Sender: TObject);
     procedure tmrAnimTimerTimer(Sender: TObject);
+  {$IFDEF FPC}
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+  {$ENDIF}
   private
     { Private declarations }
   public
@@ -66,6 +77,8 @@ type
     procedure OnProgress(Sender: TObject; FileIndex: Integer);
     procedure OnFileStatus(Sender: TObject; FileIndex: Integer);
     procedure OnStatus(Sender: TObject);
+    procedure LoadFilesFromParams;
+    procedure SetDropAccept(AcceptDrop: Boolean);
   end;
 
 var
@@ -74,6 +87,7 @@ var
 implementation
 
 uses
+  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
   ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo;
 
 {$IFDEF FPC}
@@ -81,6 +95,41 @@ uses
 {$ELSE}
   {$R *.dfm}
 {$ENDIF}
+
+{$IFNDEF FPC}
+procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
+var
+  FileCount:  LongWord;
+  i:          LongWord;
+  FileName:   String;
+begin
+inherited;
+try
+  FileCount := DragQueryFile(Msg.Drop,$FFFFFFFF,nil,0);
+  If FileCount > 0 then
+    begin
+      For i := 0 to Pred(FileCount) do
+        begin
+          SetLength(FileName,DragQueryFile(Msg.Drop,i,nil,0));
+          DragQueryFile(Msg.Drop,i,PChar(FileName),Length(FileName) + 1);
+          If FileExists(FileName) and (fMainForm.FilesManager.IndexOf(FileName) < 0) then
+            begin
+              with Self.Items.Add do
+                begin
+                  SubItems.Add('');
+                  SubItems.Add('');
+                end;
+              fMainForm.FilesManager.Add(FileName)
+            end;
+        end;
+    end;
+finally
+  DragFinish(Msg.Drop);
+end;
+end;
+{$ENDIF}
+
+//==============================================================================
 
 procedure TfMainForm.LoadCopyrightInfo;
 begin
@@ -163,6 +212,36 @@ case FilesManager.Status of
   mstTerminating: btnProcessing.Caption := 'Terminating processing, please wait...';
 end;
 end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.LoadFilesFromParams;
+var
+  i:  Integer;
+begin
+If ParamCount > 0 then
+  For i := 1 to ParamCount do
+    If FileExists(ParamStr(i)) and (FilesManager.IndexOf(ParamStr(i)) < 0) then
+      begin
+        with lvFiles.Items.Add do
+          begin
+            SubItems.Add('');
+            SubItems.Add('');
+          end;
+        FilesManager.Add(ParamStr(i))
+      end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.SetDropAccept(AcceptDrop: Boolean);
+begin
+DragAcceptFiles(lvFiles.Handle,AcceptDrop);
+{$IFDEF FPC}
+Self.AllowDropFiles := True;
+DragAcceptFiles(Handle,False);
+{$ENDIF}
+end;
     
 //==============================================================================
 
@@ -184,12 +263,15 @@ mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
 mfErrorInfo.ShortCut := ShortCut(Ord('E'),[ssAlt]);
 mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
 {$ENDIF}
+LoadFilesFromParams;
+SetDropAccept(True);
 end;
    
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.FormDestroy(Sender: TObject);
 begin
+SetDropAccept(False);
 FilesManager.Free;
 end;
 
@@ -373,5 +455,26 @@ If FilesManager.ProcessingFile >= 0 then
       tmrAnimTimer.Tag := 0;
   end;
 end;
+
+//------------------------------------------------------------------------------
+
+{$IFDEF FPC}
+procedure TfMainForm.FormDropFiles(Sender: TObject;
+  const FileNames: array of String);
+var
+  i:  Integer;
+begin
+For i := Low(FileNames) to High(FileNames) do
+  If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+    begin
+      with lvFiles.Items.Add do
+        begin
+          SubItems.Add('');
+          SubItems.Add('');
+        end;
+      fMainForm.FilesManager.Add(FileNames[i])
+    end;
+end;
+{$ENDIF}
 
 end.
