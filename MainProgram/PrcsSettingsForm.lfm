@@ -1,12 +1,12 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 436
-  Height = 600
-  Top = 102
-  Width = 568
+  Left = 260
+  Height = 584
+  Top = 113
+  Width = 736
   BorderStyle = bsDialog
   Caption = 'Processing settings'
-  ClientHeight = 600
-  ClientWidth = 568
+  ClientHeight = 584
+  ClientWidth = 736
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
@@ -16,13 +16,20 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   LCLVersion = '1.4.2.0'
   object grdEndOfCentralDirectory: TGroupBox
     Left = 8
-    Height = 73
+    Height = 105
     Top = 176
-    Width = 553
+    Width = 721
     Caption = 'End of central directory'
-    ClientHeight = 55
-    ClientWidth = 549
+    ClientHeight = 87
+    ClientWidth = 717
     TabOrder = 1
+    object bvlEOCDSplit: TBevel
+      Left = 6
+      Height = 9
+      Top = 58
+      Width = 705
+      Shape = bsTopLine
+    end
     object cbIgnoreEndOfCentralDirectory: TCheckBox
       Tag = 100
       Left = 6
@@ -73,15 +80,23 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnClick = CheckBoxClick
       TabOrder = 4
     end
+    object cbLimitSearch: TCheckBox
+      Left = 6
+      Height = 17
+      Top = 66
+      Width = 74
+      Caption = 'Limit search'
+      TabOrder = 5
+    end
   end
   object grbCentralDirectoryHeaders: TGroupBox
     Left = 8
-    Height = 145
-    Top = 256
-    Width = 553
+    Height = 121
+    Top = 288
+    Width = 721
     Caption = 'Central directory headers'
-    ClientHeight = 127
-    ClientWidth = 549
+    ClientHeight = 103
+    ClientWidth = 717
     TabOrder = 2
     object cbCDIgnoreCentralDirectory: TCheckBox
       Tag = 200
@@ -125,9 +140,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbCDIgnoreCompressionMethod: TCheckBox
       Tag = 204
-      Left = 6
+      Left = 190
       Height = 17
-      Top = 106
+      Top = 10
       Width = 151
       Caption = 'Ignore compression method'
       OnClick = CheckBoxClick
@@ -137,7 +152,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 205
       Left = 190
       Height = 17
-      Top = 10
+      Top = 34
       Width = 116
       Caption = 'Ignore last mod time'
       OnClick = CheckBoxClick
@@ -147,7 +162,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 206
       Left = 190
       Height = 17
-      Top = 34
+      Top = 58
       Width = 118
       Caption = 'Ignore last mod date'
       OnClick = CheckBoxClick
@@ -157,7 +172,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 207
       Left = 190
       Height = 17
-      Top = 58
+      Top = 82
       Width = 86
       Caption = 'Ignore CRC32'
       OnClick = CheckBoxClick
@@ -165,9 +180,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbCDIgnoreSizes: TCheckBox
       Tag = 208
-      Left = 190
+      Left = 374
       Height = 17
-      Top = 82
+      Top = 10
       Width = 76
       Caption = 'Ignore sizes'
       OnClick = CheckBoxClick
@@ -175,9 +190,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbCDIgnoreInternalFileAttributes: TCheckBox
       Tag = 209
-      Left = 190
+      Left = 374
       Height = 17
-      Top = 106
+      Top = 34
       Width = 156
       Caption = 'Ignore internal file attributes'
       OnClick = CheckBoxClick
@@ -187,7 +202,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 210
       Left = 374
       Height = 17
-      Top = 10
+      Top = 58
       Width = 160
       Caption = 'Ignore external file attributes'
       OnClick = CheckBoxClick
@@ -197,7 +212,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 211
       Left = 374
       Height = 17
-      Top = 34
+      Top = 82
       Width = 143
       Caption = 'Ignore local header offset'
       OnClick = CheckBoxClick
@@ -205,9 +220,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbCDIgnoreExtraField: TCheckBox
       Tag = 212
-      Left = 374
+      Left = 558
       Height = 17
-      Top = 58
+      Top = 10
       Width = 102
       Caption = 'Ignore extra field'
       OnClick = CheckBoxClick
@@ -215,9 +230,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbCDIgnoreFileComment: TCheckBox
       Tag = 213
-      Left = 374
+      Left = 558
       Height = 17
-      Top = 82
+      Top = 34
       Width = 113
       Caption = 'Ignore file comment'
       OnClick = CheckBoxClick
@@ -226,18 +241,18 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   end
   object grbLocalHeaders: TGroupBox
     Left = 8
-    Height = 153
-    Top = 408
-    Width = 553
+    Height = 129
+    Top = 416
+    Width = 721
     Caption = 'Local headers'
-    ClientHeight = 135
-    ClientWidth = 549
+    ClientHeight = 111
+    ClientWidth = 717
     TabOrder = 3
-    object bvlDDSplit: TBevel
+    object bvlLHSplit: TBevel
       Left = 6
       Height = 9
-      Top = 106
-      Width = 537
+      Top = 82
+      Width = 705
       Shape = bsTopLine
     end
     object cbLHIgnoreSignature: TCheckBox
@@ -262,9 +277,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbLHClearEncryptionFlags: TCheckBox
       Tag = 303
-      Left = 6
+      Left = 190
       Height = 17
-      Top = 82
+      Top = 10
       Width = 123
       Caption = 'Clear encryption flags'
       OnClick = CheckBoxClick
@@ -274,7 +289,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 304
       Left = 190
       Height = 17
-      Top = 10
+      Top = 34
       Width = 151
       Caption = 'Ignore compression method'
       OnClick = CheckBoxClick
@@ -284,7 +299,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 305
       Left = 190
       Height = 17
-      Top = 34
+      Top = 58
       Width = 116
       Caption = 'Ignore last mod time'
       OnClick = CheckBoxClick
@@ -292,9 +307,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbLHIgnoreModDate: TCheckBox
       Tag = 306
-      Left = 190
+      Left = 374
       Height = 17
-      Top = 58
+      Top = 10
       Width = 118
       Caption = 'Ignore last mod date'
       OnClick = CheckBoxClick
@@ -302,9 +317,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbLHIgnoreCRC32: TCheckBox
       Tag = 307
-      Left = 190
+      Left = 374
       Height = 17
-      Top = 82
+      Top = 34
       Width = 86
       Caption = 'Ignore CRC32'
       OnClick = CheckBoxClick
@@ -314,7 +329,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 308
       Left = 374
       Height = 17
-      Top = 10
+      Top = 58
       Width = 76
       Caption = 'Ignore sizes'
       OnClick = CheckBoxClick
@@ -322,9 +337,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbLHIgnoreExtraField: TCheckBox
       Tag = 310
-      Left = 374
+      Left = 558
       Height = 17
-      Top = 58
+      Top = 34
       Width = 102
       Caption = 'Ignore extra field'
       OnClick = CheckBoxClick
@@ -334,7 +349,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 311
       Left = 6
       Height = 17
-      Top = 114
+      Top = 90
       Width = 126
       Caption = 'Ignore data descriptor'
       OnClick = CheckBoxClick
@@ -352,9 +367,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbLHIgnoreFileName: TCheckBox
       Tag = 309
-      Left = 374
+      Left = 558
       Height = 17
-      Top = 34
+      Top = 10
       Width = 96
       Caption = 'Ignore file name'
       OnClick = CheckBoxClick
@@ -362,18 +377,18 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
   end
   object btnAccept: TButton
-    Left = 360
+    Left = 528
     Height = 25
-    Top = 568
+    Top = 552
     Width = 97
     Caption = 'Accept'
     OnClick = btnAcceptClick
     TabOrder = 4
   end
   object btnClose: TButton
-    Left = 464
+    Left = 632
     Height = 25
-    Top = 568
+    Top = 552
     Width = 97
     Caption = 'Close'
     OnClick = btnCloseClick
@@ -383,23 +398,23 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     Left = 8
     Height = 161
     Top = 8
-    Width = 553
+    Width = 721
     Caption = 'General settings'
     ClientHeight = 143
-    ClientWidth = 549
+    ClientWidth = 717
     TabOrder = 0
     object bvlGeneralhorSplit: TBevel
       Left = 6
       Height = 9
       Top = 112
-      Width = 537
+      Width = 705
       Shape = bsTopLine
     end
     object vblGeneralHorSplit_File: TBevel
       Left = 6
       Height = 9
       Top = 32
-      Width = 537
+      Width = 705
       Shape = bsTopLine
     end
     object lblFile: TLabel
@@ -421,7 +436,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 4
     end
     object cbAssumeCompressionMethods: TCheckBox
-      Left = 142
+      Left = 190
       Height = 17
       Top = 122
       Width = 161
@@ -452,7 +467,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Left = 6
       Height = 21
       Top = 82
-      Width = 512
+      Width = 680
       EditLabel.AnchorSideLeft.Control = lbleData
       EditLabel.AnchorSideRight.Control = lbleData
       EditLabel.AnchorSideRight.Side = asrBottom
@@ -460,14 +475,14 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       EditLabel.Left = 6
       EditLabel.Height = 13
       EditLabel.Top = 66
-      EditLabel.Width = 512
+      EditLabel.Width = 680
       EditLabel.Caption = 'Data:'
       EditLabel.ParentColor = False
       TabOrder = 2
       OnChange = lbleDataChange
     end
     object btnBrowse: TButton
-      Left = 518
+      Left = 686
       Height = 21
       Top = 82
       Width = 25
@@ -476,7 +491,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 3
     end
     object cbInMemoryProcessing: TCheckBox
-      Left = 326
+      Left = 374
       Height = 17
       Top = 122
       Width = 123
@@ -487,6 +502,6 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   object diaSaveDialog: TSaveDialog
     DefaultExt = '.scs'
     Filter = 'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All files (*.*)|*.*'
-    left = 528
+    left = 696
   end
 end

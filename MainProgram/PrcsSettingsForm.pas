@@ -35,6 +35,8 @@ type
     cbIgnoreNumberOfEntries: TCheckBox;
     cbIgnoreCentralDirectoryOffset: TCheckBox;
     cbIgnoreComment: TCheckBox;
+    bvlEOCDSplit: TBevel;
+    cbLimitSearch: TCheckBox;
     grbCentralDirectoryHeaders: TGroupBox;
     cbCDIgnoreCentralDirectory: TCheckBox;
     cbCDIgnoreSignature: TCheckBox;
@@ -62,7 +64,7 @@ type
     cbLHIgnoreSizes: TCheckBox;
     cbLHIgnoreFileName: TCheckBox;
     cbLHIgnoreExtraField: TCheckBox;
-    bvlDDSplit: TBevel;
+    bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
     btnAccept: TButton;
     btnClose: TButton;
@@ -122,6 +124,7 @@ cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDis
 cbIgnoreNumberOfEntries.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
 cbIgnoreCentralDirectoryOffset.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
 cbIgnoreComment.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreComment;
+cbLimitSearch.Checked := fProcessingSettings.EndOfCentralDirectory.LimitSearch;
 //central directory
 cbCDIgnoreCentralDirectory.Checked := fProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
 cbCDIgnoreSignature.Checked := fProcessingSettings.CentralDirectory.IgnoreSignature;
@@ -169,6 +172,7 @@ fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.C
 fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries := cbIgnoreNumberOfEntries.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset := cbIgnoreCentralDirectoryOffset.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreComment := cbIgnoreComment.Checked;
+fProcessingSettings.EndOfCentralDirectory.LimitSearch := cbLimitSearch.Checked;
 //central directory
 fProcessingSettings.CentralDirectory.IgnoreCentralDirectory := cbCDIgnoreCentralDirectory.Checked;
 fProcessingSettings.CentralDirectory.IgnoreSignature := cbCDIgnoreSignature.Checked;
@@ -256,6 +260,7 @@ If (Sender is TCheckBox) and not fLoading then
               cbIgnoreNumberOfEntries.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreCentralDirectoryOffset.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreComment.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
+              cbLimitSearch.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
             end;
       200:  begin
               cbCDIgnoreSignature.Enabled := not cbCDIgnoreCentralDirectory.Checked;

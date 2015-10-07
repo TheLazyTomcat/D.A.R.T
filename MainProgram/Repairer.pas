@@ -180,6 +180,7 @@ type
     IgnoreNumberOfEntries:          Boolean;
     IgnoreCentralDirectoryOffset:   Boolean;
     IgnoreComment:                  Boolean;
+    LimitSearch:                    Boolean;
   end;
 
   TCentralDirectoryProcessingSettings = record
@@ -242,7 +243,8 @@ const
       IgnoreDiskSplit:              True;
       IgnoreNumberOfEntries:        False;
       IgnoreCentralDirectoryOffset: False;
-      IgnoreComment:                True);
+      IgnoreComment:                True;
+      LimitSearch:                  True); 
     CentralDirectory: (
       IgnoreCentralDirectory:       False;
       IgnoreSignature:              True;
@@ -319,7 +321,7 @@ type
   protected
     procedure ValidateProcessingSettings; virtual;
     procedure CheckInputFileSignature; virtual;
-    Function FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1): Int64; virtual;
+    Function FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1; Limited: Boolean = False): Int64; virtual;
     procedure LoadEndOfCentralDirectory; virtual;
     procedure LoadCentralDirectory; virtual;
     procedure LoadLocalHeaders; virtual;
@@ -469,7 +471,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TRepairer.FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1): Int64;
+Function TRepairer.FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1; Limited: Boolean = False): Int64;
 const
   BuffSize    = $100000; {1MiB}
   BuffOverlap = SizeOf(LongWord) - 1;
@@ -504,7 +506,8 @@ try
             Exit;
           end;
     Inc(CurrentOffset,BuffSize - BuffOverlap);
-  until CurrentOffset > fInputFileStream.Size;
+    DoProgress(psNoProgress,0.0);
+  until (CurrentOffset > fInputFileStream.Size) or Limited;
 finally
   FreeMem(Buffer,BuffSize);
 end;
@@ -517,7 +520,7 @@ var
   EOCDPosition: Int64;
 begin
 DoProgress(psEOCDLoading,0.0);
-EOCDPosition := FindSignature(EndOfCentralDirectorySignature,True);
+EOCDPosition := FindSignature(EndOfCentralDirectorySignature,True,-1,fProcessingSettings.EndOfCentralDirectory.LimitSearch);
 DoProgress(psEOCDLoading,0.5);
 If EOCDPosition >= 0 then
   begin
