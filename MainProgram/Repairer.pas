@@ -26,15 +26,39 @@ interface
 uses
   Classes;
 
+// Text constant identifying what method is used to call zlib ------------------
+const
+{$IFDEF FPC}
+  {$IFDEF zlib_lib}
+    {$IFDEF zlib_lib_dll}
+      zlib_method_str = 'D';
+    {$ELSE}
+      zlib_method_str = 'S';
+    {$ENDIF}
+  {$ELSE}
+    zlib_method_str = 'P';
+  {$ENDIF}
+{$ELSE}
+  zlib_method_str = 'E';
+{$ENDIF}
+
 {==============================================================================}
 {------------------------------------------------------------------------------}
 {                               ZIP related stuff                              }
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
-//--- Signatures ---------------------------------------------------------------
+//--- Bit flags ----------------------------------------------------------------
 const
+  ZBF_Encrypted        = $00000001; // bit 0
+  ZBF_DataDescriptor   = $00000008; // bit 3
+  ZBF_StrongEncryption = $00000040; // bit 6
+
+
+//--- Signatures ---------------------------------------------------------------
+
   LocalFileHeaderSignature            = $04034b50;
+  DataDescriptorSignature             = $08074b50;
   CentralDirectoryFileHeaderSignature = $02014b50;
   EndOfCentralDirectorySignature      = $06054b50;
 
@@ -59,6 +83,15 @@ type
     BinPart:    TLocalFileHeaderRecord;
     FileName:   AnsiString;
     ExtraField: AnsiString;
+  end;
+
+//--- Data descriptor record ---------------------------------------------------
+
+  TDataDescriptorRecord = packed record
+    Signature:        LongWord;
+    CRC32:            LongWord;
+    CompressedSize:   LongWord;
+    UncompressedSize: LongWord;
   end;
 
 //--- Central directory file header --------------------------------------------
@@ -123,6 +156,7 @@ type
 
   TEntry = record
     LocalHeader:            TLocalFileHeader;
+    DataDescriptor:         TDataDescriptorRecord;
     CentralDirectoryHeader: TCentralDirectoryFileHeader;
     UtilityData:            TUtilityData;
   end;
@@ -146,6 +180,7 @@ type
     IgnoreNumberOfEntries:          Boolean;
     IgnoreCentralDirectoryOffset:   Boolean;
     IgnoreComment:                  Boolean;
+    LimitSearch:                    Boolean;
   end;
 
   TCentralDirectoryProcessingSettings = record
@@ -166,6 +201,7 @@ type
   end;
 
   TLocalHeaderProcessingSettings = record
+    IgnoreLocalHeaders:       Boolean;
     IgnoreSignature:          Boolean;
     IgnoreVersions:           Boolean;
     ClearEncryptionFlags:     Boolean;
@@ -174,7 +210,13 @@ type
     IgnoreModDate:            Boolean;
     IgnoreCRC32:              Boolean;
     IgnoreSizes:              Boolean;
+    IgnoreFileName:           Boolean;
     IgnoreExtraField:         Boolean;
+    IgnoreDataDescriptor:     Boolean;
+  end;
+
+  TOtherSettings = record
+    InMemoryProcessingAllowed:  Boolean;
   end;
 
   TProcessingSettings = record
@@ -182,9 +224,11 @@ type
     RepairData:               String;
     IgnoreFileSignature:      Boolean;
     AssumeCompressionMethods: Boolean;
+    InMemoryProcessing:       Boolean;
     EndOfCentralDirectory:    TEndOfCentralDirectoryProcessingSettings;
     CentralDirectory:         TCentralDirectoryProcessingSettings;
     LocalHeader:              TLocalHeaderProcessingSettings;
+    OtherSettings:            TOtherSettings;
   end;
 
 const
@@ -193,12 +237,14 @@ const
     RepairData:               '';
     IgnoreFileSignature:      True;
     AssumeCompressionMethods: False;
+    InMemoryProcessing:       False;
     EndOfCentralDirectory: (
       IgnoreEndOfCentralDirectory:  False;
       IgnoreDiskSplit:              True;
       IgnoreNumberOfEntries:        False;
       IgnoreCentralDirectoryOffset: False;
-      IgnoreComment:                True);
+      IgnoreComment:                True;
+      LimitSearch:                  True); 
     CentralDirectory: (
       IgnoreCentralDirectory:       False;
       IgnoreSignature:              True;
@@ -215,6 +261,7 @@ const
       IgnoreExtraField:             True;
       IgnoreFileComment:            True);
     LocalHeader: (
+      IgnoreLocalHeaders:           False;
       IgnoreSignature:              True;
       IgnoreVersions:               True;
       ClearEncryptionFlags:         True;
@@ -223,21 +270,28 @@ const
       IgnoreModDate:                False;
       IgnoreCRC32:                  True;
       IgnoreSizes:                  True;
-      IgnoreExtraField:             True));
+      IgnoreFileName:               False;
+      IgnoreExtraField:             True;
+      IgnoreDataDescriptor:         False);
+    OtherSettings: (
+      InMemoryProcessingAllowed:    False));
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
 {                                   TRepairer                                  }
 {------------------------------------------------------------------------------}
 {==============================================================================}
-type
-  TProgressStage = (psError,psProcessing,psEOCDLoading,psCDHeadersLoading,
-                    psLocalHeadersLoading,psEntriesProcessing);
 
-  TProgressInfo = record
-    Offset: array[0..5] of Single;
-    Range:  array[0..5] of Single;
+type
+  TProgressStage = (psError,psProcessing,psLoading,psEOCDLoading,psCDHeadersLoading,
+                    psLocalHeadersLoading,psEntriesProcessing,psSaving,psNoProgress);
+
+  TProgressStageData = record
+    Offset: Single;
+    Range:  Single;
   end;
+
+  TProgressInfo = array[TProgressStage] of TProgressStageData;
 
   TErrorInfo = record
     Source:         Pointer;
@@ -259,7 +313,7 @@ type
     fTerminated:          Integer;
     fProcessingSettings:  TProcessingSettings;
     fInputFileName:       String;
-    fInputFileStream:     TFileStream;
+    fInputFileStream:     TStream;
     fInputFileStructure:  TFileStructure;
     fProgressInfo:        TProgressInfo;
     fErrorData:           TErrorInfo;
@@ -267,7 +321,7 @@ type
   protected
     procedure ValidateProcessingSettings; virtual;
     procedure CheckInputFileSignature; virtual;
-    Function FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1): Int64; virtual;
+    Function FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1; Limited: Boolean = False): Int64; virtual;
     procedure LoadEndOfCentralDirectory; virtual;
     procedure LoadCentralDirectory; virtual;
     procedure LoadLocalHeaders; virtual;
@@ -380,12 +434,16 @@ const
 
 procedure TRepairer.ValidateProcessingSettings;
 begin
+If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+  fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
+  fProcessingSettings.LocalHeader.IgnoreLocalHeaders := False;
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   begin
     If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
       fProcessingSettings.LocalHeader.IgnoreSizes := False;
     If fProcessingSettings.LocalHeader.IgnoreSizes then
       fProcessingSettings.LocalHeader.IgnoreCompressionMethod := False;
+    fProcessingSettings.LocalHeader.IgnoreFileName := False;  
   end
 else
   begin
@@ -406,14 +464,14 @@ fInputFileStream.Seek(0,soFromBeginning);
 If fInputFileStream.Read({%H-}Signature,SizeOf(LongWord)) >= SizeOf(LongWord) then
   begin
     If Signature <> LocalFileHeaderSignature then
-      DoError(0,'Bad file signature (0x%x.8).',[Signature]);
+      DoError(0,'Bad file signature (0x%.8x).',[Signature]);
   end
 else DoError(0,'File is too small to contain valid signature (%d bytes).',[fInputFileStream.Size]);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TRepairer.FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1): Int64;
+Function TRepairer.FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1; Limited: Boolean = False): Int64;
 const
   BuffSize    = $100000; {1MiB}
   BuffOverlap = SizeOf(LongWord) - 1;
@@ -448,7 +506,8 @@ try
             Exit;
           end;
     Inc(CurrentOffset,BuffSize - BuffOverlap);
-  until CurrentOffset > fInputFileStream.Size;
+    DoProgress(psNoProgress,0.0);
+  until (CurrentOffset > fInputFileStream.Size) or Limited;
 finally
   FreeMem(Buffer,BuffSize);
 end;
@@ -461,7 +520,7 @@ var
   EOCDPosition: Int64;
 begin
 DoProgress(psEOCDLoading,0.0);
-EOCDPosition := FindSignature(EndOfCentralDirectorySignature,True);
+EOCDPosition := FindSignature(EndOfCentralDirectorySignature,True,-1,fProcessingSettings.EndOfCentralDirectory.LimitSearch);
 DoProgress(psEOCDLoading,0.5);
 If EOCDPosition >= 0 then
   begin
@@ -524,7 +583,7 @@ var
           BinPart.Signature := CentralDirectoryFileHeaderSignature
         else
           If BinPart.Signature <> CentralDirectoryFileHeaderSignature then
-            DoError(4,'Bad central directory header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(4,'Bad central directory header signature (0x%.8x) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.CentralDirectory.IgnoreVersions then
           begin
             BinPart.VersionMadeBy := 20;
@@ -533,7 +592,7 @@ var
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not Word(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -648,8 +707,10 @@ var
   i:              Integer;
 
   procedure LoadLocalHeader(Index: Integer);
+  var
+    DescriptorOffset:  Int64;
   begin
-    with fInputFileStructure.Entries[Index].LocalHeader do
+    with fInputFileStructure.Entries[Index],fInputFileStructure.Entries[Index].LocalHeader do
       begin
         fInputFileStream.ReadBuffer(BinPart,SizeOf(TLocalFileHeaderRecord));
         // binary part checks
@@ -657,14 +718,14 @@ var
           BinPart.Signature := LocalFileHeaderSignature
         else
           If BinPart.Signature <> LocalFileHeaderSignature then
-            DoError(6,'Bad local header signature (0x%x.8) for entry #%d.',[BinPart.Signature,Index]);
+            DoError(6,'Bad local header signature (0x%.8x) for entry #%d.',[BinPart.Signature,Index]);
         If fProcessingSettings.LocalHeader.IgnoreVersions then
           begin
             BinPart.VersionNeededToExtract := 20;
             BinPart.OSNeededForExtraction := 0;
           end;
         If fProcessingSettings.LocalHeader.ClearEncryptionFlags then
-          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not $41;;
+          BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not Word(ZBF_Encrypted or ZBF_StrongEncryption);
         If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
           begin
             If BinPart.CompressedSize = BinPart.UncompressedSize then
@@ -689,8 +750,17 @@ var
             BinPart.UncompressedSize := 0;
           end;
         // file name
-        SetLength(FileName,BinPart.FileNameLength);
-        fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+        If fProcessingSettings.LocalHeader.IgnoreFileName then
+          begin
+            fInputFileStream.Seek(BinPart.FileNameLength,soFromCurrent);
+            BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
+            FileName := CentralDirectoryHeader.FileName;
+          end
+        else
+          begin
+            SetLength(FileName,BinPart.FileNameLength);
+            fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+          end;
         // extra field
         If fProcessingSettings.LocalHeader.IgnoreExtraField then
           begin
@@ -702,54 +772,128 @@ var
             SetLength(ExtraField,BinPart.ExtraFieldLength);
             fInputFileStream.ReadBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
           end;
+        fInputFileStructure.Entries[Index].UtilityData.DataOffset := fInputFileStream.Position;
+        // read data descriptor if present
+        If ((BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0) and
+          not fProcessingSettings.LocalHeader.IgnoreDataDescriptor then
+          begin
+            If fProcessingSettings.LocalHeader.IgnoreSizes then
+              DescriptorOffset := FindSignature(DataDescriptorSignature,False,fInputFileStream.Position)
+            else
+              DescriptorOffset := fInputFileStream.Position + BinPart.CompressedSize;
+            If (DescriptorOffset > 0) and ((DescriptorOffset + SizeOf(TDataDescriptorRecord)) <= fInputFileStream.Size) then
+              begin
+                fInputFileStream.Seek(DescriptorOffset,soFromBeginning);
+                fInputFileStream.ReadBuffer(DataDescriptor,SizeOf(TDataDescriptorRecord));
+                If fProcessingSettings.LocalHeader.IgnoreSignature then
+                  DataDescriptor.Signature := DataDescriptorSignature
+                else
+                  begin
+                    If DataDescriptor.Signature <> DataDescriptorSignature then
+                      DoError(6,'Bad data descriptor signature (0x%.8x) for entry #%d.',[DataDescriptor.Signature,Index])
+                  end;
+                If fProcessingSettings.LocalHeader.IgnoreCRC32 then
+                  DataDescriptor.CRC32 := 0
+                else
+                  BinPart.CRC32 := DataDescriptor.CRC32;
+                If fProcessingSettings.LocalHeader.IgnoreSizes then
+                  begin
+                    DataDescriptor.CompressedSize := 0;
+                    DataDescriptor.UncompressedSize := 0;
+                  end
+                else
+                  begin
+                    BinPart.CompressedSize := DataDescriptor.CompressedSize;
+                    BinPart.UncompressedSize := DataDescriptor.UncompressedSize;
+                  end;
+              end
+            else DoError(6,'Data descriptor was not found (%d).',[DescriptorOffset]);
+          end
+        else
+          begin
+            BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not ZBF_DataDescriptor;
+            CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag and not ZBF_DataDescriptor;
+          end;
       end;
-    fInputFileStructure.Entries[Index].UtilityData.DataOffset := fInputFileStream.Position; 
+  end;
+
+  procedure CopyCentralToLocal(Index: Integer);
+  begin
+    with fInputFileStructure.Entries[Index] do
+      begin
+        LocalHeader.BinPart.Signature := LocalFileHeaderSignature;
+        LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
+        LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
+        LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
+        LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
+        LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
+        LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
+        LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+        LocalHeader.BinPart.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+        LocalHeader.BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
+        LocalHeader.BinPart.ExtraFieldLength := CentralDirectoryHeader.BinPart.ExtraFieldLength;
+        LocalHeader.FileName := CentralDirectoryHeader.FileName;
+        LocalHeader.ExtraField := CentralDirectoryHeader.ExtraField;
+        UtilityData.DataOffset := Int64(CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader) +
+                                  SizeOf(TLocalFileHeaderRecord) +
+                                  LocalHeader.BinPart.FileNameLength +
+                                  LocalHeader.BinPart.ExtraFieldLength;
+      end;
   end;
 
 begin
 DoProgress(psLocalHeadersLoading,0.0);
-If Length(fInputFileStructure.Entries) > 0 then
+If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
   begin
-    fInputFileStream.Seek(0,soFromBeginning);
     For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
-      with fInputFileStructure.Entries[i].CentralDirectoryHeader do
-        begin
-          If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
-            fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-            begin
-              WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
-              If WorkingOffset >= 0 then
-                begin
-                  BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
-                  fInputFileStream.Seek(WorkingOffset,soFromBeginning);
-                end
-              else DoError(5,'No local header found for entry #%d.',[i]);
-            end
-          else fInputFileStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soFromBeginning);
-          LoadLocalHeader(i);
-          DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
-          If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-            If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
-              DoError(5,'Mismatch in local and central directory file name for entry #%d.',[i]);
-        end;
+      CopyCentralToLocal(i);
   end
 else
   begin
-    i := 0;
-    WorkingOffset := FindSignature(LocalFileHeaderSignature,False);
-    If WorkingOffset >= 0 then
-      repeat
-        If (i + 1) > Length(fInputFileStructure.Entries) then
-          SetLength(fInputFileStructure.Entries,Length(fInputFileStructure.Entries) + 1024);
-        fInputFileStructure.Entries[i].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;          
-        fInputFileStream.Seek(WorkingOffset,soFromBeginning);
-        with fInputFileStructure.EndOfCentralDirectory.BinPart do
-          DoProgress(psLocalHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fInputFileStream.Size - CentralDirectoryOffset));
-        LoadLocalHeader(i);
-        WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
-        Inc(i);
-      until WorkingOffset < 0;
-    SetLength(fInputFileStructure.Entries,i);
+    If Length(fInputFileStructure.Entries) > 0 then
+      begin
+        fInputFileStream.Seek(0,soFromBeginning);
+        For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
+          with fInputFileStructure.Entries[i].CentralDirectoryHeader do
+            begin
+              If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
+                fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+                begin
+                  WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
+                  If WorkingOffset >= 0 then
+                    begin
+                      BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
+                      fInputFileStream.Seek(WorkingOffset,soFromBeginning);
+                    end
+                  else DoError(5,'No local header found for entry #%d.',[i]);
+                end
+              else fInputFileStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soFromBeginning);
+              LoadLocalHeader(i);
+              DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
+              If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+                If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
+                  DoError(5,'Mismatch in local and central directory file name for entry #%d.',[i]);
+            end;
+      end
+    else
+      begin
+        i := 0;
+        WorkingOffset := FindSignature(LocalFileHeaderSignature,False);
+        If WorkingOffset >= 0 then
+          repeat
+            If (i + 1) > Length(fInputFileStructure.Entries) then
+              SetLength(fInputFileStructure.Entries,Length(fInputFileStructure.Entries) + 1024);
+            fInputFileStructure.Entries[i].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
+            fInputFileStream.Seek(WorkingOffset,soFromBeginning);
+            with fInputFileStructure.EndOfCentralDirectory.BinPart do
+              DoProgress(psLocalHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fInputFileStream.Size - CentralDirectoryOffset));
+            LoadLocalHeader(i);
+            WorkingOffset := FindSignature(LocalFileHeaderSignature,False,fInputFileStream.Position);
+            Inc(i);
+          until WorkingOffset < 0;
+        SetLength(fInputFileStructure.Entries,i);
+      end;
   end;
 DoProgress(psLocalHeadersLoading,1.0);  
 end;
@@ -777,11 +921,16 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
       If fProcessingSettings.LocalHeader.IgnoreModDate and not fProcessingSettings.CentralDirectory.IgnoreModDate then
         LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
       If fProcessingSettings.LocalHeader.IgnoreCRC32 and not fProcessingSettings.CentralDirectory.IgnoreCRC32 then
-        LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        begin
+          LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+          DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        end;
       If fProcessingSettings.LocalHeader.IgnoreSizes and not fProcessingSettings.CentralDirectory.IgnoreSizes then
         begin
           LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           LocalHeader.BinPart.UncompressedSize:= CentralDirectoryHeader.BinPart.UncompressedSize;
+          DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+          DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
     end;
 end;
@@ -977,7 +1126,8 @@ end;
 
 procedure TRepairer.RebuildInputFile;
 var
-  RebuildFileStream:        TFileStream;
+  OutputFileName:           String;
+  RebuildFileStream:        TStream;
   i:                        Integer;
   EntryFileBuffer:          Pointer;
   DecompressForProcessing:  Boolean;
@@ -989,10 +1139,16 @@ var
 begin
 DoProgress(psEntriesProcessing,0.0);
 {$IFDEF FPC}
-RebuildFileStream := TFileStream.Create(UTF8ToAnsi(fProcessingSettings.RepairData),fmCreate or fmShareDenyWrite);
+OutputFileName := UTF8ToAnsi(fProcessingSettings.RepairData);
 {$ELSE}
-RebuildFileStream := TFileStream.Create(fProcessingSettings.RepairData,fmCreate or fmShareDenyWrite);
+OutputFileName := fProcessingSettings.RepairData;
 {$ENDIF}
+If fProcessingSettings.InMemoryProcessing then
+  begin
+    RebuildFileStream := TMemoryStream.Create;
+    RebuildFileStream.Size := Trunc(fInputFileStream.Size * 1.1);
+  end
+else RebuildFileStream := TFileStream.Create(OutputFileName,fmCreate or fmShareDenyWrite);
 try
   EntryProgressOffset := 0.0;
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
@@ -1013,6 +1169,7 @@ try
                 else
                   LocalHeader.BinPart.CompressedSize := LongWord(fInputFileStream.Size - UtilityData.DataOffset);
               end;
+            DataDescriptor.CompressedSize := LocalHeader.BinPart.CompressedSize;
             CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
           end;
         If fProcessingSettings.AssumeCompressionMethods then
@@ -1041,11 +1198,13 @@ try
                 If UtilityData.NeedsCRC32 then
                   begin
                     LocalHeader.BinPart.CRC32 := BufferCRC32(UncompressedBuffer^,UncompressedSize);
+                    DataDescriptor.CRC32 := LocalHeader.BinPart.CRC32;
                     CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
                   end;
                 If UtilityData.NeedsSizes then
                   begin
                     LocalHeader.BinPart.UncompressedSize := UncompressedSize;
+                    DataDescriptor.UncompressedSize := UncompressedSize;
                     CentralDirectoryHeader.BinPart.UncompressedSize := UncompressedSize;
                   end;
               finally
@@ -1057,11 +1216,13 @@ try
               If UtilityData.NeedsCRC32 then
                 begin
                   LocalHeader.BinPart.CRC32 := BufferCRC32(EntryFileBuffer^,LocalHeader.BinPart.CompressedSize);
+                  DataDescriptor.CRC32 := LocalHeader.BinPart.CRC32;
                   CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
                 end;
               If UtilityData.NeedsSizes then
                 begin
                   LocalHeader.BinPart.UncompressedSize := LocalHeader.BinPart.CompressedSize;
+                  DataDescriptor.UncompressedSize := DataDescriptor.CompressedSize;
                   CentralDirectoryHeader.BinPart.UncompressedSize :=  CentralDirectoryHeader.BinPart.CompressedSize;
                 end;
             end;
@@ -1072,6 +1233,9 @@ try
           RebuildFileStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
           // write data
           ProgressStreamWrite(RebuildFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
+          // write data descriptor
+          If (LocalHeader.BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
+            RebuildFileStream.WriteBuffer(DataDescriptor,SizeOf(TDataDescriptorRecord));
         finally
           FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         end;
@@ -1096,6 +1260,8 @@ try
     end;
   // finalize
   RebuildFileStream.Size := RebuildFileStream.Position;
+  If fProcessingSettings.InMemoryProcessing then
+    TMemoryStream(RebuildFileStream).SaveToFile(OutputFileName);
 finally
   RebuildFileStream.Free;
 end;
@@ -1237,14 +1403,22 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProcessFile;
+{$IFDEF FPC}
+var
+  InputFileName:  String;
+{$ENDIF}
 begin
 DoProgress(psProcessing,0.0);
-try
 {$IFDEF FPC}
-  fInputFileStream := TFileStream.Create(UTF8ToAnsi(InputFileName),fmOpenRead or fmShareDenyWrite);
-{$ELSE}
-  fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+InputFileName := UTF8ToAnsi(Self.InputFileName);
 {$ENDIF}
+try
+  If fProcessingSettings.InMemoryProcessing then
+    begin
+      fInputFileStream := TMemoryStream.Create;
+      TMemoryStream(fInputFileStream).LoadFromFile(InputFileName);
+    end
+  else fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
   try
     If fInputFileStream.Size <= 0 then
       DoError(7,'Input file does not contain any data.');
@@ -1273,26 +1447,30 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.InitializeProgressInfo;
+var
+  InnerProcessingRange: Single;
 begin
 FillChar(fProgressInfo,SizeOf(TProgressInfo),0);
-fProgressInfo.Offset[0] := -1.0;
-fProgressInfo.Range[1] := 1.0;
-If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
-  fProgressInfo.Range[2] := 0.01;
-If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+fProgressInfo[psError].Offset := -1.0;
+fProgressInfo[psProcessing].Range := 1.0;
+If fProcessingSettings.InMemoryProcessing then
   begin
-    fProgressInfo.Offset[3] := fProgressInfo.Range[2];
-    fProgressInfo.Range[3] := 0.1 - fProgressInfo.Range[2];
-  end
-else
-  begin
-    fProgressInfo.Offset[3] := fProgressInfo.Offset[2];
-    fProgressInfo.Range[3] := fProgressInfo.Range[2];  
+    fProgressInfo[psLoading].Range := 0.3;
+    fProgressInfo[psSaving].Range := 0.3;
+    fProgressInfo[psSaving].Offset := 1 - fProgressInfo[psSaving].Range;
   end;
-fProgressInfo.Offset[4] := fProgressInfo.Offset[3] + fProgressInfo.Range[3];
-fProgressInfo.Range[4] := 0.2 - fProgressInfo.Offset[4];
-fProgressInfo.Offset[5] := fProgressInfo.Offset[4] + fProgressInfo.Range[4];
-fProgressInfo.Range[5] := 1.0 - fProgressInfo.Offset[5];
+InnerProcessingRange := 1 - (fProgressInfo[psLoading].Range + fProgressInfo[psSaving].Range);
+fProgressInfo[psEOCDLoading].Offset := fProgressInfo[psLoading].Range;
+If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
+  fProgressInfo[psEOCDLoading].Range := 0.01 * InnerProcessingRange;
+fProgressInfo[psCDHeadersLoading].Offset := fProgressInfo[psEOCDLoading].Offset + fProgressInfo[psEOCDLoading].Range;
+If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+  fProgressInfo[psCDHeadersLoading].Range := 0.1 * InnerProcessingRange;
+fProgressInfo[psLocalHeadersLoading].Offset := fProgressInfo[psCDHeadersLoading].Offset + fProgressInfo[psCDHeadersLoading].Range;
+If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+  fProgressInfo[psLocalHeadersLoading].Range := 0.1 * InnerProcessingRange;
+fProgressInfo[psEntriesProcessing].Offset := fProgressInfo[psLocalHeadersLoading].Offset + fProgressInfo[psLocalHeadersLoading].Range;
+fProgressInfo[psEntriesProcessing].Range := InnerProcessingRange - (fProgressInfo[psLocalHeadersLoading].Range + fProgressInfo[psCDHeadersLoading].Range + fProgressInfo[psEOCDLoading].Range);
 end;
  
 //------------------------------------------------------------------------------
@@ -1303,8 +1481,11 @@ If ProgressStage <> psProcessing then
   If Data > 1.0 then Data := 1.0;
 If (ProgressStage <> psError) and (InterlockedExchange(fTerminated,0) <> 0) then
   DoError(-1,'Processing terminated. Data can be in inconsistent state.');
-Data := fProgressInfo.Offset[Integer(ProgressStage)] + (fProgressInfo.Range[Integer(ProgressStage)] * Data);
-If Assigned(fOnProgress) then fOnProgress(Self,Data);
+If ProgressStage <> psNoProgress then
+  begin
+    Data := fProgressInfo[ProgressStage].Offset + (fProgressInfo[ProgressStage].Range * Data);
+    If Assigned(fOnProgress) then fOnProgress(Self,Data);
+  end;
 end;
 
 //------------------------------------------------------------------------------

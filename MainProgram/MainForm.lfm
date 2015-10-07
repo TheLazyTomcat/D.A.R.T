@@ -107,6 +107,7 @@ object fMainForm: TfMainForm
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnDropFiles = FormDropFiles
   OnResize = FormResize
   Position = poScreenCenter
   LCLVersion = '1.4.2.0'
@@ -165,11 +166,13 @@ object fMainForm: TfMainForm
     MultiSelect = True
     ParentShowHint = False
     PopupMenu = mnuFiles
+    ReadOnly = True
     RowSelect = True
     ShowHint = True
     SmallImages = imlFileIcons
     TabOrder = 0
     ViewStyle = vsReport
+    OnClick = mnuFilesPopup
     OnDblClick = lvFilesDblClick
   end
   object stbStatusBar: TStatusBar
@@ -242,10 +245,12 @@ object fMainForm: TfMainForm
     end
     object mfSettings: TMenuItem
       Caption = 'File processing settings...'
+      ShortCut = 32851
       OnClick = mfSettingsClick
     end
     object mfErrorInfo: TMenuItem
       Caption = 'Error informations...'
+      ShortCut = 32837
       OnClick = mfErrorInfoClick
     end
     object N2: TMenuItem
@@ -253,6 +258,7 @@ object fMainForm: TfMainForm
     end
     object mfClearCompleted: TMenuItem
       Caption = 'Clear completed'
+      ShortCut = 32835
       OnClick = mfClearCompletedClick
     end
   end

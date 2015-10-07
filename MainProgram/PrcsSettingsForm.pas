@@ -28,12 +28,15 @@ type
     bvlGeneralhorSplit: TBevel;
     cbIgnoreFileSignature: TCheckBox;
     cbAssumeCompressionMethods: TCheckBox;
+    cbInMemoryProcessing: TCheckBox;    
     grdEndOfCentralDirectory: TGroupBox;
     cbIgnoreEndOfCentralDirectory: TCheckBox;
     cbIgnoreDiskSplit: TCheckBox;
     cbIgnoreNumberOfEntries: TCheckBox;
     cbIgnoreCentralDirectoryOffset: TCheckBox;
     cbIgnoreComment: TCheckBox;
+    bvlEOCDSplit: TBevel;
+    cbLimitSearch: TCheckBox;
     grbCentralDirectoryHeaders: TGroupBox;
     cbCDIgnoreCentralDirectory: TCheckBox;
     cbCDIgnoreSignature: TCheckBox;
@@ -50,6 +53,7 @@ type
     cbCDIgnoreExtraField: TCheckBox;
     cbCDIgnoreFileComment: TCheckBox;
     grbLocalHeaders: TGroupBox;
+    cbLHIgnoreLocalHeaders: TCheckBox;
     cbLHIgnoreSignature: TCheckBox;
     cbLHIgnoreVersions: TCheckBox;
     cbLHClearEncryptionFlags: TCheckBox;
@@ -58,7 +62,10 @@ type
     cbLHIgnoreModDate: TCheckBox;
     cbLHIgnoreCRC32: TCheckBox;
     cbLHIgnoreSizes: TCheckBox;
+    cbLHIgnoreFileName: TCheckBox;
     cbLHIgnoreExtraField: TCheckBox;
+    bvlLHSplit: TBevel;
+    cbLHIgnoreDataDescriptor: TCheckBox;
     btnAccept: TButton;
     btnClose: TButton;
     procedure FormShow(Sender: TObject);
@@ -109,12 +116,15 @@ end;
 lbleData.Text := fProcessingSettings.RepairData;
 cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
 cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
+cbInMemoryProcessing.Checked := fProcessingSettings.InMemoryProcessing;
+cbInMemoryProcessing.Enabled := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
 cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
 cbIgnoreNumberOfEntries.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
 cbIgnoreCentralDirectoryOffset.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
 cbIgnoreComment.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreComment;
+cbLimitSearch.Checked := fProcessingSettings.EndOfCentralDirectory.LimitSearch;
 //central directory
 cbCDIgnoreCentralDirectory.Checked := fProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
 cbCDIgnoreSignature.Checked := fProcessingSettings.CentralDirectory.IgnoreSignature;
@@ -131,6 +141,7 @@ cbCDIgnoreLocalHeaderOffset.Checked := fProcessingSettings.CentralDirectory.Igno
 cbCDIgnoreExtraField.Checked := fProcessingSettings.CentralDirectory.IgnoreExtraField;
 cbCDIgnoreFileComment.Checked := fProcessingSettings.CentralDirectory.IgnoreFileComment;
 //local headers
+cbLHIgnoreLocalHeaders.Checked := fProcessingSettings.LocalHeader.IgnoreLocalHeaders;
 cbLHIgnoreSignature.Checked := fProcessingSettings.LocalHeader.IgnoreSignature;
 cbLHIgnoreVersions.Checked := fProcessingSettings.LocalHeader.IgnoreVersions;
 cbLHClearEncryptionFlags.Checked := fProcessingSettings.LocalHeader.ClearEncryptionFlags;
@@ -139,7 +150,10 @@ cbLHIgnoreModTime.Checked := fProcessingSettings.LocalHeader.IgnoreModTime;
 cbLHIgnoreModDate.Checked := fProcessingSettings.LocalHeader.IgnoreModDate;
 cbLHIgnoreCRC32.Checked := fProcessingSettings.LocalHeader.IgnoreCRC32;
 cbLHIgnoreSizes.Checked := fProcessingSettings.LocalHeader.IgnoreSizes;
+cbLHIgnoreFileName.Checked := fProcessingSettings.LocalHeader.IgnoreFileName;
 cbLHIgnoreExtraField.Checked := fProcessingSettings.LocalHeader.IgnoreExtraField;
+//data descriptor
+cbLHIgnoreDataDescriptor.Checked := fProcessingSettings.LocalHeader.IgnoreDataDescriptor;
 end;
 
 //------------------------------------------------------------------------------
@@ -151,12 +165,14 @@ If rbExtract.Checked then fProcessingSettings.RepairMethod := rmExtract;
 fProcessingSettings.RepairData := lbleData.Text;
 fProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
+fProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
 //eocd
 fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries := cbIgnoreNumberOfEntries.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset := cbIgnoreCentralDirectoryOffset.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreComment := cbIgnoreComment.Checked;
+fProcessingSettings.EndOfCentralDirectory.LimitSearch := cbLimitSearch.Checked;
 //central directory
 fProcessingSettings.CentralDirectory.IgnoreCentralDirectory := cbCDIgnoreCentralDirectory.Checked;
 fProcessingSettings.CentralDirectory.IgnoreSignature := cbCDIgnoreSignature.Checked;
@@ -173,6 +189,7 @@ fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset := cbCDIgnoreLocalH
 fProcessingSettings.CentralDirectory.IgnoreExtraField := cbCDIgnoreExtraField.Checked;
 fProcessingSettings.CentralDirectory.IgnoreFileComment := cbCDIgnoreFileComment.Checked;
 //local headers
+fProcessingSettings.LocalHeader.IgnoreLocalHeaders := cbLHIgnoreLocalHeaders.Checked;
 fProcessingSettings.LocalHeader.IgnoreSignature := cbLHIgnoreSignature.Checked;
 fProcessingSettings.LocalHeader.IgnoreVersions := cbLHIgnoreVersions.Checked;
 fProcessingSettings.LocalHeader.ClearEncryptionFlags := cbLHClearEncryptionFlags.Checked;
@@ -181,7 +198,10 @@ fProcessingSettings.LocalHeader.IgnoreModTime := cbLHIgnoreModTime.Checked;
 fProcessingSettings.LocalHeader.IgnoreModDate := cbLHIgnoreModDate.Checked;
 fProcessingSettings.LocalHeader.IgnoreCRC32 := cbLHIgnoreCRC32.Checked;
 fProcessingSettings.LocalHeader.IgnoreSizes := cbLHIgnoreSizes.Checked;
+fProcessingSettings.LocalHeader.IgnoreFileName := cbLHIgnoreFileName.Checked;
 fProcessingSettings.LocalHeader.IgnoreExtraField := cbLHIgnoreExtraField.Checked;
+//data descriptor
+fProcessingSettings.LocalHeader.IgnoreDataDescriptor := cbLHIgnoreDataDescriptor.Checked;
 end;
 
 //------------------------------------------------------------------------------
@@ -199,6 +219,7 @@ finally
 end;
 cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
 cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
+cbLHIgnoreLocalHeaders.OnClick(cbLHIgnoreLocalHeaders);
 fAccepted := False;
 ShowModal;
 FormToSettings;
@@ -239,6 +260,7 @@ If (Sender is TCheckBox) and not fLoading then
               cbIgnoreNumberOfEntries.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreCentralDirectoryOffset.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreComment.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
+              cbLimitSearch.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
             end;
       200:  begin
               cbCDIgnoreSignature.Enabled := not cbCDIgnoreCentralDirectory.Checked;
@@ -256,12 +278,37 @@ If (Sender is TCheckBox) and not fLoading then
               cbCDIgnoreFileComment.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               If TCheckBox(Sender).Checked and cbLHIgnoreCompressionMethod.Checked then
                 cbLHIgnoreSizes.Checked := False;
+              If TCheckBox(Sender).Checked then
+                begin
+                  cbLHIgnoreLocalHeaders.Checked := False;
+                  cbLHIgnoreFileName.Checked := False;
+                end;
             end;
        204: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreSizes.Checked := False;
        208: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreCompressionMethod.Checked := False;
-       303: If cbCDIgnoreCentralDirectory.Checked then
+       211: If TCheckBox(Sender).Checked then
+              cbLHIgnoreLocalHeaders.Checked := False;
+       300: begin
+              cbLHIgnoreSignature.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreVersions.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHClearEncryptionFlags.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreCompressionMethod.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreModTime.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreModDate.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreCRC32.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreSizes.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreFileName.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreExtraField.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              cbLHIgnoreDataDescriptor.Enabled := not cbLHIgnoreLocalHeaders.Checked;
+              If TCheckBox(Sender).Checked then
+                begin
+                  cbCDIgnoreCentralDirectory.Checked := False;
+                  cbCDIgnoreLocalHeaderOffset.Checked := False;
+                end;
+            end;
+       304: If cbCDIgnoreCentralDirectory.Checked then
               begin
                 If TCheckBox(Sender).Checked then
                   cbLHIgnoreSizes.Checked := False;
@@ -269,7 +316,7 @@ If (Sender is TCheckBox) and not fLoading then
             else
               If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
                 cbLHIgnoreSizes.Checked := False;
-       307: If cbCDIgnoreCentralDirectory.Checked then
+       308: If cbCDIgnoreCentralDirectory.Checked then
               begin
                 If TCheckBox(Sender).Checked then
                   cbLHIgnoreCompressionMethod.Checked := False;
@@ -277,6 +324,8 @@ If (Sender is TCheckBox) and not fLoading then
             else
               If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
                 cbLHIgnoreCompressionMethod.Checked := False;
+       309: If TCheckBox(Sender).Checked then
+              cbCDIgnoreCentralDirectory.Checked := False;
     end;
   end;
 end;

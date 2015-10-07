@@ -164,6 +164,7 @@ object fMainForm: TfMainForm
         Width = 155
       end>
     MultiSelect = True
+    ReadOnly = True
     RowSelect = True
     ParentShowHint = False
     PopupMenu = mnuFiles
@@ -171,6 +172,7 @@ object fMainForm: TfMainForm
     SmallImages = imlFileIcons
     TabOrder = 0
     ViewStyle = vsReport
+    OnClick = mnuFilesPopup
     OnDblClick = lvFilesDblClick
     OnInfoTip = lvFilesInfoTip
   end

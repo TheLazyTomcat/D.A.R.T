@@ -123,7 +123,7 @@ František Milt, frantisek.milt@gmail.com
 
 Links
 ------------------------------
-Forum thread:
+Forum thread: http://forum.scssoft.com/viewtopic.php?f=41&t=192120
 
 
 
