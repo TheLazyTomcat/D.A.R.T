@@ -28,6 +28,7 @@ type
     bvlGeneralhorSplit: TBevel;
     cbIgnoreFileSignature: TCheckBox;
     cbAssumeCompressionMethods: TCheckBox;
+    cbInMemoryProcessing: TCheckBox;    
     grdEndOfCentralDirectory: TGroupBox;
     cbIgnoreEndOfCentralDirectory: TCheckBox;
     cbIgnoreDiskSplit: TCheckBox;
@@ -113,6 +114,8 @@ end;
 lbleData.Text := fProcessingSettings.RepairData;
 cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
 cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
+cbInMemoryProcessing.Checked := fProcessingSettings.InMemoryProcessing;
+cbInMemoryProcessing.Enabled := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
 cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
@@ -159,6 +162,7 @@ If rbExtract.Checked then fProcessingSettings.RepairMethod := rmExtract;
 fProcessingSettings.RepairData := lbleData.Text;
 fProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
+fProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
 //eocd
 fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;

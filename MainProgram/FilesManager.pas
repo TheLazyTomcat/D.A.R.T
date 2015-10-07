@@ -21,6 +21,12 @@ uses
 {==============================================================================}
 
 type
+{$IF defined(FPC) or (CompilerVersion >= 18)}
+  TMemSize = UInt64;
+{$ELSE}
+  TMemSize = Int64;
+{$IFEND}
+
   TFileStatus = (fstUnknown,fstReady,fstProcessing,fstDone,fstError);
 
   TFileListItem = record
@@ -52,6 +58,7 @@ type
     fRepairer:          TRepairerThread;
     fTerminatingThread: array of TThread;
     fProgress:          Single;
+    fAvailableMemory:   TMemSize;
     fOnProgress:        TProgressEvent;
     fOnFileStatus:      TProgressEvent;
     fOnStatus:          TNotifyEvent;
@@ -62,6 +69,7 @@ type
     procedure DoProgress(FileIndex: Integer); virtual;
     procedure DoFileStatus(FileIndex: Integer); virtual;
     procedure DoStatus; virtual;
+    procedure GetAvailableMemory; virtual;
     procedure AddTerminatingThread(Thread: TThread); virtual;
     procedure FreeTerminatedThreads; virtual;
     procedure ThreadProgressHandler(Sender: TObject; Progress: Single); virtual;
@@ -94,6 +102,22 @@ implementation
 
 uses
   Windows, SysUtils;
+
+type
+  TMemoryStatusEx = record
+    dwLength:                 LongWord;
+    dwMemoryLoad:             LongWord;
+    ullTotalPhys:             TMemSize;
+    ullAvailPhys:             TMemSize;
+    ullTotalPageFile:         TMemSize;
+    ullAvailPageFile:         TMemSize;
+    ullTotalVirtual:          TMemSize;
+    ullAvailVirtual:          TMemSize;
+    ullAvailExtendedVirtual:  TMemSize;
+  end;
+  PMemoryStatusEx = ^TMemoryStatusEx;
+
+Function GlobalMemoryStatusEx(lpBuffer: PMemoryStatusEx): BOOL; stdcall; external kernel32;
 
 {==============================================================================}
 {   Auxiliary routines                                                         }
@@ -168,6 +192,19 @@ end;
 procedure TFilesManager.DoStatus;
 begin
 If Assigned(fOnStatus) then fOnStatus(Self);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TFilesManager.GetAvailableMemory;
+var
+  MemStat:  TMemoryStatusEx;
+begin
+FillChar({%H-}MemStat,SizeOf(TMemoryStatusEx),0);
+MemStat.dwLength := SizeOf(TMemoryStatusEx);
+If not GlobalMemoryStatusEx(@MemStat) then
+  raise Exception.CreateFmt('GlobalMemoryStatusEx has failed with error %.8x.',[GetLastError]);
+fAvailableMemory := MemStat.ullTotalPhys;
 end;
 
 //------------------------------------------------------------------------------
@@ -257,9 +294,10 @@ end;
 
 constructor TFilesManager.Create;
 begin
+inherited;
 fStatus := mstReady;
 fProcessingFile := -1;
-inherited;
+GetAvailableMemory;
 end;
 
 //------------------------------------------------------------------------------
@@ -295,6 +333,7 @@ If fStatus = mstReady then
         Status := fstReady;
         ProcessingSettings := DefaultProcessingSettings;
         ProcessingSettings.RepairData := ExtractFilePath(Path) + 'unlocked_' + Name;
+        ProcessingSettings.OtherSettings.InMemoryProcessingAllowed := Size <= Trunc(fAvailableMemory * 0.25);
         DoFileStatus(Result);
       end;
   end

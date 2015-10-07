@@ -461,6 +461,14 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 3
       OnClick = btnBrowseClick
     end
+    object cbInMemoryProcessing: TCheckBox
+      Left = 328
+      Top = 136
+      Width = 129
+      Height = 17
+      Caption = 'In memory processing'
+      TabOrder = 6
+    end
   end
   object diaSaveDialog: TSaveDialog
     DefaultExt = '.scs'

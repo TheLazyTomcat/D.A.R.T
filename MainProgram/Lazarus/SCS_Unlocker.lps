@@ -9,7 +9,7 @@
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
         <CursorPos Y="31"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -20,7 +20,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -29,8 +29,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="18" Y="331"/>
-        <UsageCount Value="45"/>
+        <TopLine Value="104"/>
+        <CursorPos Y="117"/>
+        <UsageCount Value="47"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -41,22 +42,32 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2"/>
         <CursorPos X="78" Y="15"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="812"/>
-        <CursorPos X="100" Y="823"/>
-        <UsageCount Value="45"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="13"/>
+        <CursorPos Y="28"/>
+        <UsageCount Value="47"/>
+        <Bookmarks Count="1">
+          <Item0 Y="1404" ID="2"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos Y="443"/>
-        <UsageCount Value="45"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="191"/>
+        <CursorPos X="14" Y="203"/>
+        <UsageCount Value="47"/>
+        <Bookmarks Count="1">
+          <Item0 X="8" Y="267" ID="1"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
@@ -64,18 +75,17 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="6" Y="91"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="37"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\MainForm.pas"/>
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="72"/>
         <CursorPos X="72" Y="92"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="24"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit7>
@@ -240,47 +250,127 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="10" HistoryIndex="9">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="SCS_Unlocker.lpr"/>
         <Caret Line="31" TopLine="7"/>
       </Position1>
       <Position2>
-        <Filename Value="SCS_Unlocker.lpr"/>
-        <Caret Line="31" TopLine="7"/>
-      </Position2>
-      <Position3>
-        <Filename Value="SCS_Unlocker.lpr"/>
-        <Caret Line="31" TopLine="7"/>
-      </Position3>
-      <Position4>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="280" TopLine="174"/>
-      </Position4>
-      <Position5>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="194" TopLine="174"/>
-      </Position5>
-      <Position6>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="195" TopLine="174"/>
-      </Position6>
-      <Position7>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="194" TopLine="174"/>
-      </Position7>
-      <Position8>
-        <Filename Value="SCS_Unlocker.lpr"/>
-        <Caret Line="31" TopLine="7"/>
-      </Position8>
-      <Position9>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="197" TopLine="193"/>
-      </Position9>
-      <Position10>
+      </Position2>
+      <Position3>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="288" Column="33" TopLine="270"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="234" Column="35" TopLine="223"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1392" Column="8" TopLine="1392"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1399" TopLine="1392"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1400" TopLine="1392"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1403" TopLine="1392"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1404" TopLine="1392"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1406" TopLine="1392"/>
       </Position10>
+      <Position11>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1408" TopLine="1392"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1409" TopLine="1392"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1137" TopLine="1127"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1392" TopLine="1378"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1397" TopLine="1378"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1137" TopLine="1125"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1399" Column="44" TopLine="1384"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1139" Column="51" TopLine="1128"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1132" Column="62" TopLine="1124"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1139" Column="32" TopLine="1127"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1409" Column="24" TopLine="1389"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1402" TopLine="1389"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1251" Column="50" TopLine="1235"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1405" Column="58" TopLine="1394"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="282" Column="11" TopLine="262"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="280" Column="13" TopLine="97"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="288" Column="44" TopLine="264"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="286" Column="19" TopLine="268"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\FilesManager.pas"/>
+        <Caret Line="203" Column="14" TopLine="191"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1246" Column="49" TopLine="1132"/>
+      </Position30>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

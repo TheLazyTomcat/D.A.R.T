@@ -214,14 +214,20 @@ type
     IgnoreDataDescriptor:     Boolean;
   end;
 
+  TOtherSettings = record
+    InMemoryProcessingAllowed:  Boolean;
+  end;
+
   TProcessingSettings = record
     RepairMethod:             TRepairMethod;
     RepairData:               String;
     IgnoreFileSignature:      Boolean;
     AssumeCompressionMethods: Boolean;
+    InMemoryProcessing:       Boolean;
     EndOfCentralDirectory:    TEndOfCentralDirectoryProcessingSettings;
     CentralDirectory:         TCentralDirectoryProcessingSettings;
     LocalHeader:              TLocalHeaderProcessingSettings;
+    OtherSettings:            TOtherSettings;
   end;
 
 const
@@ -230,6 +236,7 @@ const
     RepairData:               '';
     IgnoreFileSignature:      True;
     AssumeCompressionMethods: False;
+    InMemoryProcessing:       False;
     EndOfCentralDirectory: (
       IgnoreEndOfCentralDirectory:  False;
       IgnoreDiskSplit:              True;
@@ -263,7 +270,9 @@ const
       IgnoreSizes:                  True;
       IgnoreFileName:               False;
       IgnoreExtraField:             True;
-      IgnoreDataDescriptor:         False));
+      IgnoreDataDescriptor:         False);
+    OtherSettings: (
+      InMemoryProcessingAllowed:    False));
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -271,8 +280,11 @@ const
 {------------------------------------------------------------------------------}
 {==============================================================================}
 type
-  TProgressStage = (psError,psProcessing,psEOCDLoading,psCDHeadersLoading,
-                    psLocalHeadersLoading,psEntriesProcessing);
+//  TProgressStage = (psError,psLoading,psSaving,psProcessing,psEOCDLoading,
+//                    psCDHeadersLoading,psLocalHeadersLoading,psEntriesProcessing,
+//                    psNoProgress);
+  TProgressStage = (psError,psProcessing,psEOCDLoading,
+                    psCDHeadersLoading,psLocalHeadersLoading,psEntriesProcessing);
 
   TProgressInfo = record
     Offset: array[0..5] of Single;
@@ -299,7 +311,7 @@ type
     fTerminated:          Integer;
     fProcessingSettings:  TProcessingSettings;
     fInputFileName:       String;
-    fInputFileStream:     TFileStream;
+    fInputFileStream:     TStream;
     fInputFileStructure:  TFileStructure;
     fProgressInfo:        TProgressInfo;
     fErrorData:           TErrorInfo;
@@ -1111,7 +1123,8 @@ end;
 
 procedure TRepairer.RebuildInputFile;
 var
-  RebuildFileStream:        TFileStream;
+  OutputFileName:           String;
+  RebuildFileStream:        TStream;
   i:                        Integer;
   EntryFileBuffer:          Pointer;
   DecompressForProcessing:  Boolean;
@@ -1123,10 +1136,16 @@ var
 begin
 DoProgress(psEntriesProcessing,0.0);
 {$IFDEF FPC}
-RebuildFileStream := TFileStream.Create(UTF8ToAnsi(fProcessingSettings.RepairData),fmCreate or fmShareDenyWrite);
+OutputFileName := UTF8ToAnsi(fProcessingSettings.RepairData);
 {$ELSE}
-RebuildFileStream := TFileStream.Create(fProcessingSettings.RepairData,fmCreate or fmShareDenyWrite);
+OutputFileName := fProcessingSettings.RepairData;
 {$ENDIF}
+If fProcessingSettings.InMemoryProcessing then
+  begin
+    RebuildFileStream := TMemoryStream.Create;
+    RebuildFileStream.Size := Trunc(fInputFileStream.Size * 1.1);
+  end
+else RebuildFileStream := TFileStream.Create(OutputFileName,fmCreate or fmShareDenyWrite);
 try
   EntryProgressOffset := 0.0;
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
@@ -1238,6 +1257,8 @@ try
     end;
   // finalize
   RebuildFileStream.Size := RebuildFileStream.Position;
+  If fProcessingSettings.InMemoryProcessing then
+    TMemoryStream(RebuildFileStream).SaveToFile(OutputFileName);
 finally
   RebuildFileStream.Free;
 end;
@@ -1379,14 +1400,22 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProcessFile;
+{$IFDEF FPC}
+var
+  InputFileName:  String;
+{$ENDIF}
 begin
 DoProgress(psProcessing,0.0);
-try
 {$IFDEF FPC}
-  fInputFileStream := TFileStream.Create(UTF8ToAnsi(InputFileName),fmOpenRead or fmShareDenyWrite);
-{$ELSE}
-  fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+InputFileName := UTF8ToAnsi(Self.InputFileName);
 {$ENDIF}
+try
+  If fProcessingSettings.InMemoryProcessing then
+    begin
+      fInputFileStream := TMemoryStream.Create;
+      TMemoryStream(fInputFileStream).LoadFromFile(InputFileName);
+    end
+  else fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
   try
     If fInputFileStream.Size <= 0 then
       DoError(7,'Input file does not contain any data.');
