@@ -279,17 +279,17 @@ const
 {                                   TRepairer                                  }
 {------------------------------------------------------------------------------}
 {==============================================================================}
-type
-//  TProgressStage = (psError,psLoading,psSaving,psProcessing,psEOCDLoading,
-//                    psCDHeadersLoading,psLocalHeadersLoading,psEntriesProcessing,
-//                    psNoProgress);
-  TProgressStage = (psError,psProcessing,psEOCDLoading,
-                    psCDHeadersLoading,psLocalHeadersLoading,psEntriesProcessing);
 
-  TProgressInfo = record
-    Offset: array[0..5] of Single;
-    Range:  array[0..5] of Single;
+type
+  TProgressStage = (psError,psProcessing,psLoading,psEOCDLoading,psCDHeadersLoading,
+                    psLocalHeadersLoading,psEntriesProcessing,psSaving,psNoProgress);
+
+  TProgressStageData = record
+    Offset: Single;
+    Range:  Single;
   end;
+
+  TProgressInfo = array[TProgressStage] of TProgressStageData;
 
   TErrorInfo = record
     Source:         Pointer;
@@ -1444,26 +1444,30 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.InitializeProgressInfo;
+var
+  InnerProcessingRange: Single;
 begin
 FillChar(fProgressInfo,SizeOf(TProgressInfo),0);
-fProgressInfo.Offset[0] := -1.0;
-fProgressInfo.Range[1] := 1.0;
-If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
-  fProgressInfo.Range[2] := 0.01;
-If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+fProgressInfo[psError].Offset := -1.0;
+fProgressInfo[psProcessing].Range := 1.0;
+If fProcessingSettings.InMemoryProcessing then
   begin
-    fProgressInfo.Offset[3] := fProgressInfo.Range[2];
-    fProgressInfo.Range[3] := 0.1 - fProgressInfo.Range[2];
-  end
-else
-  begin
-    fProgressInfo.Offset[3] := fProgressInfo.Offset[2];
-    fProgressInfo.Range[3] := fProgressInfo.Range[2];  
+    fProgressInfo[psLoading].Range := 0.3;
+    fProgressInfo[psSaving].Range := 0.3;
+    fProgressInfo[psSaving].Offset := 1 - fProgressInfo[psSaving].Range;
   end;
-fProgressInfo.Offset[4] := fProgressInfo.Offset[3] + fProgressInfo.Range[3];
-fProgressInfo.Range[4] := 0.2 - fProgressInfo.Offset[4];
-fProgressInfo.Offset[5] := fProgressInfo.Offset[4] + fProgressInfo.Range[4];
-fProgressInfo.Range[5] := 1.0 - fProgressInfo.Offset[5];
+InnerProcessingRange := 1 - (fProgressInfo[psLoading].Range + fProgressInfo[psSaving].Range);
+fProgressInfo[psEOCDLoading].Offset := fProgressInfo[psLoading].Range;
+If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
+  fProgressInfo[psEOCDLoading].Range := 0.01 * InnerProcessingRange;
+fProgressInfo[psCDHeadersLoading].Offset := fProgressInfo[psEOCDLoading].Offset + fProgressInfo[psEOCDLoading].Range;
+If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+  fProgressInfo[psCDHeadersLoading].Range := 0.1 * InnerProcessingRange;
+fProgressInfo[psLocalHeadersLoading].Offset := fProgressInfo[psCDHeadersLoading].Offset + fProgressInfo[psCDHeadersLoading].Range;
+If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+  fProgressInfo[psLocalHeadersLoading].Range := 0.1 * InnerProcessingRange;
+fProgressInfo[psEntriesProcessing].Offset := fProgressInfo[psLocalHeadersLoading].Offset + fProgressInfo[psLocalHeadersLoading].Range;
+fProgressInfo[psEntriesProcessing].Range := InnerProcessingRange - (fProgressInfo[psLocalHeadersLoading].Range + fProgressInfo[psCDHeadersLoading].Range + fProgressInfo[psEOCDLoading].Range);
 end;
  
 //------------------------------------------------------------------------------
@@ -1474,8 +1478,11 @@ If ProgressStage <> psProcessing then
   If Data > 1.0 then Data := 1.0;
 If (ProgressStage <> psError) and (InterlockedExchange(fTerminated,0) <> 0) then
   DoError(-1,'Processing terminated. Data can be in inconsistent state.');
-Data := fProgressInfo.Offset[Integer(ProgressStage)] + (fProgressInfo.Range[Integer(ProgressStage)] * Data);
-If Assigned(fOnProgress) then fOnProgress(Self,Data);
+If ProgressStage <> psNoProgress then
+  begin
+    Data := fProgressInfo[ProgressStage].Offset + (fProgressInfo[ProgressStage].Range * Data);
+    If Assigned(fOnProgress) then fOnProgress(Self,Data);
+  end;
 end;
 
 //------------------------------------------------------------------------------
