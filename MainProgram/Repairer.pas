@@ -328,6 +328,8 @@ type
     procedure ReconstructLocalHeaders; virtual;
     procedure ReconstructCentralDirectoryHeaders; virtual;
     procedure ReconstructEndOfCentralDirectory; virtual;
+    procedure ProgressLoadFile(FileName: String; Stream: TStream); virtual;
+    procedure ProgressSaveFile(FileName: String; Stream: TStream); virtual;
     procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single); virtual;
@@ -385,9 +387,9 @@ implementation
 uses
   Windows, SysUtils, StrUtils, Math, CRC32
 {$IFDEF FPC}
-  {$IFNDEF zlib_lib},PasZLib{$ENDIF}
+  {$IFNDEF zlib_lib}, PasZLib{$ENDIF}
 {$ELSE}
-  ,ZLibExAPI
+  , ZLibExAPI
 {$ENDIF};
 
 {$IFDEF zlib_lib}
@@ -402,7 +404,7 @@ type
 {$ENDIF}
 
 const
-  // Size of the buffer used in progress-aware stream reading and writing,
+  // Size of the buffer used in progress-aware stream reading and writing
   BufferSize = $100000; {1MiB}
 
 {==============================================================================}
@@ -1023,6 +1025,76 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer.ProgressLoadFile(FileName: String; Stream: TStream);
+var
+  FileStream: TFileStream;
+  BytesRead:  Integer;
+  Buffer:     Pointer;
+begin
+DoProgress(psLoading,0.0);
+{$IFDEF FPC}
+FileName := UTF8ToAnsi(FileName);
+{$ENDIF}
+FileStream := TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
+try
+  Stream.Seek(0,soFromBeginning);
+  If FileStream.Size > 0 then
+    begin
+      GetMem(Buffer,BufferSize);
+      try
+        Stream.Size := FileStream.Size;
+        repeat
+          BytesRead := FileStream.Read(Buffer^,BufferSize);
+          Stream.Write(Buffer^,BytesRead);
+          DoProgress(psLoading,FileStream.Position / FileStream.Size);
+        until BytesRead <= 0;
+      finally
+        FreeMem(Buffer,BufferSize);
+      end;
+    end;
+finally
+  FileStream.Free;
+end;
+DoProgress(psLoading,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressSaveFile(FileName: String; Stream: TStream);
+var
+  FileStream: TFileStream;
+  BytesRead:  Integer;
+  Buffer:     Pointer;
+begin
+DoProgress(psSaving,0.0);
+{$IFDEF FPC}
+FileName := UTF8ToAnsi(FileName);
+{$ENDIF}
+FileStream := TFileStream.Create(FileName,fmCreate or fmShareDenyWrite);
+try
+  Stream.Seek(0,soFromBeginning);
+  If Stream.Size > 0 then
+    begin
+      GetMem(Buffer,BufferSize);
+      try
+        repeat
+          BytesRead := Stream.Read(Buffer^,BufferSize);
+          FileStream.Write(Buffer^,BytesRead);
+          DoProgress(psSaving,Stream.Position / Stream.Size);
+        until BytesRead <= 0;
+        FileStream.Size := Stream.Size;        
+      finally
+        FreeMem(Buffer,BufferSize);
+      end;
+    end;
+finally
+  FileStream.Free;
+end;
+DoProgress(psSaving,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single);
 var
   i,Max:  Integer;
@@ -1144,12 +1216,12 @@ OutputFileName := UTF8ToAnsi(fProcessingSettings.RepairData);
 OutputFileName := fProcessingSettings.RepairData;
 {$ENDIF}
 If fProcessingSettings.InMemoryProcessing then
-  begin
-    RebuildFileStream := TMemoryStream.Create;
-    RebuildFileStream.Size := Trunc(fInputFileStream.Size * 1.1);
-  end
-else RebuildFileStream := TFileStream.Create(OutputFileName,fmCreate or fmShareDenyWrite);
+  RebuildFileStream := TMemoryStream.Create
+else
+  RebuildFileStream := TFileStream.Create(OutputFileName,fmCreate or fmShareDenyWrite);
 try
+  If fProcessingSettings.InMemoryProcessing then
+    RebuildFileStream.Size := Trunc(fInputFileStream.Size * 1.1);
   EntryProgressOffset := 0.0;
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
     with fInputFileStructure.Entries[i] do
@@ -1261,7 +1333,7 @@ try
   // finalize
   RebuildFileStream.Size := RebuildFileStream.Position;
   If fProcessingSettings.InMemoryProcessing then
-    TMemoryStream(RebuildFileStream).SaveToFile(OutputFileName);
+    ProgressSaveFile(OutputFileName,RebuildFileStream);
 finally
   RebuildFileStream.Free;
 end;
@@ -1414,12 +1486,12 @@ InputFileName := UTF8ToAnsi(Self.InputFileName);
 {$ENDIF}
 try
   If fProcessingSettings.InMemoryProcessing then
-    begin
-      fInputFileStream := TMemoryStream.Create;
-      TMemoryStream(fInputFileStream).LoadFromFile(InputFileName);
-    end
-  else fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+    fInputFileStream := TMemoryStream.Create
+  else
+    fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
   try
+    If fProcessingSettings.InMemoryProcessing then
+      ProgressLoadFile(InputFileName,fInputFileStream);
     If fInputFileStream.Size <= 0 then
       DoError(7,'Input file does not contain any data.');
     If not fProcessingSettings.IgnoreFileSignature then

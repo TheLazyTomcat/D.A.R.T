@@ -83,9 +83,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     object cbLimitSearch: TCheckBox
       Left = 8
       Top = 80
-      Width = 81
+      Width = 185
       Height = 17
-      Caption = 'Limit search'
+      Caption = 'Limit search to one buffer (~1MiB)'
       TabOrder = 5
     end
   end

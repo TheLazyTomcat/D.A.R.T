@@ -84,8 +84,8 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Left = 6
       Height = 17
       Top = 66
-      Width = 74
-      Caption = 'Limit search'
+      Width = 182
+      Caption = 'Limit search to one buffer (~1MiB)'
       TabOrder = 5
     end
   end
