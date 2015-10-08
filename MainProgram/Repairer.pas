@@ -11,6 +11,8 @@ interface
 
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
 
+{$DEFINE preallocated_buffers}
+
 {$DEFINE zlib_lib}
 {.$DEFINE zlib_lib_dll}
 
@@ -255,8 +257,8 @@ const
       IgnoreModDate:                False;
       IgnoreCRC32:                  True;
       IgnoreSizes:                  False;
-      IgnoreInternalFileAttributes: True;
-      IgnoreExternalFileAttributes: True;
+      IgnoreInternalFileAttributes: False;
+      IgnoreExternalFileAttributes: False;
       IgnoreLocalHeaderOffset:      False;
       IgnoreExtraField:             True;
       IgnoreFileComment:            True);
@@ -283,6 +285,12 @@ const
 {==============================================================================}
 
 type
+{$IFDEF x64}
+  PtrUInt = UInt64;
+{$ELSE}
+  PtrUInt = LongWord;
+{$ENDIF}
+
   TProgressStage = (psError,psProcessing,psLoading,psEOCDLoading,psCDHeadersLoading,
                     psLocalHeadersLoading,psEntriesProcessing,psSaving,psNoProgress);
 
@@ -305,6 +313,11 @@ type
 
   TProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
 
+  TBuffer = record
+    Memory: Pointer;
+    Size:   PtrUInt;
+  end;
+
 {==============================================================================}
 {   TRepairer - Class declaration                                              }
 {==============================================================================}
@@ -317,6 +330,11 @@ type
     fInputFileStructure:  TFileStructure;
     fProgressInfo:        TProgressInfo;
     fErrorData:           TErrorInfo;
+  {$IFDEF preallocated_buffers}
+    fIOBuffer:            TBuffer;
+    fEntryCompressed:     TBuffer;
+    fEntryUncompressed:   TBuffer;
+  {$ENDIF}
     fOnProgress:          TProgressEvent;
   protected
     procedure ValidateProcessingSettings; virtual;
@@ -344,6 +362,7 @@ type
     procedure DoError(MethodIdx: Integer; ErrorText: String); overload; virtual;
   public
     constructor Create(ProcessingSettings: TProcessingSettings; InputFileName: String);
+    destructor Destroy; override;
     procedure InitFileStructure; virtual;
     procedure Start; virtual;
     procedure Stop; virtual;
@@ -396,16 +415,42 @@ uses
   {$I 'libs\lazarus.zlib.128\zlib_lib.pas'}
 {$ENDIF}
 
-type
-{$IFDEF x64}
-  PtrUInt = UInt64;
-{$ELSE}
-  PtrUInt = LongWord;
-{$ENDIF}
-
 const
   // Size of the buffer used in progress-aware stream reading and writing
-  BufferSize = $100000; {1MiB}
+  IO_BufferSize  = $100000; {1MiB}
+
+  // Initial size of buffer used to hold compressed entry data
+  CED_BufferSize = $100000 * 8; {8MiB}
+
+  // Initial size of buffer used to hold uncompressed entry data
+  UED_BufferSize = $100000 * 16; {16MiB}
+
+{==============================================================================}
+{   Auxiliary routines                                                         }
+{==============================================================================}
+
+procedure AllocateBuffer(var Buff: TBuffer; Size: PtrUInt);
+begin
+GetMem(Buff.Memory,Size);
+Buff.Size := Size;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure FreeBuffer(var Buff: TBuffer);
+begin
+FreeMem(Buff.Memory,Buff.Size);
+Buff.Memory := nil;
+Buff.Size := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ReallocateBuffer(var Buff: TBuffer; NewSize: PtrUInt);
+begin
+ReallocMem(Buff.Memory,NewSize);
+Buff.Size := NewSize;
+end;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -475,17 +520,23 @@ end;
 
 Function TRepairer.FindSignature(Signature: LongWord; SearchBack: Boolean = False; SearchFrom: Int64 = -1; Limited: Boolean = False): Int64;
 const
-  BuffSize    = $100000; {1MiB}
-  BuffOverlap = SizeOf(LongWord) - 1;
+  BufferOverlap = SizeOf(LongWord) - 1;
 var
   Buffer:         Pointer;
+  BufferSize:     PtrUInt;
   CurrentOffset:  Int64;
   BytesRead:      LongWord;
   i:              LongWord;
 begin
 Result := -1;
-GetMem(Buffer,BuffSize);
+{$IFDEF preallocated_buffers}
+BufferSize := fIOBuffer.Size;
+Buffer := fIOBuffer.Memory;
+{$ELSE}
+BufferSize := IO_BufferSize;
+GetMem(Buffer,BufferSize);
 try
+{$ENDIF}
   If SearchFrom >= 0 then
     begin
       If SearchBack then
@@ -496,10 +547,10 @@ try
   else CurrentOffset := 0;
   repeat
     If SearchBack then
-      fInputFileStream.Seek(-(CurrentOffset + BuffSize),soFromEnd)
+      fInputFileStream.Seek(-(CurrentOffset + BufferSize),soFromEnd)
     else
       fInputFileStream.Seek(CurrentOffset,soFromBeginning);
-    BytesRead := fInputFileStream.Read(Buffer^,BuffSize);
+    BytesRead := fInputFileStream.Read(Buffer^,BufferSize);
     If BytesRead >= SizeOf(LongWord) then
       For i := 0 to (BytesRead - SizeOf(LongWord)) do
         If {%H-}PLongWord({%H-}PtrUInt(Buffer) + i)^ = Signature then
@@ -507,12 +558,14 @@ try
             Result := fInputFileStream.Position - BytesRead + i;
             Exit;
           end;
-    Inc(CurrentOffset,BuffSize - BuffOverlap);
+    Inc(CurrentOffset,BufferSize - BufferOverlap);
     DoProgress(psNoProgress,0.0);
   until (CurrentOffset > fInputFileStream.Size) or Limited;
+{$IFNDEF preallocated_buffers}
 finally
-  FreeMem(Buffer,BuffSize);
+  FreeMem(Buffer,BufferSize);
 end;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -1030,6 +1083,7 @@ var
   FileStream: TFileStream;
   BytesRead:  Integer;
   Buffer:     Pointer;
+  BufferSize: PtrUInt;
 begin
 DoProgress(psLoading,0.0);
 {$IFDEF FPC}
@@ -1040,17 +1094,25 @@ try
   Stream.Seek(0,soFromBeginning);
   If FileStream.Size > 0 then
     begin
+    {$IFDEF preallocated_buffers}
+      BufferSize := fIOBuffer.Size;
+      Buffer := fIOBuffer.Memory;
+    {$ELSE}
+      BufferSize := IO_BufferSize;
       GetMem(Buffer,BufferSize);
       try
+    {$ENDIF}      
         Stream.Size := FileStream.Size;
         repeat
           BytesRead := FileStream.Read(Buffer^,BufferSize);
           Stream.Write(Buffer^,BytesRead);
           DoProgress(psLoading,FileStream.Position / FileStream.Size);
         until BytesRead <= 0;
+    {$IFNDEF preallocated_buffers}
       finally
         FreeMem(Buffer,BufferSize);
       end;
+    {$ENDIF}
     end;
 finally
   FileStream.Free;
@@ -1065,6 +1127,7 @@ var
   FileStream: TFileStream;
   BytesRead:  Integer;
   Buffer:     Pointer;
+  BufferSize: PtrUInt;
 begin
 DoProgress(psSaving,0.0);
 {$IFDEF FPC}
@@ -1075,17 +1138,25 @@ try
   Stream.Seek(0,soFromBeginning);
   If Stream.Size > 0 then
     begin
+    {$IFDEF preallocated_buffers}
+      BufferSize := fIOBuffer.Size;
+      Buffer := fIOBuffer.Memory;
+    {$ELSE}
+      BufferSize := IO_BufferSize;
       GetMem(Buffer,BufferSize);
       try
+    {$ENDIF}      
         repeat
           BytesRead := Stream.Read(Buffer^,BufferSize);
           FileStream.Write(Buffer^,BytesRead);
           DoProgress(psSaving,Stream.Position / Stream.Size);
         until BytesRead <= 0;
         FileStream.Size := Stream.Size;        
+    {$IFNDEF preallocated_buffers}
       finally
         FreeMem(Buffer,BufferSize);
       end;
+    {$ENDIF}
     end;
 finally
   FileStream.Free;
@@ -1100,12 +1171,12 @@ var
   i,Max:  Integer;
 begin
 DoProgress(psEntriesProcessing,ProgressOffset);
-Max := Ceil(Size / BufferSize);
+Max := Ceil(Size / IO_BufferSize);
 For i := 1 to Max do
   begin
-    Stream.ReadBuffer(Buffer^,Min(BufferSize,Size));
-    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + BufferSize);
-    Dec(Size,BufferSize);
+    Stream.ReadBuffer(Buffer^,Min(IO_BufferSize,Size));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + IO_BufferSize);
+    Dec(Size,IO_BufferSize);
     DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
   end;
 DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
@@ -1118,12 +1189,12 @@ var
   i,Max:  Integer;
 begin
 DoProgress(psEntriesProcessing,ProgressOffset);
-Max := Ceil(Size / BufferSize);
+Max := Ceil(Size / IO_BufferSize);
 For i := 1 to Max do
   begin
-    Stream.WriteBuffer(Buffer^,Min(BufferSize,Size));
-    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + BufferSize);
-    Dec(Size,BufferSize);
+    Stream.WriteBuffer(Buffer^,Min(IO_BufferSize,Size));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + IO_BufferSize);
+    Dec(Size,IO_BufferSize);
     DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * (i / Max)));
   end;
 DoProgress(psEntriesProcessing,ProgressOffset + ProgressRange);
@@ -1171,23 +1242,35 @@ If InSize >= 0 then
     OutSize := SizeDelta;
     try
       try
+        ResultCode := Z_OK;  
         ZStream.next_in := InBuff;
         ZStream.avail_in := InSize;
-        repeat
-          ReallocMem(OutBuff,OutSize);
-          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(OutBuff) + ZStream.total_out);
-          ZStream.avail_out := Cardinal(OutSize) - ZStream.total_out;
-          ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_SYNC_FLUSH));
-          DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * ZStream.total_in / InSize));
-          Inc(OutSize, SizeDelta);
-        until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
+        while (ResultCode <> Z_STREAM_END) and (ZStream.avail_in > 0) do
+          repeat
+          {$IFDEF preallocated_buffers}
+            If fEntryUncompressed.Size < PtrUInt(OutSize) then
+              ReallocateBuffer(fEntryUncompressed,OutSize);
+            OutBuff := fEntryUncompressed.Memory;
+          {$ELSE}
+            ReallocMem(OutBuff,OutSize);
+          {$ENDIF}
+            ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(OutBuff) + ZStream.total_out);
+            ZStream.avail_out := Cardinal(OutSize) - ZStream.total_out;
+            ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_SYNC_FLUSH));
+            DoProgress(psEntriesProcessing,ProgressOffset + (ProgressRange * ZStream.total_in / InSize));
+            Inc(OutSize, SizeDelta);
+          until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
         OutSize := ZStream.total_out;
+      {$IFNDEF preallocated_buffers}
         ReallocMem(OutBuff,OutSize);
+      {$ENDIF}
       finally
         RaiseDecompressionError(InflateEnd(ZStream));
       end;
     except
+    {$IFNDEF preallocated_buffers}
       If Assigned(OutBuff) then FreeMem(OutBuff,OutSize);
+    {$ENDIF}  
       raise;
     end;
   end;
@@ -1259,8 +1342,14 @@ try
           end;
         DecompressForProcessing := (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0);
         EntryProgressRange := LocalHeader.BinPart.CompressedSize / fInputFileStream.Size;
+      {$IFDEF preallocated_buffers}
+        If fEntryCompressed.Size < LocalHeader.BinPart.CompressedSize then
+          ReallocateBuffer(fEntryCompressed,(LocalHeader.BinPart.CompressedSize + 255) and not 255);
+        EntryFileBuffer := fEntryCompressed.Memory;
+      {$ELSE}
         GetMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         try
+      {$ENDIF}
           fInputFileStream.Seek(UtilityData.DataOffset,soFromBeginning);
           ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
           If DecompressForProcessing then
@@ -1280,7 +1369,9 @@ try
                     CentralDirectoryHeader.BinPart.UncompressedSize := UncompressedSize;
                   end;
               finally
+              {$IFNDEF preallocated_buffers}
                 FreeMem(UncompressedBuffer,UncompressedSize);
+              {$ENDIF}
               end;
             end
           else
@@ -1308,9 +1399,11 @@ try
           // write data descriptor
           If (LocalHeader.BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
             RebuildFileStream.WriteBuffer(DataDescriptor,SizeOf(TDataDescriptorRecord));
+      {$IFNDEF preallocated_buffers}
         finally
           FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         end;
+      {$ENDIF}  
         EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
         DoProgress(psEntriesProcessing,EntryProgressOffset);
       end;
@@ -1366,8 +1459,8 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
       FullFileName := IncludeTrailingPathDelimiter(fProcessingSettings.RepairData) +
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
     {$ENDIF}
-      ForceDirectories(ExtractFilePath(FullFileName));
-      If ExtractFileName(FullFileName) <> '' then
+      ForceDirectories(ExtractFileDir(FullFileName));
+      If (ExtractFileName(FullFileName) <> '') and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
         begin
           EntryOutputFileStream := TFileStream.Create(FullFileName,fmCreate or fmShareDenyWrite);
           try
@@ -1394,17 +1487,25 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
                   LocalHeader.BinPart.CompressionMethod := 0;
               end;
             EntryProgressRange := LocalHeader.BinPart.CompressedSize / fInputFileStream.Size;
+          {$IFDEF preallocated_buffers}
+            If fEntryCompressed.Size < LocalHeader.BinPart.CompressedSize then
+              ReallocateBuffer(fEntryCompressed,(LocalHeader.BinPart.CompressedSize + 255) and not 255);
+            EntryFileBuffer := fEntryCompressed.Memory;
+          {$ELSE}
             GetMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
             try
+          {$ENDIF}
               fInputFileStream.Seek(UtilityData.DataOffset,soFromBeginning);
               ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
               case LocalHeader.BinPart.CompressionMethod of
                 8:  begin
                       DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2);
                       try
-                        EntryOutputFileStream.WriteBuffer(UncompressedBuffer^,UncompressedSize);
+                        ProgressStreamWrite(EntryOutputFileStream,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
                       finally
+                      {$IFNDEF preallocated_buffers}
                         FreeMem(UncompressedBuffer,UncompressedSize);
+                      {$ENDIF}  
                       end;
                     end;
               else
@@ -1412,9 +1513,11 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
               end;
             EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
             DoProgress(psEntriesProcessing,EntryProgressOffset);
+          {$IFNDEF preallocated_buffers}
             finally
               FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
             end;
+          {$ENDIF}  
             EntryOutputFileStream.Size := EntryOutputFileStream.Position;
           finally
             EntryOutputFileStream.Free;
@@ -1598,6 +1701,23 @@ fErrorData.SourceClass := Self.ClassName;
 fErrorData.MethodIdx := -1;
 fErrorData.MethodName := 'unknown method';
 fErrorData.ThreadID := GetCurrentThreadID;
+{$IFDEF preallocated_buffers}
+AllocateBuffer(fIOBuffer,IO_BufferSize);
+AllocateBuffer(fEntryCompressed,CED_BufferSize);
+AllocateBuffer(fEntryUncompressed,UED_BufferSize);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+destructor TRepairer.Destroy;
+begin
+{$IFDEF preallocated_buffers}
+FreeBuffer(fIOBuffer);
+FreeBuffer(fEntryCompressed);
+FreeBuffer(fEntryUncompressed);
+{$ENDIF}
+inherited;
 end;
 
 //------------------------------------------------------------------------------
