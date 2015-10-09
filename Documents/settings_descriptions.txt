@@ -54,3 +54,85 @@ Before the end of central directory record can be loaded, it must be found in th
 
 Activating this setting will cause that only one buffer is searched for the signature, meaning the record must be at most 1MiB distant from the end of file, otherwise such file is assumed to be corrupted. 
 If you deactivate it, the whole file will be searched, which may take very long time if the file is large and does not contain EOCD record, but may be needed in case the file is damaged by inserting large amount of bogus data at its end.
+#40
+If active, the whole central directory structure is ignored (ie. is not loaded) and all data stored in there are reconstructed from local headers. It is also required that either sizes or compression method must be loaded from local header, which prevents you to ignoring both of them or the local header as a whole.
+#41
+When selected, the Signature field of loaded CD header is not checked to match expected signature (0x02014b50). 
+An error is raised in case the loaded signature does not match and this settings is not active.
+
+It has no effect when "Ignore central directory offset" for EOCD is active - the central directory is searched for in the stream using the signature, so it must match. 
+#42
+CD header fields VersionMadeBy, HostOS, VersionNeededToExtract and OSNeededForExtraction are ignored and set to following values:
+  VersionMadeBy           0x20
+  HostOS                  0x00
+  VersionNeededToExtract  0x20
+  OSNeededForExtraction   0x00
+
+When local headers are loaded and versions stored in them are not ignored, then fields VersionNeededToExtract and OSNeededForExtraction are set to values stored in corresponding local header fields, field VersionMadeBy is set to the same value as VersionNeededToExtract and HostOS os set to the same value as OSNeededForExtraction.  
+#43
+The first and seventh bit (ie. bit 0 and 6, "encrypted" and "strong enryption" flags) of GeneralPurposeBitFlags field are cleared.
+#44
+Compression method stored in the header is ignored. Instead, a compression method 0 is used when stored compressed size and uncompressed size are equal, otherwise a compression method 8 (deflate) is inferred. 
+Also, if local headers are loaded and compression method stored in them is not ignored, then CD header compression method is set to the same values as is stored in corresponding local header.
+
+This setting is not allowed to be active if one of the following two combinations is true:
+- local headers are ignored and sizes in central directory are ignored
+- sizes in central directory are ignored and both sizes and compression method in local header are ignored
+#45
+Last modification time of entry is ignored. It is set to an actual system time instead.
+If local headers are loaded and time stored in there is not ignored, then a value stored in local header is copied into central directory header.
+#46
+Last modification date of entry is ignored. It is set to an actual system date instead.
+If local headers are loaded and date stored in there is not ignored, then a value stored in local header is copied into central directory header.
+#47
+CRC32 checksum stored in CD header is ignored and is presumed to be invalid.
+If corresponding local header is NOT loaded or CRC32 stored in it is ignored, then the program will decompress stored entry data, calculate new checksum and then stores it back in the CD header.
+If local header is loaded and the checksum stored in there is not ignored, then this value is used instead.
+#48
+Compressed size and uncompressed size stored in the header are ignored.
+If corresponding local header is loaded and sizes stored in it are not ignored, then they are copied into the CD header. Otherwise a complex aperations are performed to obtain compressed size (see source code for details) and uncompressed size is obtained by decompressing the data or by copying the copmressed size in case of comression method 0.
+
+This setting is not allowed to be active if one of the following two combinations is true:
+- local headers are ignored and comression method in central directory is ignored
+- comression method in central directory is ignored and both sizes and compression method 
+#49
+Internal file attributes stored in the header are ignored and are set to 0.
+#50
+External file attributes stored in the header are ignored. 
+Instead, if a file name (that is, a file without a path) can be extracted from a stored entry file path, then attributes are set to FILE_ATTRIBUTE_ARCHIVE (0x00000020), otherwise they are set to FILE_ATTRIBUTE_DIRECTORY (0x00000010).  
+#51
+Offset where a corresponding local header can be found is ignored.
+
+Local headers must be loaded if this setting is set. The loading is done this way:
+- for each entry loaded from central directory a local header is searched for in the input stream so that...
+- for first CD entry the first found LH is used, for second CD entry the second found LH is used, and so on
+
+This means that the local headers must have valid signatures (0x04034b50) and they must be in the same order as in the central directory. It also means there must be at least the same amount of local headers as CD headers in the file.  
+#52
+Extra field stored in the central directory headers are ignored (data are discarded).
+#53
+Entry file comments stored in the central directory headers are ignored.
+#60
+cbLHIgnoreLocalHeaders
+#61
+cbLHIgnoreSignature
+#62
+cbLHIgnoreVersions
+#63
+cbLHClearEncryptionFlags
+#64
+cbLHIgnoreCompressionMethod
+#65
+cbLHIgnoreModTime
+#66
+cbLHIgnoreModDate
+#67
+cbLHIgnoreCRC32
+#68
+cbLHIgnoreSizes
+#69
+cbLHIgnoreFileName
+#70
+cbLHIgnoreExtraField
+#71
+cbLHIgnoreDataDescriptor

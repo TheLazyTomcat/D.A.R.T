@@ -971,8 +971,6 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
           LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
         end;
-      If fProcessingSettings.LocalHeader.ClearEncryptionFlags and not fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
-        LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
       If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
         LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
       If fProcessingSettings.LocalHeader.IgnoreModTime and not fProcessingSettings.CentralDirectory.IgnoreModTime then
@@ -1003,7 +1001,7 @@ begin
 For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
   with fInputFileStructure.Entries[i] do
     begin
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreVersions and not fProcessingSettings.LocalHeader.IgnoreVersions) then
         begin
           CentralDirectoryHeader.BinPart.VersionMadeBy := LocalHeader.BinPart.VersionNeededToExtract;
@@ -1011,22 +1009,19 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           CentralDirectoryHeader.BinPart.VersionNeededToExtract := LocalHeader.BinPart.VersionNeededToExtract;
           CentralDirectoryHeader.BinPart.OSNeededForExtraction := LocalHeader.BinPart.OSNeededForExtraction;
         end;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
-        (fProcessingSettings.CentralDirectory.ClearEncryptionFlags and not fProcessingSettings.LocalHeader.ClearEncryptionFlags) then
-        CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := LocalHeader.BinPart.GeneralPurposeBitFlag;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreCompressionMethod and not fProcessingSettings.LocalHeader.IgnoreCompressionMethod) then
         CentralDirectoryHeader.BinPart.CompressionMethod := LocalHeader.BinPart.CompressionMethod;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreModTime and not fProcessingSettings.LocalHeader.IgnoreModTime) then
         CentralDirectoryHeader.BinPart.LastModFileTime := LocalHeader.BinPart.LastModFileTime;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreModDate and not fProcessingSettings.LocalHeader.IgnoreModDate) then
         CentralDirectoryHeader.BinPart.LastModFileDate := LocalHeader.BinPart.LastModFileDate;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreCRC32 and not fProcessingSettings.LocalHeader.IgnoreCRC32) then
         CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
-      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
         (fProcessingSettings.CentralDirectory.IgnoreSizes and not fProcessingSettings.LocalHeader.IgnoreSizes) then
         begin
           CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
@@ -1041,9 +1036,11 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           CentralDirectoryHeader.BinPart.FileNameLength := LocalHeader.BinPart.FileNameLength;
           CentralDirectoryHeader.FileName := LocalHeader.FileName;
         end;
-      fInputFileStructure.Entries[i].UtilityData.NeedsCRC32 := fProcessingSettings.LocalHeader.IgnoreCRC32 and
+      fInputFileStructure.Entries[i].UtilityData.NeedsCRC32 :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreCRC32) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreCRC32);
-      fInputFileStructure.Entries[i].UtilityData.NeedsSizes := fProcessingSettings.LocalHeader.IgnoreSizes and
+      fInputFileStructure.Entries[i].UtilityData.NeedsSizes :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
     end;
 end;

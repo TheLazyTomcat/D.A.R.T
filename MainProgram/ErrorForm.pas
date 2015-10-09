@@ -34,7 +34,7 @@ type
   private
     { Private declarations }
   public
-    procedure ShowErrorInformations(const FileName: String; ErrorInfo: TErrorInfo);
+    procedure ShowErrorInformation(const FileName: String; ErrorInfo: TErrorInfo);
   end;
 
 var
@@ -51,7 +51,7 @@ implementation
 uses
   ClipBrd;
 
-procedure TfErrorForm.ShowErrorInformations(const FileName: String; ErrorInfo: TErrorInfo);
+procedure TfErrorForm.ShowErrorInformation(const FileName: String; ErrorInfo: TErrorInfo);
 begin
 lblFileName.Caption := FileName;
 lblText.Caption := ErrorInfo.Text;

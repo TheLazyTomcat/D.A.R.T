@@ -2,7 +2,12 @@
 
 pushd .
 
-cd ..\MainProgram\Delphi
+cd ..\MainProgram\Resources
+call "Build zlib (windres).bat"
+call "Build SettDescr (windres).bat"
+call "Build SettDescr (brcc32).bat"
+
+cd ..\Delphi
 dcc32.exe -Q -B SCS_Unlocker.dpr
 
 cd ..\Lazarus

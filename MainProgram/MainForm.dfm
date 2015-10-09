@@ -257,7 +257,7 @@ object fMainForm: TfMainForm
       OnClick = mfSettingsClick
     end
     object mfErrorInfo: TMenuItem
-      Caption = 'Error informations...'
+      Caption = 'Error information...'
       OnClick = mfErrorInfoClick
     end
     object N2: TMenuItem
