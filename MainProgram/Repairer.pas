@@ -1641,8 +1641,13 @@ fProgressInfo[psError].Offset := -1.0;
 fProgressInfo[psProcessing].Range := 1.0;
 If fProcessingSettings.InMemoryProcessing then
   begin
-    fProgressInfo[psLoading].Range := 0.3;
-    fProgressInfo[psSaving].Range := 0.3;
+    case fProcessingSettings.RepairMethod of
+      rmRebuild:  begin
+                    fProgressInfo[psLoading].Range := 0.3;
+                    fProgressInfo[psSaving].Range := 0.3;
+                  end;
+      rmExtract:  fProgressInfo[psLoading].Range := 0.4;
+    end;
     fProgressInfo[psSaving].Offset := 1 - fProgressInfo[psSaving].Range;
   end;
 InnerProcessingRange := 1 - (fProgressInfo[psLoading].Range + fProgressInfo[psSaving].Range);

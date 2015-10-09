@@ -204,7 +204,12 @@ FillChar({%H-}MemStat,SizeOf(TMemoryStatusEx),0);
 MemStat.dwLength := SizeOf(TMemoryStatusEx);
 If not GlobalMemoryStatusEx(@MemStat) then
   raise Exception.CreateFmt('GlobalMemoryStatusEx has failed with error %.8x.',[GetLastError]);
-fAvailableMemory := MemStat.ullTotalPhys;
+{$IFNDEF x64}
+If MemStat.ullTotalPhys > $0000000080000000 then
+  fAvailableMemory := $0000000080000000
+else
+{$ENDIF}
+  fAvailableMemory := MemStat.ullTotalPhys;
 end;
 
 //------------------------------------------------------------------------------
