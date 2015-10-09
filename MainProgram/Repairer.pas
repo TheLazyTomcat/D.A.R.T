@@ -33,15 +33,15 @@ const
 {$IFDEF FPC}
   {$IFDEF zlib_lib}
     {$IFDEF zlib_lib_dll}
-      zlib_method_str = 'D';
+      zlib_method_str = 'D';  // ZLib is loaded from a DLL
     {$ELSE}
-      zlib_method_str = 'S';
+      zlib_method_str = 'S';  // ZLib is statically linked
     {$ENDIF}
   {$ELSE}
-    zlib_method_str = 'P';
+    zlib_method_str = 'P';    // PasZLib is used
   {$ENDIF}
 {$ELSE}
-  zlib_method_str = 'E';
+  zlib_method_str = 'E';      // ZLibEx (delphi zlib) is used (statically linked)
 {$ENDIF}
 
 {==============================================================================}
@@ -227,6 +227,7 @@ type
     IgnoreFileSignature:      Boolean;
     AssumeCompressionMethods: Boolean;
     InMemoryProcessing:       Boolean;
+    IgnoreProcessingErrors:   Boolean;
     EndOfCentralDirectory:    TEndOfCentralDirectoryProcessingSettings;
     CentralDirectory:         TCentralDirectoryProcessingSettings;
     LocalHeader:              TLocalHeaderProcessingSettings;
@@ -240,6 +241,7 @@ const
     IgnoreFileSignature:      True;
     AssumeCompressionMethods: False;
     InMemoryProcessing:       False;
+    IgnoreProcessingErrors:   False;
     EndOfCentralDirectory: (
       IgnoreEndOfCentralDirectory:  False;
       IgnoreDiskSplit:              True;
@@ -481,6 +483,8 @@ const
 
 procedure TRepairer.ValidateProcessingSettings;
 begin
+If fProcessingSettings.RepairMethod <> rmExtract then
+  fProcessingSettings.IgnoreProcessingErrors := False;
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
   fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
   fProcessingSettings.LocalHeader.IgnoreLocalHeaders := False;
@@ -1451,7 +1455,7 @@ DoProgress(psEntriesProcessing,0.0);
 EntryProgressOffset := 0.0;
 For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
   with fInputFileStructure.Entries[i] do
-    begin
+    try
     {$IFDEF FPC}
       FullFileName := IncludeTrailingPathDelimiter(UTF8ToAnsi(fProcessingSettings.RepairData)) +
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
@@ -1523,6 +1527,11 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
             EntryOutputFileStream.Free;
           end;
         end;
+    except
+      If not fProcessingSettings.IgnoreProcessingErrors then
+        raise
+      else
+        InterlockedExchange(fTerminated,0);
     end;
 DoProgress(psEntriesProcessing,1.0);
 end;

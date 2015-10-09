@@ -105,7 +105,7 @@ begin
 inherited;
 try
   FileCount := DragQueryFile(Msg.Drop,$FFFFFFFF,nil,0);
-  If FileCount > 0 then
+  If (fMainForm.FilesManager.Status = mstReady) and (FileCount > 0) then
     begin
       For i := 0 to Pred(FileCount) do
         begin
@@ -205,6 +205,7 @@ end;
 procedure TfMainForm.OnStatus(Sender: TObject);
 begin
 mnuFiles.OnPopup(nil);
+SetDropAccept(FilesManager.Status = mstReady);
 case FilesManager.Status of
   mstReady:       btnProcessing.Caption := 'Start processing';
   mstProcessing:  btnProcessing.Caption := 'Stop processing';
@@ -463,16 +464,17 @@ procedure TfMainForm.FormDropFiles(Sender: TObject;
 var
   i:  Integer;
 begin
-For i := Low(FileNames) to High(FileNames) do
-  If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
-    begin
-      with lvFiles.Items.Add do
-        begin
-          SubItems.Add('');
-          SubItems.Add('');
-        end;
-      fMainForm.FilesManager.Add(FileNames[i])
-    end;
+If FilesManager.Status = mstReady then
+  For i := Low(FileNames) to High(FileNames) do
+    If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+      begin
+        with lvFiles.Items.Add do
+          begin
+            SubItems.Add('');
+            SubItems.Add('');
+          end;
+        fMainForm.FilesManager.Add(FileNames[i])
+      end;
 end;
 {$ENDIF}
 

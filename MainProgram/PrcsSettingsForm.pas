@@ -28,7 +28,8 @@ type
     bvlGeneralhorSplit: TBevel;
     cbIgnoreFileSignature: TCheckBox;
     cbAssumeCompressionMethods: TCheckBox;
-    cbInMemoryProcessing: TCheckBox;    
+    cbInMemoryProcessing: TCheckBox;
+    cbIgnoreProcessingErrors: TCheckBox;       
     grdEndOfCentralDirectory: TGroupBox;
     cbIgnoreEndOfCentralDirectory: TCheckBox;
     cbIgnoreDiskSplit: TCheckBox;
@@ -66,6 +67,8 @@ type
     cbLHIgnoreExtraField: TCheckBox;
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
+    lblSettingDescription: TLabel;
+    meHint: TMemo;
     btnAccept: TButton;
     btnClose: TButton;
     procedure FormShow(Sender: TObject);
@@ -118,6 +121,7 @@ cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
 cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
 cbInMemoryProcessing.Checked := fProcessingSettings.InMemoryProcessing;
 cbInMemoryProcessing.Enabled := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
+cbIgnoreProcessingErrors.Checked := fProcessingSettings.IgnoreProcessingErrors;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
 cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
@@ -166,6 +170,7 @@ fProcessingSettings.RepairData := lbleData.Text;
 fProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
 fProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
+fProcessingSettings.IgnoreProcessingErrors := cbIgnoreProcessingErrors.Checked;
 //eocd
 fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
 fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;
@@ -238,11 +243,15 @@ If Sender is TRadioButton then
       0:  begin
             lbleData.EditLabel.Caption := 'Output file:';
             fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'unlocked_' + ExtractFileName(fFilePath);
+            cbIgnoreProcessingErrors.Enabled := False;
           end;
       1:  begin
             lbleData.EditLabel.Caption := 'Extract into:';
             fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFilePath,''));
+            cbIgnoreProcessingErrors.Enabled := True;
           end;
+    else
+      cbIgnoreProcessingErrors.Enabled := False;    
     end;
     lbleData.Text := fProcessingSettings.RepairData;
   end;

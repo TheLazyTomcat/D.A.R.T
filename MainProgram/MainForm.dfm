@@ -207,7 +207,7 @@ object fMainForm: TfMainForm
     Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 2
+    TabOrder = 1
     OnClick = btnProcessingClick
   end
   object prbOverallProgress: TProgressBar
@@ -217,7 +217,7 @@ object fMainForm: TfMainForm
     Height = 17
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
-    TabOrder = 3
+    TabOrder = 2
   end
   object prbFileProgress: TProgressBar
     Left = 8
@@ -226,7 +226,7 @@ object fMainForm: TfMainForm
     Height = 17
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
-    TabOrder = 4
+    TabOrder = 3
   end
   object oXPManifest: TXPManifest
     Left = 656
