@@ -1,517 +1,587 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
   Left = 113
+  Height = 624
   Top = 57
+  Width = 888
   BorderStyle = bsDialog
   Caption = 'Processing settings'
   ClientHeight = 624
   ClientWidth = 888
   Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
-  Font.Style = []
-  Position = poMainFormCenter
+  OnCreate = FormCreate
   OnShow = FormShow
-  PixelsPerInch = 96
+  Position = poMainFormCenter
+  LCLVersion = '1.4.2.0'
   object lblSettingDescription: TLabel
     Left = 576
+    Height = 13
     Top = 8
     Width = 93
-    Height = 13
     Caption = 'Setting description:'
+    ParentColor = False
   end
   object grdEndOfCentralDirectory: TGroupBox
     Left = 8
+    Height = 105
     Top = 200
     Width = 561
-    Height = 105
     Caption = 'End of central directory'
+    ClientHeight = 87
+    ClientWidth = 557
     TabOrder = 1
+    OnMouseMove = GroupBoxMouseMove
     object bvlEOCDSplit: TBevel
       Left = 6
+      Height = 9
       Top = 58
       Width = 545
-      Height = 9
       Shape = bsTopLine
     end
     object cbIgnoreEndOfCentralDirectory: TCheckBox
-      Tag = 100
+      Tag = 20
       Left = 6
-      Top = 10
-      Width = 169
       Height = 17
+      Top = 10
+      Width = 166
       Caption = 'Ignore end of central directory'
-      TabOrder = 0
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 0
     end
     object cbIgnoreDiskSplit: TCheckBox
-      Tag = 101
+      Tag = 21
       Left = 190
-      Top = 10
-      Width = 97
       Height = 17
+      Top = 10
+      Width = 93
       Caption = 'Ignore disk split'
-      TabOrder = 1
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 1
     end
     object cbIgnoreNumberOfEntries: TCheckBox
-      Tag = 102
+      Tag = 22
       Left = 374
-      Top = 10
-      Width = 145
       Height = 17
+      Top = 10
+      Width = 138
       Caption = 'Ignore number of entries'
-      TabOrder = 2
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 2
     end
     object cbIgnoreCentralDirectoryOffset: TCheckBox
-      Tag = 103
+      Tag = 23
       Left = 6
-      Top = 34
-      Width = 169
       Height = 17
+      Top = 34
+      Width = 164
       Caption = 'Ignore central directory offset'
-      TabOrder = 3
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 3
     end
     object cbIgnoreComment: TCheckBox
-      Tag = 104
+      Tag = 24
       Left = 190
-      Top = 34
-      Width = 105
       Height = 17
+      Top = 34
+      Width = 96
       Caption = 'Ignore comment'
-      TabOrder = 4
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 4
     end
     object cbLimitSearch: TCheckBox
+      Tag = 25
       Left = 6
-      Top = 66
-      Width = 185
       Height = 17
+      Top = 66
+      Width = 182
       Caption = 'Limit search to one buffer (~1MiB)'
+      OnMouseMove = SettingsMouseMove
       TabOrder = 5
     end
   end
   object grbCentralDirectoryHeaders: TGroupBox
     Left = 8
+    Height = 145
     Top = 312
     Width = 561
-    Height = 145
     Caption = 'Central directory headers'
+    ClientHeight = 127
+    ClientWidth = 557
     TabOrder = 2
+    OnMouseMove = GroupBoxMouseMove
     object cbCDIgnoreCentralDirectory: TCheckBox
-      Tag = 200
+      Tag = 40
       Left = 6
-      Top = 10
-      Width = 137
       Height = 17
+      Top = 10
+      Width = 132
       Caption = 'Ignore central directory'
-      TabOrder = 0
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 0
     end
     object cbCDIgnoreSignature: TCheckBox
-      Tag = 201
+      Tag = 41
       Left = 190
-      Top = 10
-      Width = 137
       Height = 17
+      Top = 10
+      Width = 135
       Caption = 'Ignore header signature'
-      TabOrder = 1
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 1
     end
     object cbCDIgnoreVersions: TCheckBox
-      Tag = 202
+      Tag = 42
       Left = 374
-      Top = 10
-      Width = 97
       Height = 17
+      Top = 10
+      Width = 93
       Caption = 'Ignore versions'
-      TabOrder = 2
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 2
     end
     object cbCDClearEncryptionFlags: TCheckBox
-      Tag = 203
+      Tag = 43
       Left = 6
-      Top = 34
-      Width = 129
       Height = 17
+      Top = 34
+      Width = 123
       Caption = 'Clear encryption flags'
-      TabOrder = 3
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 3
     end
     object cbCDIgnoreCompressionMethod: TCheckBox
-      Tag = 204
+      Tag = 44
       Left = 190
-      Top = 34
-      Width = 161
       Height = 17
+      Top = 34
+      Width = 151
       Caption = 'Ignore compression method'
-      TabOrder = 4
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 4
     end
     object cbCDIgnoreModTime: TCheckBox
-      Tag = 205
+      Tag = 45
       Left = 374
-      Top = 34
-      Width = 121
       Height = 17
+      Top = 34
+      Width = 116
       Caption = 'Ignore last mod time'
-      TabOrder = 5
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 5
     end
     object cbCDIgnoreModDate: TCheckBox
-      Tag = 206
+      Tag = 46
       Left = 6
-      Top = 58
-      Width = 121
       Height = 17
+      Top = 58
+      Width = 118
       Caption = 'Ignore last mod date'
-      TabOrder = 6
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 6
     end
     object cbCDIgnoreCRC32: TCheckBox
-      Tag = 207
+      Tag = 47
       Left = 190
-      Top = 58
-      Width = 89
       Height = 17
+      Top = 58
+      Width = 86
       Caption = 'Ignore CRC32'
-      TabOrder = 7
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 7
     end
     object cbCDIgnoreSizes: TCheckBox
-      Tag = 208
+      Tag = 48
       Left = 374
-      Top = 58
-      Width = 81
       Height = 17
+      Top = 58
+      Width = 76
       Caption = 'Ignore sizes'
-      TabOrder = 8
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 8
     end
     object cbCDIgnoreInternalFileAttributes: TCheckBox
-      Tag = 209
+      Tag = 49
       Left = 6
-      Top = 82
-      Width = 161
       Height = 17
+      Top = 82
+      Width = 156
       Caption = 'Ignore internal file attributes'
-      TabOrder = 9
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 9
     end
     object cbCDIgnoreExternalFileAttributes: TCheckBox
-      Tag = 210
+      Tag = 50
       Left = 190
-      Top = 82
-      Width = 169
       Height = 17
+      Top = 82
+      Width = 160
       Caption = 'Ignore external file attributes'
-      TabOrder = 10
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 10
     end
     object cbCDIgnoreLocalHeaderOffset: TCheckBox
-      Tag = 211
+      Tag = 51
       Left = 374
-      Top = 82
-      Width = 145
       Height = 17
+      Top = 82
+      Width = 143
       Caption = 'Ignore local header offset'
-      TabOrder = 11
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 11
     end
     object cbCDIgnoreExtraField: TCheckBox
-      Tag = 212
+      Tag = 52
       Left = 6
-      Top = 106
-      Width = 105
       Height = 17
+      Top = 106
+      Width = 102
       Caption = 'Ignore extra field'
-      TabOrder = 12
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 12
     end
     object cbCDIgnoreFileComment: TCheckBox
-      Tag = 213
+      Tag = 53
       Left = 190
-      Top = 106
-      Width = 121
       Height = 17
+      Top = 106
+      Width = 113
       Caption = 'Ignore file comment'
-      TabOrder = 13
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 13
     end
   end
   object grbLocalHeaders: TGroupBox
     Left = 8
+    Height = 153
     Top = 464
     Width = 561
-    Height = 153
     Caption = 'Local headers'
+    ClientHeight = 135
+    ClientWidth = 557
     TabOrder = 3
+    OnMouseMove = GroupBoxMouseMove
     object bvlLHSplit: TBevel
       Left = 6
+      Height = 9
       Top = 106
       Width = 545
-      Height = 9
       Shape = bsTopLine
     end
     object cbLHIgnoreSignature: TCheckBox
-      Tag = 301
+      Tag = 61
       Left = 190
-      Top = 10
-      Width = 137
       Height = 17
+      Top = 10
+      Width = 135
       Caption = 'Ignore header signature'
-      TabOrder = 1
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 1
     end
     object cbLHIgnoreVersions: TCheckBox
-      Tag = 302
+      Tag = 62
       Left = 374
-      Top = 10
-      Width = 97
       Height = 17
+      Top = 10
+      Width = 93
       Caption = 'Ignore versions'
-      TabOrder = 2
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 2
     end
     object cbLHClearEncryptionFlags: TCheckBox
-      Tag = 303
+      Tag = 63
       Left = 6
-      Top = 34
-      Width = 129
       Height = 17
+      Top = 34
+      Width = 123
       Caption = 'Clear encryption flags'
-      TabOrder = 3
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 3
     end
     object cbLHIgnoreCompressionMethod: TCheckBox
-      Tag = 304
+      Tag = 64
       Left = 190
-      Top = 34
-      Width = 153
       Height = 17
+      Top = 34
+      Width = 151
       Caption = 'Ignore compression method'
-      TabOrder = 4
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 4
     end
     object cbLHIgnoreModTime: TCheckBox
-      Tag = 305
+      Tag = 65
       Left = 374
-      Top = 34
-      Width = 121
       Height = 17
+      Top = 34
+      Width = 116
       Caption = 'Ignore last mod time'
-      TabOrder = 5
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 5
     end
     object cbLHIgnoreModDate: TCheckBox
-      Tag = 306
+      Tag = 66
       Left = 6
-      Top = 58
-      Width = 121
       Height = 17
+      Top = 58
+      Width = 118
       Caption = 'Ignore last mod date'
-      TabOrder = 6
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 6
     end
     object cbLHIgnoreCRC32: TCheckBox
-      Tag = 307
+      Tag = 67
       Left = 190
-      Top = 58
-      Width = 89
       Height = 17
+      Top = 58
+      Width = 86
       Caption = 'Ignore CRC32'
-      TabOrder = 7
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 7
     end
     object cbLHIgnoreSizes: TCheckBox
-      Tag = 308
+      Tag = 68
       Left = 374
-      Top = 58
-      Width = 81
       Height = 17
+      Top = 58
+      Width = 76
       Caption = 'Ignore sizes'
-      TabOrder = 8
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 8
     end
     object cbLHIgnoreExtraField: TCheckBox
-      Tag = 310
+      Tag = 70
       Left = 190
-      Top = 82
-      Width = 113
       Height = 17
+      Top = 82
+      Width = 102
       Caption = 'Ignore extra field'
-      TabOrder = 10
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 10
     end
     object cbLHIgnoreDataDescriptor: TCheckBox
-      Tag = 311
+      Tag = 71
       Left = 6
-      Top = 114
-      Width = 129
       Height = 17
+      Top = 114
+      Width = 126
       Caption = 'Ignore data descriptor'
-      TabOrder = 11
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 11
     end
     object cbLHIgnoreLocalHeaders: TCheckBox
-      Tag = 300
+      Tag = 60
       Left = 6
-      Top = 10
-      Width = 121
       Height = 17
+      Top = 10
+      Width = 116
       Caption = 'Ignore local headers'
-      TabOrder = 0
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 0
     end
     object cbLHIgnoreFileName: TCheckBox
-      Tag = 309
+      Tag = 69
       Left = 6
-      Top = 82
-      Width = 105
       Height = 17
+      Top = 82
+      Width = 96
       Caption = 'Ignore file name'
-      TabOrder = 9
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 9
     end
   end
   object btnAccept: TButton
     Left = 680
+    Height = 25
     Top = 592
     Width = 97
-    Height = 25
     Caption = 'Accept'
-    TabOrder = 4
     OnClick = btnAcceptClick
+    TabOrder = 4
   end
   object btnClose: TButton
     Left = 784
+    Height = 25
     Top = 592
     Width = 97
-    Height = 25
     Caption = 'Close'
-    TabOrder = 5
     OnClick = btnCloseClick
+    TabOrder = 5
   end
   object grbGeneral: TGroupBox
     Left = 8
+    Height = 185
     Top = 8
     Width = 561
-    Height = 185
     Caption = 'General settings'
+    ClientHeight = 167
+    ClientWidth = 557
     TabOrder = 0
+    OnMouseMove = GroupBoxMouseMove
     object bvlGeneralhorSplit: TBevel
       Left = 0
+      Height = 9
       Top = 112
       Width = 729
-      Height = 9
       Shape = bsTopLine
     end
     object vblGeneralHorSplit_File: TBevel
       Left = 6
+      Height = 9
       Top = 32
       Width = 545
-      Height = 9
       Shape = bsTopLine
     end
     object lblFile: TLabel
+      Tag = 1
       Left = 6
+      Height = 13
       Top = 10
       Width = 26
-      Height = 13
       Caption = 'lblFile'
       Constraints.MaxWidth = 393
+      ParentColor = False
+      OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
+      Tag = 6
       Left = 6
-      Top = 122
-      Width = 121
       Height = 17
+      Top = 122
+      Width = 115
       Caption = 'Ignore file signature'
-      TabOrder = 4
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 4
     end
     object cbAssumeCompressionMethods: TCheckBox
+      Tag = 7
       Left = 190
-      Top = 122
-      Width = 169
       Height = 17
+      Top = 122
+      Width = 161
       Caption = 'Assume compression methods'
-      TabOrder = 5
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 5
     end
     object rbRebuild: TRadioButton
+      Tag = 2
       Left = 6
-      Top = 42
-      Width = 97
       Height = 17
+      Top = 42
+      Width = 91
       Caption = 'Rebuild archive'
-      TabOrder = 0
       OnClick = RepairMethodClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 0
     end
     object rbExtract: TRadioButton
-      Tag = 1
+      Tag = 3
       Left = 110
-      Top = 42
-      Width = 97
       Height = 17
+      Top = 42
+      Width = 91
       Caption = 'Extract archive'
-      TabOrder = 1
       OnClick = RepairMethodClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 1
     end
     object lbleData: TLabeledEdit
+      Tag = 4
       Left = 6
+      Height = 21
       Top = 82
       Width = 520
-      Height = 21
-      EditLabel.Width = 27
+      EditLabel.AnchorSideLeft.Control = lbleData
+      EditLabel.AnchorSideRight.Control = lbleData
+      EditLabel.AnchorSideRight.Side = asrBottom
+      EditLabel.AnchorSideBottom.Control = lbleData
+      EditLabel.Left = 6
       EditLabel.Height = 13
+      EditLabel.Top = 66
+      EditLabel.Width = 520
       EditLabel.Caption = 'Data:'
+      EditLabel.ParentColor = False
       TabOrder = 2
       OnChange = lbleDataChange
+      OnMouseMove = SettingsMouseMove
     end
     object btnBrowse: TButton
+      Tag = 5
       Left = 526
+      Height = 21
       Top = 82
       Width = 25
-      Height = 21
       Caption = '...'
-      TabOrder = 3
       OnClick = btnBrowseClick
+      TabOrder = 3
     end
     object cbInMemoryProcessing: TCheckBox
+      Tag = 8
       Left = 374
-      Top = 122
-      Width = 129
       Height = 17
+      Top = 122
+      Width = 123
       Caption = 'In memory processing'
+      OnMouseMove = SettingsMouseMove
       TabOrder = 6
     end
     object cbIgnoreProcessingErrors: TCheckBox
+      Tag = 9
       Left = 6
-      Top = 146
-      Width = 145
       Height = 17
+      Top = 146
+      Width = 136
       Caption = 'Ignore processing errors'
+      OnMouseMove = SettingsMouseMove
       TabOrder = 7
     end
   end
-  object meHint: TMemo
+  object meSettingDescription: TMemo
     Left = 576
+    Height = 561
     Top = 24
     Width = 305
-    Height = 561
     Color = clInfoBk
-    Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
     Font.Name = 'Courier New'
-    Font.Style = []
     Lines.Strings = (
       'Move cursor over specific setting to see '
-      'its description.')
+      'its description.'
+    )
     ParentFont = False
     ReadOnly = True
     ScrollBars = ssVertical
@@ -519,9 +589,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   end
   object diaSaveDialog: TSaveDialog
     DefaultExt = '.scs'
-    Filter = 
-      'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All file' +
-      's (*.*)|*.*'
-    Left = 856
+    Filter = 'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All files (*.*)|*.*'
+    left = 856
   end
 end

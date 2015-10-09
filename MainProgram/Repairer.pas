@@ -1515,8 +1515,8 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
               else
                 ProgressStreamWrite(EntryOutputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
               end;
-            EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
-            DoProgress(psEntriesProcessing,EntryProgressOffset);
+              EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
+              DoProgress(psEntriesProcessing,EntryProgressOffset);
           {$IFNDEF preallocated_buffers}
             finally
               FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
@@ -1528,10 +1528,10 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           end;
         end;
     except
-      If not fProcessingSettings.IgnoreProcessingErrors then
-        raise
+      If fProcessingSettings.IgnoreProcessingErrors then
+        InterlockedExchange(fTerminated,0)
       else
-        InterlockedExchange(fTerminated,0);
+        raise;
     end;
 DoProgress(psEntriesProcessing,1.0);
 end;
@@ -1540,6 +1540,8 @@ end;
 
 procedure TRepairer.ProcessFile_Rebuild;
 begin
+If AnsiSameText(ExpandFileName(fInputFileName),ExpandFileName(fProcessingSettings.RepairData)) then
+  DoError(8,'Output is directed into an input file, cannot proceed.');
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
     LoadEndOfCentralDirectory;
@@ -1792,6 +1794,9 @@ end;
 constructor TRepairerThread.Create(ProcessingSettings: TProcessingSettings; InputFileName: String);
 begin
 inherited Create(True);
+// to ensure thread safety..
+UniqueString(ProcessingSettings.RepairData);
+UniqueString(InputFileName);
 fRepairer := TRepairer.Create(ProcessingSettings,InputFileName);
 fRepairer.OnProgress := ProgressHandler;
 end;

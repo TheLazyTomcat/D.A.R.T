@@ -68,19 +68,23 @@ type
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
     lblSettingDescription: TLabel;
-    meHint: TMemo;
+    meSettingDescription: TMemo;
     btnAccept: TButton;
     btnClose: TButton;
+    procedure FormCreate(Sender: TObject);    
     procedure FormShow(Sender: TObject);
     procedure lbleDataChange(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure btnAcceptClick(Sender: TObject);
   private
-    fFilePath:            String;
-    fProcessingSettings:  TProcessingSettings;
-    fLoading:             Boolean;
-    fAccepted:            Boolean;
+    fFilePath:              String;
+    fProcessingSettings:    TProcessingSettings;
+    fLoading:               Boolean;
+    fAccepted:              Boolean;
+    fSettingsDescriptions:  array[0..79] of String;
+  protected
+    procedure LoadSettingsDescriptions;
   public
     procedure SettingsToForm;
     procedure FormToSettings;
@@ -88,6 +92,8 @@ type
   published  
     procedure RepairMethodClick(Sender: TObject);
     procedure CheckBoxClick(Sender: TObject);
+    procedure SettingsMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
+    procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
   end;
 
 var
@@ -102,6 +108,7 @@ implementation
 {$ENDIF}  
 
 uses
+  Windows, StrUtils,
 {$IFDEF FPC}
   FileUtil;
 {$ELSE}
@@ -109,6 +116,63 @@ uses
   FileCtrl;
 {$WARN UNIT_PLATFORM ON}
 {$ENDIF}
+
+{$R '.\Resources\SettDescr.res'}
+
+//==============================================================================
+
+procedure TfPrcsSettingsForm.LoadSettingsDescriptions;
+var
+  ResourceStream: TResourceStream;
+  TempStrList:    TStringList;
+  i:              Integer;
+  TagIdx:         Integer;
+  NextTagIdx:     Integer;
+  Tag:            Integer;
+  TempStr:        String;
+
+  Function FindNextTag(Start: Integer): Integer;
+  begin
+    For Result := Start to Pred(TempStrList.Count) do
+      If AnsiStartsText('#',TempStrList[Result]) then Exit;
+    Result := TempStrList.Count;
+  end;
+
+begin
+For i := Low(fSettingsDescriptions) to High(fSettingsDescriptions) do
+  fSettingsDescriptions[i] := Format('no description (%d)',[i]);
+TempStrList := TStringList.Create;
+try
+  ResourceStream := TResourceStream.Create(hInstance,'SettDescr',RT_RCDATA);
+  try
+    TempStrList.LoadFromStream(ResourceStream);
+  finally
+    ResourceStream.Free;
+  end;
+  // load individual descriptions
+  TagIdx := FindNextTag(0);
+  while TagIdx < TempStrList.Count do
+    begin
+      NextTagIdx := FindNextTag(TagIdx + 1);    
+      Tag := StrToIntDef(Copy(TempStrList[TagIdx],2,Length(TempStrList[TagIdx])),-1);
+      If (Tag >= Low(fSettingsDescriptions)) and (Tag <= High(fSettingsDescriptions)) then
+        begin
+          TempStr := '';
+          For i := Succ(TagIdx) to Pred(NextTagIdx) do
+            If i > Succ(TagIdx) then
+              TempStr := TempStr + sLineBreak + TempStrList[i]
+            else
+              TempStr := TempStrList[i];
+          fSettingsDescriptions[Tag] := TempStr;  
+        end;
+      TagIdx := NextTagIdx;  
+    end;
+finally
+  TempStrList.Free;
+end;
+end;
+
+//==============================================================================
 
 procedure TfPrcsSettingsForm.SettingsToForm;
 begin
@@ -240,12 +304,12 @@ If Sender is TRadioButton then
   begin
     btnBrowse.Tag := TRadioButton(Sender).Tag;
     case TRadioButton(Sender).Tag of
-      0:  begin
+      2:  begin
             lbleData.EditLabel.Caption := 'Output file:';
             fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'unlocked_' + ExtractFileName(fFilePath);
             cbIgnoreProcessingErrors.Enabled := False;
           end;
-      1:  begin
+      3:  begin
             lbleData.EditLabel.Caption := 'Extract into:';
             fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFilePath,''));
             cbIgnoreProcessingErrors.Enabled := True;
@@ -264,14 +328,14 @@ begin
 If (Sender is TCheckBox) and not fLoading then
   begin
     case TCheckBox(Sender).Tag of
-      100:  begin
+       20:  begin
               cbIgnoreDiskSplit.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreNumberOfEntries.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreCentralDirectoryOffset.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreComment.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbLimitSearch.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
             end;
-      200:  begin
+       40:  begin
               cbCDIgnoreSignature.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDIgnoreVersions.Enabled := not cbCDIgnoreCentralDirectory.Checked;
               cbCDClearEncryptionFlags.Enabled := not cbCDIgnoreCentralDirectory.Checked;
@@ -293,13 +357,13 @@ If (Sender is TCheckBox) and not fLoading then
                   cbLHIgnoreFileName.Checked := False;
                 end;
             end;
-       204: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
+       44:  If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreSizes.Checked := False;
-       208: If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
+       48:  If TCheckBox(Sender).Checked and cbLHIgnoreSizes.Checked and cbLHIgnoreCompressionMethod.Checked then
               cbCDIgnoreCompressionMethod.Checked := False;
-       211: If TCheckBox(Sender).Checked then
+       51:  If TCheckBox(Sender).Checked then
               cbLHIgnoreLocalHeaders.Checked := False;
-       300: begin
+       60:  begin
               cbLHIgnoreSignature.Enabled := not cbLHIgnoreLocalHeaders.Checked;
               cbLHIgnoreVersions.Enabled := not cbLHIgnoreLocalHeaders.Checked;
               cbLHClearEncryptionFlags.Enabled := not cbLHIgnoreLocalHeaders.Checked;
@@ -317,7 +381,7 @@ If (Sender is TCheckBox) and not fLoading then
                   cbCDIgnoreLocalHeaderOffset.Checked := False;
                 end;
             end;
-       304: If cbCDIgnoreCentralDirectory.Checked then
+       64:  If cbCDIgnoreCentralDirectory.Checked then
               begin
                 If TCheckBox(Sender).Checked then
                   cbLHIgnoreSizes.Checked := False;
@@ -325,7 +389,7 @@ If (Sender is TCheckBox) and not fLoading then
             else
               If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
                 cbLHIgnoreSizes.Checked := False;
-       308: If cbCDIgnoreCentralDirectory.Checked then
+       68:  If cbCDIgnoreCentralDirectory.Checked then
               begin
                 If TCheckBox(Sender).Checked then
                   cbLHIgnoreCompressionMethod.Checked := False;
@@ -333,13 +397,59 @@ If (Sender is TCheckBox) and not fLoading then
             else
               If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked and TCheckBox(Sender).Checked then
                 cbLHIgnoreCompressionMethod.Checked := False;
-       309: If TCheckBox(Sender).Checked then
+       69:  If TCheckBox(Sender).Checked then
               cbCDIgnoreCentralDirectory.Checked := False;
     end;
   end;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TfPrcsSettingsForm.SettingsMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+If Sender is TControl then
+  If meSettingDescription.Tag <> TControl(Sender).Tag then
+    begin
+      meSettingDescription.Tag := TControl(Sender).Tag;
+      If (TControl(Sender).Tag >= Low(fSettingsDescriptions)) and
+         (TControl(Sender).Tag <= High(fSettingsDescriptions)) then
+        meSettingDescription.Text := fSettingsDescriptions[TControl(Sender).Tag]
+      else
+        meSettingDescription.Text := 'unknown #' + IntToStr(TControl(Sender).Tag);
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfPrcsSettingsForm.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  Control:  TControl;
+
+{$IFDEF FPC}
+  Function Point(X,Y: Integer): TPoint;
+  begin
+    Result.x := X;
+    Result.y := Y;
+  end;
+{$ENDIF}
+
+begin
+If Sender is TGroupBox then
+  begin
+    Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
+    If Assigned(Control) and (Control is TCheckBox) then
+      SettingsMouseMove(Control,Shift,X,Y);
+  end;
+end;
+
 //==============================================================================
+
+procedure TfPrcsSettingsForm.FormCreate(Sender: TObject);
+begin
+LoadSettingsDescriptions;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TfPrcsSettingsForm.FormShow(Sender: TObject);
 begin
@@ -362,7 +472,7 @@ var
   TempStr:  String;
 begin
 case btnBrowse.Tag of
-  0:  begin
+  2:  begin
       {$IFDEF FPC}
         If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) then
       {$ELSE}
@@ -372,7 +482,7 @@ case btnBrowse.Tag of
         If diaSaveDialog.Execute then
           lbleData.Text := diaSaveDialog.FileName;
       end;
-  1:  begin
+  3:  begin
       {$IFDEF FPC}
         If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) or
            DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(fFilePath + '..')))  then
@@ -413,5 +523,5 @@ begin
 fAccepted := True;
 Close;
 end;
-  
+
 end.

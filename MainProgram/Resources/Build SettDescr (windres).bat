@@ -1,0 +1,1 @@
+windres -o SettDescr.res -i SettDescr.rc
