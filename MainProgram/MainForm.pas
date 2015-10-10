@@ -86,7 +86,7 @@ var
 implementation
 
 uses
-  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
+  {$IFNDEF FPC}Windows,{$ELSE}FileUtil,{$ENDIF} ShellAPI,
   ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo;
 
 {$IFDEF FPC}
@@ -229,9 +229,9 @@ If ParamCount > 0 then
             SubItems.Add('');
           end;
       {$IFDEF FPC}
-        FilesManager.Add(ExpandFileNameUTF8(ParamStr(i)))
+        FilesManager.Add(ExpandFileNameUTF8(ParamStr(i)));
       {$ELSE}
-        FilesManager.Add(ExpandFileName(ParamStr(i)))
+        FilesManager.Add(ExpandFileName(ParamStr(i)));
       {$ENDIF}
       end;
 end;

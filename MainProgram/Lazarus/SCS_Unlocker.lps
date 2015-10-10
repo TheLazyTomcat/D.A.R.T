@@ -29,12 +29,10 @@
         <ComponentName Value="fPrcsSettingsForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="230"/>
-        <CursorPos Y="241"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="223"/>
+        <CursorPos X="54" Y="237"/>
         <UsageCount Value="51"/>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -78,9 +76,10 @@
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="242"/>
-        <CursorPos Y="252"/>
+        <TopLine Value="75"/>
+        <CursorPos X="40" Y="89"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -101,10 +100,11 @@
       </Unit9>
       <Unit10>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.pas"/>
+        <UnitName Value="FileUtil"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="236"/>
-        <CursorPos X="18" Y="249"/>
-        <UsageCount Value="9"/>
+        <TopLine Value="237"/>
+        <CursorPos X="10" Y="250"/>
+        <UsageCount Value="10"/>
       </Unit10>
       <Unit11>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.inc"/>
@@ -320,8 +320,8 @@
         <Caret Line="251" TopLine="242"/>
       </Position4>
       <Position5>
-        <Filename Value="..\PrcsSettingsForm.pas"/>
-        <Caret Line="247" TopLine="229"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="252" TopLine="242"/>
       </Position5>
     </JumpHistory>
   </ProjectSession>
