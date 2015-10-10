@@ -249,7 +249,7 @@ object fMainForm: TfMainForm
       OnClick = mfSettingsClick
     end
     object mfErrorInfo: TMenuItem
-      Caption = 'Error informations...'
+      Caption = 'Error information...'
       ShortCut = 32837
       OnClick = mfErrorInfoClick
     end

@@ -4,11 +4,12 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="36">
+    <Units Count="39">
       <Unit0>
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos Y="31"/>
+        <TopLine Value="2"/>
+        <CursorPos X="12" Y="15"/>
         <UsageCount Value="51"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -29,8 +30,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="16"/>
-        <CursorPos X="31" Y="39"/>
+        <TopLine Value="223"/>
+        <CursorPos X="54" Y="237"/>
         <UsageCount Value="51"/>
       </Unit2>
       <Unit3>
@@ -48,12 +49,9 @@
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="488"/>
-        <CursorPos Y="1435"/>
+        <TopLine Value="1672"/>
+        <CursorPos Y="1685"/>
         <UsageCount Value="51"/>
-        <Bookmarks Count="1">
-          <Item0 Y="1404" ID="2"/>
-        </Bookmarks>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
@@ -68,7 +66,6 @@
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="6" Y="91"/>
@@ -81,8 +78,8 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="453"/>
-        <CursorPos X="47" Y="475"/>
+        <TopLine Value="75"/>
+        <CursorPos X="40" Y="89"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -103,10 +100,11 @@
       </Unit9>
       <Unit10>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.pas"/>
+        <UnitName Value="FileUtil"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="236"/>
-        <CursorPos X="18" Y="249"/>
-        <UsageCount Value="9"/>
+        <TopLine Value="237"/>
+        <CursorPos X="10" Y="250"/>
+        <UsageCount Value="10"/>
       </Unit10>
       <Unit11>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.inc"/>
@@ -228,8 +226,8 @@
       <Unit29>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_lib.pas"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="129"/>
-        <CursorPos X="5" Y="181"/>
+        <TopLine Value="10"/>
+        <CursorPos X="9" Y="18"/>
         <UsageCount Value="10"/>
       </Unit29>
       <Unit30>
@@ -241,19 +239,17 @@
       </Unit30>
       <Unit31>
         <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32proc.pp"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="811"/>
         <CursorPos Y="827"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit31>
       <Unit32>
         <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1968"/>
         <CursorPos Y="1981"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit32>
       <Unit33>
         <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32int.pp"/>
@@ -266,20 +262,37 @@
       <Unit34>
         <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32wsforms.pp"/>
         <UnitName Value="Win32WSForms"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="384"/>
         <CursorPos Y="396"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit34>
       <Unit35>
         <Filename Value="D:\Lazarus\lcl\include\wincontrol.inc"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="4957"/>
         <CursorPos Y="4975"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit35>
+      <Unit36>
+        <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\objpas\sysutils\diskh.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="18" Y="22"/>
+        <UsageCount Value="10"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="D:\Lazarus\fpc\2.6.4\source\rtl\objpas\sysutils\sysutils.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="603"/>
+        <CursorPos X="3" Y="635"/>
+        <UsageCount Value="10"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\..\PrcsSettingsForm.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="22" Y="2"/>
+        <UsageCount Value="10"/>
+      </Unit38>
     </Units>
     <CustomDefines Count="6">
       <Define0 Value="FPC"/>
@@ -289,127 +302,27 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="5" HistoryIndex="4">
       <Position1>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="999" TopLine="998"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="475" Column="47" TopLine="242"/>
       </Position1>
       <Position2>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1000" TopLine="996"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="249" TopLine="242"/>
       </Position2>
       <Position3>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1001" TopLine="996"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="250" TopLine="242"/>
       </Position3>
       <Position4>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1003" TopLine="996"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="251" TopLine="242"/>
       </Position4>
       <Position5>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1004" TopLine="996"/>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="252" TopLine="242"/>
       </Position5>
-      <Position6>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1007" TopLine="999"/>
-      </Position6>
-      <Position7>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1009" TopLine="999"/>
-      </Position7>
-      <Position8>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1010" TopLine="999"/>
-      </Position8>
-      <Position9>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1011" TopLine="999"/>
-      </Position9>
-      <Position10>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1012" TopLine="999"/>
-      </Position10>
-      <Position11>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1013" TopLine="1005"/>
-      </Position11>
-      <Position12>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1030" TopLine="1024"/>
-      </Position12>
-      <Position13>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1032" TopLine="1024"/>
-      </Position13>
-      <Position14>
-        <Filename Value="D:\Lazarus\lcl\include\wincontrol.inc"/>
-        <Caret Line="4970" TopLine="4957"/>
-      </Position14>
-      <Position15>
-        <Filename Value="D:\Lazarus\lcl\include\wincontrol.inc"/>
-        <Caret Line="4972" TopLine="4957"/>
-      </Position15>
-      <Position16>
-        <Filename Value="D:\Lazarus\lcl\include\wincontrol.inc"/>
-        <Caret Line="4973" TopLine="4957"/>
-      </Position16>
-      <Position17>
-        <Filename Value="D:\Lazarus\lcl\include\wincontrol.inc"/>
-        <Caret Line="4974" TopLine="4957"/>
-      </Position17>
-      <Position18>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="108" Column="6" TopLine="94"/>
-      </Position18>
-      <Position19>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="296" Column="12" TopLine="283"/>
-      </Position19>
-      <Position20>
-        <Filename Value="D:\Lazarus\lcl\interfaces\win32\win32callback.inc"/>
-        <Caret Line="1981" TopLine="1968"/>
-      </Position20>
-      <Position21>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="252" TopLine="234"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="22" Column="5" TopLine="6"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="113" Column="24" TopLine="101"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="73" TopLine="62"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="55" Column="52" TopLine="44"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="70" TopLine="52"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="26" TopLine="99"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="17" Column="3" TopLine="3"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="475" Column="44" TopLine="453"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="470" Column="17" TopLine="454"/>
-      </Position30>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
@@ -422,17 +335,10 @@
         <Line Value="17"/>
       </Item1>
     </BreakPoints>
-    <Watches Count="3">
+    <Watches Count="1">
       <Item1>
-        <Expression Value="result"/>
+        <Expression Value="FullFileName"/>
       </Item1>
-      <Item2>
-        <Expression Value="lvFiles.Handle"/>
-      </Item2>
-      <Item3>
-        <Expression Value="test"/>
-        <DisplayStyle Value="wdfHex"/>
-      </Item3>
     </Watches>
   </Debugging>
 </CONFIG>

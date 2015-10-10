@@ -12,9 +12,8 @@ unit MainForm;
 interface
 
 uses
-  {$IFNDEF FPC}Messages,{$ENDIF} SysUtils, Variants, Classes, Graphics,
-  Controls, Forms, Dialogs, StdCtrls, ComCtrls, ExtCtrls, Menus,
-  {$IFNDEF FPC}ImgList, XPMan,{$ENDIF}
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
+  ComCtrls, ExtCtrls, Menus, {$IFNDEF FPC}Messages, ImgList, XPMan,{$ENDIF}
   FilesManager;
 
 type
@@ -87,7 +86,7 @@ var
 implementation
 
 uses
-  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
+  {$IFNDEF FPC}Windows,{$ELSE}FileUtil,{$ENDIF} ShellAPI,
   ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo;
 
 {$IFDEF FPC}
@@ -106,7 +105,7 @@ begin
 inherited;
 try
   FileCount := DragQueryFile(Msg.Drop,$FFFFFFFF,nil,0);
-  If FileCount > 0 then
+  If (fMainForm.FilesManager.Status = mstReady) and (FileCount > 0) then
     begin
       For i := 0 to Pred(FileCount) do
         begin
@@ -206,6 +205,7 @@ end;
 procedure TfMainForm.OnStatus(Sender: TObject);
 begin
 mnuFiles.OnPopup(nil);
+SetDropAccept(FilesManager.Status = mstReady);
 case FilesManager.Status of
   mstReady:       btnProcessing.Caption := 'Start processing';
   mstProcessing:  btnProcessing.Caption := 'Stop processing';
@@ -228,7 +228,11 @@ If ParamCount > 0 then
             SubItems.Add('');
             SubItems.Add('');
           end;
-        FilesManager.Add(ParamStr(i))
+      {$IFDEF FPC}
+        FilesManager.Add(ExpandFileNameUTF8(ParamStr(i)));
+      {$ELSE}
+        FilesManager.Add(ExpandFileName(ParamStr(i)));
+      {$ENDIF}
       end;
 end;
 
@@ -298,7 +302,7 @@ If FilesManager.Status = mstReady then
     If lvFiles.ItemIndex >= 0 then
       begin
         case FilesManager[lvFiles.ItemIndex].Status of
-          fstError: fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+          fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
         else
           fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
         end;
@@ -402,7 +406,7 @@ end;
 procedure TfMainForm.mfErrorInfoClick(Sender: TObject);
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError) then
-  fErrorForm.ShowErrorInformations(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+  fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
 end;
     
 //------------------------------------------------------------------------------
@@ -464,16 +468,17 @@ procedure TfMainForm.FormDropFiles(Sender: TObject;
 var
   i:  Integer;
 begin
-For i := Low(FileNames) to High(FileNames) do
-  If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
-    begin
-      with lvFiles.Items.Add do
-        begin
-          SubItems.Add('');
-          SubItems.Add('');
-        end;
-      fMainForm.FilesManager.Add(FileNames[i])
-    end;
+If FilesManager.Status = mstReady then
+  For i := Low(FileNames) to High(FileNames) do
+    If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+      begin
+        with lvFiles.Items.Add do
+          begin
+            SubItems.Add('');
+            SubItems.Add('');
+          end;
+        fMainForm.FilesManager.Add(FileNames[i])
+      end;
 end;
 {$ENDIF}
 
