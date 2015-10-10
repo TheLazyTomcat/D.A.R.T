@@ -29,10 +29,12 @@
         <ComponentName Value="fPrcsSettingsForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="83"/>
-        <CursorPos X="88" Y="95"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="230"/>
+        <CursorPos Y="241"/>
         <UsageCount Value="51"/>
+        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -66,7 +68,6 @@
       </Unit5>
       <Unit6>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
-        <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="6" Y="91"/>
@@ -77,7 +78,6 @@
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="242"/>
         <CursorPos Y="252"/>
@@ -290,6 +290,7 @@
       <Unit38>
         <Filename Value="..\..\PrcsSettingsForm.pas"/>
         <EditorIndex Value="-1"/>
+        <CursorPos X="22" Y="2"/>
         <UsageCount Value="10"/>
       </Unit38>
     </Units>
@@ -301,7 +302,7 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="4" HistoryIndex="3">
+    <JumpHistory Count="5" HistoryIndex="4">
       <Position1>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="475" Column="47" TopLine="242"/>
@@ -318,6 +319,10 @@
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="251" TopLine="242"/>
       </Position4>
+      <Position5>
+        <Filename Value="..\PrcsSettingsForm.pas"/>
+        <Caret Line="247" TopLine="229"/>
+      </Position5>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

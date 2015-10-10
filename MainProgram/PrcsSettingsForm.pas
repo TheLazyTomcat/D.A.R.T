@@ -69,12 +69,14 @@ type
     cbLHIgnoreDataDescriptor: TCheckBox;
     lblSettingDescription: TLabel;
     meSettingDescription: TMemo;
+    btnDefault: TButton;    
     btnAccept: TButton;
     btnClose: TButton;
-    procedure FormCreate(Sender: TObject);    
+    procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure lbleDataChange(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
+    procedure btnDefaultClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure btnAcceptClick(Sender: TObject);
   private
@@ -228,9 +230,24 @@ end;
 
 procedure TfPrcsSettingsForm.FormToSettings;
 begin
-If rbRebuild.Checked then fProcessingSettings.RepairMethod := rmRebuild;
-If rbExtract.Checked then fProcessingSettings.RepairMethod := rmExtract;
-fProcessingSettings.RepairData := lbleData.Text;
+If rbRebuild.Checked then
+  begin
+    fProcessingSettings.RepairMethod := rmRebuild;
+  {$IFDEF FPC}
+    fProcessingSettings.RepairData := ExpandFileNameUTF8(lbleData.Text);
+  {$ELSE}
+    fProcessingSettings.RepairData := ExpandFileName(lbleData.Text);
+  {$ENDIF}
+  end;
+If rbExtract.Checked then
+  begin
+    fProcessingSettings.RepairMethod := rmExtract;
+  {$IFDEF FPC}
+    fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileNameUTF8(lbleData.Text));
+  {$ELSE}
+    fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileName(lbleData.Text));
+  {$ENDIF}
+  end;
 fProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
 fProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
@@ -475,26 +492,25 @@ begin
 case btnBrowse.Tag of
   2:  begin
       {$IFDEF FPC}
-        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) then
+        TempStr := ExpandFileNameUTF8(lbleData.Text);
+        If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then
       {$ELSE}
-        If DirectoryExists(ExtractFileDir(fFilePath)) then
+        TempStr := ExpandFileName(lbleData.Text);
+        If DirectoryExists(ExtractFileDir(TempStr)) then
       {$ENDIF}
-          diaSaveDialog.InitialDir := ExtractFileDir(fFilePath);
+          diaSaveDialog.InitialDir := ExtractFileDir(TempStr);
+        diaSaveDialog.FileName := TempStr;  
         If diaSaveDialog.Execute then
           lbleData.Text := diaSaveDialog.FileName;
       end;
   3:  begin
       {$IFDEF FPC}
-        If DirectoryExistsUTF8(ExtractFileDir(fFilePath)) or
-           DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(fFilePath + '..')))  then
-      {$ELSE}
-        If DirectoryExists(ExtractFileDir(fFilePath)) or
-           DirectoryExists(ExtractFileDir(ExpandFileName(fFilePath + '..'))) then
-      {$ENDIF}
-          TempStr := ExtractFileDir(fFilePath)
-        else
-          TempStr := ExtractFileDir(ParamStr(0));
-      {$IFDEF FPC}
+        TempStr := ExpandFileNameUTF8(IncludeTrailingPathDelimiter(lbleData.Text));
+        If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then TempStr := ExtractFileDir(TempStr)
+          else If DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(TempStr + '..\'))) then
+            TempStr := ExtractFileDir(ExpandFileNameUTF8(TempStr + '..\'))
+          else
+            TempStr := ExtractFileDir(ParamStr(0));
         with TSelectDirectoryDialog.Create(Self) do
           begin
             Title := 'Select folder for archive extraction.';
@@ -503,11 +519,41 @@ case btnBrowse.Tag of
               lbleData.Text := FileName;
           end;
       {$ELSE}
+        TempStr := ExpandFileName(IncludeTrailingPathDelimiter(lbleData.Text));
+        If DirectoryExists(ExtractFileDir(TempStr)) then TempStr := ExtractFileDir(TempStr)
+          else If DirectoryExists(ExtractFileDir(ExpandFileName(TempStr + '..\'))) then
+            TempStr := ExtractFileDir(ExpandFileName(TempStr + '..\'))
+          else
+            TempStr := ExtractFileDir(ParamStr(0));
         If SelectDirectory('Select folder for archive extraction.','',TempStr) then
           lbleData.Text := IncludeTrailingPathDelimiter(TempStr);
       {$ENDIF}
       end;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfPrcsSettingsForm.btnDefaultClick(Sender: TObject);
+var
+  TempMemoryAvailable:  Boolean;
+begin
+If MessageDlg('Are you sure you want to load default settings?',mtWarning,[mbYes,mbNo],0) = mrYes then
+  begin
+    TempMemoryAvailable := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
+    fProcessingSettings := DefaultProcessingSettings;
+    fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'unlocked_' + Name;
+    fProcessingSettings.OtherSettings.InMemoryProcessingAllowed := TempMemoryAvailable;
+    fLoading := True;
+    try
+      SettingsToForm;
+    finally
+      fLoading := False;
+    end;
+    cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
+    cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
+    cbLHIgnoreLocalHeaders.OnClick(cbLHIgnoreLocalHeaders);
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -520,9 +566,21 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfPrcsSettingsForm.btnAcceptClick(Sender: TObject);
+var
+  MsgStr: String;
 begin
-fAccepted := True;
-Close;
+If lbleData.Text <> '' then
+  begin
+    fAccepted := True;
+    Close;
+  end
+else
+  begin
+    If rbRebuild.Checked then MsgStr := 'No output file selected.'
+      else If rbExtract.Checked then MsgStr := 'No folder for extraction selected.'
+        else MsgStr := 'No output selected.';
+    MessageDlg(MsgStr,mtInformation,[mbOK],0);
+  end;
 end;
 
 end.

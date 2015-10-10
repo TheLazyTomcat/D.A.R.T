@@ -1299,6 +1299,7 @@ OutputFileName := UTF8ToAnsi(fProcessingSettings.RepairData);
 {$ELSE}
 OutputFileName := fProcessingSettings.RepairData;
 {$ENDIF}
+ForceDirectories(ExtractFileDir(OutputFileName));
 If fProcessingSettings.InMemoryProcessing then
   RebuildFileStream := TMemoryStream.Create
 else
@@ -1537,7 +1538,7 @@ end;
 
 procedure TRepairer.ProcessFile_Rebuild;
 begin
-If AnsiSameText(ExpandFileName(fInputFileName),ExpandFileName(fProcessingSettings.RepairData)) then
+If AnsiSameText(fInputFileName,fProcessingSettings.RepairData) then
   DoError(8,'Output is directed into an input file, cannot proceed.');
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin

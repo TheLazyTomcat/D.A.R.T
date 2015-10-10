@@ -1,10 +1,10 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 113
-  Top = 57
+  Left = 60
+  Top = 59
   BorderStyle = bsDialog
   Caption = 'Processing settings'
   ClientHeight = 624
-  ClientWidth = 888
+  ClientWidth = 944
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -417,21 +417,21 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
   end
   object btnAccept: TButton
-    Left = 680
+    Left = 736
     Top = 592
     Width = 97
     Height = 25
     Caption = 'Accept'
-    TabOrder = 4
+    TabOrder = 6
     OnClick = btnAcceptClick
   end
   object btnClose: TButton
-    Left = 784
+    Left = 840
     Top = 592
     Width = 97
     Height = 25
     Caption = 'Close'
-    TabOrder = 5
+    TabOrder = 7
     OnClick = btnCloseClick
   end
   object grbGeneral: TGroupBox
@@ -557,7 +557,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   object meSettingDescription: TMemo
     Left = 576
     Top = 24
-    Width = 305
+    Width = 361
     Height = 561
     Color = clInfoBk
     Font.Charset = DEFAULT_CHARSET
@@ -571,13 +571,22 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     ParentFont = False
     ReadOnly = True
     ScrollBars = ssVertical
-    TabOrder = 6
+    TabOrder = 4
+  end
+  object btnDefault: TButton
+    Left = 576
+    Top = 592
+    Width = 137
+    Height = 25
+    Caption = 'Load default settings...'
+    TabOrder = 5
+    OnClick = btnDefaultClick
   end
   object diaSaveDialog: TSaveDialog
     DefaultExt = '.scs'
     Filter = 
       'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All file' +
       's (*.*)|*.*'
-    Left = 856
+    Left = 536
   end
 end

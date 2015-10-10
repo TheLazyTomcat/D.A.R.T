@@ -228,7 +228,11 @@ If ParamCount > 0 then
             SubItems.Add('');
             SubItems.Add('');
           end;
-        FilesManager.Add(ParamStr(i))
+      {$IFDEF FPC}
+        FilesManager.Add(ExpandFileNameUTF8(ParamStr(i)))
+      {$ELSE}
+        FilesManager.Add(ExpandFileName(ParamStr(i)))
+      {$ENDIF}
       end;
 end;
 
