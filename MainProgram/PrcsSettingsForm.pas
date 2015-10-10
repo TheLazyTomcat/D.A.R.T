@@ -453,6 +453,7 @@ end;
 
 procedure TfPrcsSettingsForm.FormShow(Sender: TObject);
 begin
+meSettingDescription.Text := 'Move cursor over specific setting to see its description.';
 btnClose.SetFocus;
 end;
 
