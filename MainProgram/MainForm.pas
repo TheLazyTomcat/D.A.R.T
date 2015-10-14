@@ -54,8 +54,6 @@ type
     procedure FormClose(Sender: TObject; var {%H-}Action: TCloseAction);
     procedure FormResize(Sender: TObject);
     procedure lvFilesDblClick(Sender: TObject);
-    procedure lvFilesInfoTip(Sender: TObject; Item: TListItem;
-      var InfoTip: String);
     procedure mnuFilesPopup(Sender: TObject);
     procedure mfAddClick(Sender: TObject);
     procedure mfRemoveClick(Sender: TObject);
@@ -68,8 +66,9 @@ type
   {$IFDEF FPC}
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   {$ENDIF}
-  private
-    { Private declarations }
+  protected
+    fSettingsChanged: Boolean;
+    procedure SettingsChanged(FileIndex: Integer);
   public
     FilesManager: TFilesManager;
     procedure LoadCopyrightInfo;
@@ -95,6 +94,13 @@ uses
   {$R *.dfm}
 {$ENDIF}
 
+const
+{%H-}List_IconColumn   = -1;
+     List_NameColumn   = 0;
+     List_SizeColumn   = 1;
+     List_MethodColumn = 2;
+     List_StateColumn  = 3;
+
 {$IFNDEF FPC}
 procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
 var
@@ -117,6 +123,8 @@ try
                 begin
                   SubItems.Add('');
                   SubItems.Add('');
+                  SubItems.Add('');
+                  SubItems.Add('');
                 end;
               fMainForm.FilesManager.Add(FileName)
             end;
@@ -127,6 +135,18 @@ finally
 end;
 end;
 {$ENDIF}
+
+//==============================================================================
+
+procedure TfMainForm.SettingsChanged(FileIndex: Integer);
+begin
+fSettingsChanged := True;
+try
+  OnFileStatus(Self,FileIndex);
+finally;
+  fSettingsChanged := False;
+end
+end;
 
 //==============================================================================
 
@@ -155,7 +175,7 @@ If FilesManager[FileIndex].Status = fstProcessing then
     Temp := Trunc(prbFileProgress.Max * FilesManager[FileIndex].Progress);
     If Temp <> prbFileProgress.Position then
       begin
-        lvFiles.Items[FileIndex].SubItems[1] := Format('Processing... %.0f%%',[FilesManager[FileIndex].Progress * 100]);
+        lvFiles.Items[FileIndex].SubItems[List_StateColumn] := Format('Processing... %.0f%%',[FilesManager[FileIndex].Progress * 100]);
         prbFileProgress.Position := Temp;
       end;
     Temp := Trunc(prbOverallProgress.Max * FilesManager.Progress);
@@ -167,34 +187,68 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.OnFileStatus(Sender: TObject; FileIndex: Integer);
+
+  Function FileSizeStr(FileSize: Int64): String;
+  const
+    BinaryPrefix: Array[0..8] of String = ('','Ki','Mi','Gi','Ti','Pi','Ei','Zi','Yi');
+  var
+    ShiftCounter:   Integer;
+    DecimalDigits:  Integer;
+  begin
+    ShiftCounter := 0;
+    DecimalDigits := 0;
+    If FileSize <> 0 then
+      begin
+        while (FileSize shr (ShiftCounter * 10)) <> 0 do
+          Inc(ShiftCounter);
+        Dec(ShiftCounter);  
+        case FileSize shr (ShiftCounter * 10) of
+          0..9:   DecimalDigits := 2;
+         10..99:  DecimalDigits := 1;
+        else
+          DecimalDigits := 0;
+        end;
+      end;
+    Result := FloatToStrF(FileSize / (Int64(1) shl (ShiftCounter * 10)),ffFixed,18,DecimalDigits) + ' ' + BinaryPrefix[ShiftCounter] + 'B';
+  end;
+
 begin
-If lvFiles.Items[FileIndex].SubItems[0] = '' then
-  lvFiles.Items[FileIndex].SubItems[0] := FilesManager[FileIndex].Name;
+If (lvFiles.Items[FileIndex].SubItems[List_NameColumn] = '') or fSettingsChanged then
+  begin
+    lvFiles.Items[FileIndex].SubItems[List_NameColumn] := FilesManager[FileIndex].Name;
+    lvFiles.Items[FileIndex].SubItems[List_SizeColumn] := FileSizeStr(FilesManager[FileIndex].Size);
+    case FilesManager[FileIndex].ProcessingSettings.RepairMethod of
+      rmRebuild:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Rebuild file';
+      rmExtract:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Extract archive';
+    else
+      lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Unknown';
+    end;
+  end;
 case FilesManager[FileIndex].Status of
   fstReady:
     begin
-      lvFiles.Items[FileIndex].SubItems[1] := 'Ready';
+      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Ready';
       lvFiles.Items[FileIndex].ImageIndex := 1;
     end;
   fstDone:
     begin
-      lvFiles.Items[FileIndex].SubItems[1] := 'Done';
+      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Done';
       lvFiles.Items[FileIndex].ImageIndex := 2;
     end;
   fstError:
     begin
-      lvFiles.Items[FileIndex].SubItems[1] := 'Error';
+      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Error';
       lvFiles.Items[FileIndex].ImageIndex := 3;
     end;
   fstProcessing:
     begin
-      lvFiles.Items[FileIndex].SubItems[1] := 'Processing... 0%';
+      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Processing... 0%';
       lvFiles.Items[FileIndex].ImageIndex := 4;
       tmrAnimTimer.Tag := 0;  
     end;
 else
  {fstUnknown}
-  lvFiles.Items[FileIndex].SubItems[1] := 'Unknown';
+  lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Unknown';
   lvFiles.Items[FileIndex].ImageIndex := 0;
 end;
 tmrAnimTimer.Enabled := FilesManager[FileIndex].Status = fstProcessing;
@@ -221,10 +275,12 @@ var
 begin
 If ParamCount > 0 then
   For i := 1 to ParamCount do
-    If FileExists(ParamStr(i)) and (FilesManager.IndexOf(ParamStr(i)) < 0) then
+    If {$IFDEF FPC}FileExistsUTF8(ParamStr(i)){$ELSE}FileExists(ParamStr(i)){$ENDIF}  and (FilesManager.IndexOf(ParamStr(i)) < 0) then
       begin
         with lvFiles.Items.Add do
           begin
+            SubItems.Add('');
+            SubItems.Add('');
             SubItems.Add('');
             SubItems.Add('');
           end;
@@ -251,6 +307,7 @@ end;
 
 procedure TfMainForm.FormCreate(Sender: TObject);
 begin
+fSettingsChanged := False;
 stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
 prbOverallProgress.DoubleBuffered := True;
@@ -289,8 +346,14 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.FormResize(Sender: TObject);
+var
+  i:        Integer;
+  NewWidth: Integer;
 begin
-lvFiles.Columns.Items[1].Width := lvFiles.Width - (Int64(lvFiles.Columns.Items[0].Width) + lvFiles.Columns.Items[2].Width + 25);
+NewWidth := lvFiles.Width + lvFiles.Columns[1].Width - 25;
+For i := 0 to Pred(lvFiles.Columns.Count) do
+  Dec(NewWidth,lvFiles.Columns[i].Width);
+lvFiles.Columns[1].Width := NewWidth;
 end;
 
 //------------------------------------------------------------------------------
@@ -305,18 +368,11 @@ If FilesManager.Status = mstReady then
           fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
         else
           fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+          SettingsChanged(lvFiles.ItemIndex);
         end;
       end
     else mfAdd.OnClick(nil);
   end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TfMainForm.lvFilesInfoTip(Sender: TObject; Item: TListItem;
-  var InfoTip: String);
-begin
-InfoTip := FilesManager[Item.Index].Path;
 end;
 
 //------------------------------------------------------------------------------
@@ -347,6 +403,8 @@ If FilesManager.Status = mstReady then
             begin
               with lvFiles.Items.Add do
                 begin
+                  SubItems.Add('');
+                  SubItems.Add('');
                   SubItems.Add('');
                   SubItems.Add('');
                 end;
@@ -398,7 +456,10 @@ end;
 procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) then
-  fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+  begin
+    fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+    SettingsChanged(lvFiles.ItemIndex);
+  end;
 end;
      
 //------------------------------------------------------------------------------
@@ -470,10 +531,12 @@ var
 begin
 If FilesManager.Status = mstReady then
   For i := Low(FileNames) to High(FileNames) do
-    If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+    If FileExistsUTF8(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
       begin
         with lvFiles.Items.Add do
           begin
+            SubItems.Add('');
+            SubItems.Add('');
             SubItems.Add('');
             SubItems.Add('');
           end;

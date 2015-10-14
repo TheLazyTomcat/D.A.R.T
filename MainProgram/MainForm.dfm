@@ -156,12 +156,20 @@ object fMainForm: TfMainForm
         Width = 25
       end
       item
-        Caption = 'File'
-        Width = 470
+        Caption = 'File name'
+        Width = 320
+      end
+      item
+        Caption = 'File size'
+        Width = 75
+      end
+      item
+        Caption = 'Repair method'
+        Width = 100
       end
       item
         Caption = 'File processing status'
-        Width = 155
+        Width = 130
       end>
     MultiSelect = True
     ReadOnly = True
@@ -174,7 +182,6 @@ object fMainForm: TfMainForm
     ViewStyle = vsReport
     OnClick = mnuFilesPopup
     OnDblClick = lvFilesDblClick
-    OnInfoTip = lvFilesInfoTip
   end
   object stbStatusBar: TStatusBar
     Left = 0
