@@ -127,7 +127,11 @@ Function GetFileSize(const FilePath: String): Int64;
 var
   SearchResult: TSearchRec;
 begin
+{$IFDEF FPC}
+If FindFirst(UTF8ToAnsi(FilePath),faAnyFile,SearchResult) = 0 then
+{$ELSE}
 If FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
+{$ENDIF}
   begin
     {$WARN SYMBOL_PLATFORM OFF}
     Int64Rec(Result).Hi := SearchResult.FindData.nFileSizeHigh;
