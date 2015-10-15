@@ -358,7 +358,9 @@ type
     procedure ProcessFile_Rebuild; virtual;
     procedure ProcessFile_Extract; virtual;
     procedure ProcessFile; virtual;
-    procedure InitializeProgressInfo; virtual;    
+    procedure InitializeProgressInfo; virtual;
+    procedure AllocateBuffers; virtual;
+    procedure FreeBuffers; virtual;
     procedure DoProgress(ProgressStage: TProgressStage; Data: Single); virtual;
     procedure DoError(MethodIdx: Integer; ErrorText: String; Values: array of const); overload; virtual;
     procedure DoError(MethodIdx: Integer; ErrorText: String); overload; virtual;
@@ -1597,26 +1599,31 @@ DoProgress(psProcessing,0.0);
 InputFileName := UTF8ToAnsi(Self.InputFileName);
 {$ENDIF}
 try
-  If fProcessingSettings.InMemoryProcessing then
-    fInputFileStream := TMemoryStream.Create
-  else
-    fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+  AllocateBuffers;
   try
     If fProcessingSettings.InMemoryProcessing then
-      ProgressLoadFile(InputFileName,fInputFileStream);
-    If fInputFileStream.Size <= 0 then
-      DoError(7,'Input file does not contain any data.');
-    If not fProcessingSettings.IgnoreFileSignature then
-      CheckInputFileSignature;
-    case fProcessingSettings.RepairMethod of
-      rmRebuild:  ProcessFile_Rebuild;
-      rmExtract:  ProcessFile_Extract;
+      fInputFileStream := TMemoryStream.Create
     else
-      DoError(7,'Unknown repair method (%d).',[Integer(fProcessingSettings.RepairMethod)]);
+      fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+    try
+      If fProcessingSettings.InMemoryProcessing then
+        ProgressLoadFile(InputFileName,fInputFileStream);
+      If fInputFileStream.Size <= 0 then
+        DoError(7,'Input file does not contain any data.');
+      If not fProcessingSettings.IgnoreFileSignature then
+        CheckInputFileSignature;
+      case fProcessingSettings.RepairMethod of
+        rmRebuild:  ProcessFile_Rebuild;
+        rmExtract:  ProcessFile_Extract;
+      else
+        DoError(7,'Unknown repair method (%d).',[Integer(fProcessingSettings.RepairMethod)]);
+      end;
+      DoProgress(psProcessing,2.0);
+    finally
+      fInputFileStream.Free;
     end;
-    DoProgress(psProcessing,2.0);
   finally
-    fInputFileStream.Free;
+    FreeBuffers;
   end;
 except
   on E: Exception do
@@ -1661,7 +1668,29 @@ If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
 fProgressInfo[psEntriesProcessing].Offset := fProgressInfo[psLocalHeadersLoading].Offset + fProgressInfo[psLocalHeadersLoading].Range;
 fProgressInfo[psEntriesProcessing].Range := InnerProcessingRange - (fProgressInfo[psLocalHeadersLoading].Range + fProgressInfo[psCDHeadersLoading].Range + fProgressInfo[psEOCDLoading].Range);
 end;
- 
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.AllocateBuffers;
+begin
+{$IFDEF preallocated_buffers}
+AllocateBuffer(fIOBuffer,IO_BufferSize);
+AllocateBuffer(fEntryCompressed,CED_BufferSize);
+AllocateBuffer(fEntryUncompressed,UED_BufferSize);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.FreeBuffers;
+begin
+{$IFDEF preallocated_buffers}
+FreeBuffer(fIOBuffer);
+FreeBuffer(fEntryCompressed);
+FreeBuffer(fEntryUncompressed);
+{$ENDIF}
+end;
+
 //------------------------------------------------------------------------------
 
 procedure TRepairer.DoProgress(ProgressStage: TProgressStage; Data: Single);
@@ -1715,22 +1744,12 @@ fErrorData.SourceClass := Self.ClassName;
 fErrorData.MethodIdx := -1;
 fErrorData.MethodName := 'unknown method';
 fErrorData.ThreadID := GetCurrentThreadID;
-{$IFDEF preallocated_buffers}
-AllocateBuffer(fIOBuffer,IO_BufferSize);
-AllocateBuffer(fEntryCompressed,CED_BufferSize);
-AllocateBuffer(fEntryUncompressed,UED_BufferSize);
-{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 destructor TRepairer.Destroy;
 begin
-{$IFDEF preallocated_buffers}
-FreeBuffer(fIOBuffer);
-FreeBuffer(fEntryCompressed);
-FreeBuffer(fEntryUncompressed);
-{$ENDIF}
 inherited;
 end;
 
