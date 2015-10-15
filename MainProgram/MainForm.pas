@@ -367,7 +367,7 @@ If FilesManager.Status = mstReady then
         case FilesManager[lvFiles.ItemIndex].Status of
           fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
         else
-          fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+          fPrcsSettingsForm.ShowProcessingSettings(FilesManager.Pointers[lvFiles.ItemIndex]^);
           SettingsChanged(lvFiles.ItemIndex);
         end;
       end
@@ -457,7 +457,7 @@ procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) then
   begin
-    fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+    fPrcsSettingsForm.ShowProcessingSettings(FilesManager.Pointers[lvFiles.ItemIndex]^);
     SettingsChanged(lvFiles.ItemIndex);
   end;
 end;

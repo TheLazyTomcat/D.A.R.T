@@ -35,7 +35,7 @@ type
   private
     { Private declarations }
   public
-    procedure ShowErrorInformation(FileInfo: TFileListItem);
+    procedure ShowErrorInformation(const FileInfo: TFileListItem);
   end;
 
 var
@@ -52,7 +52,7 @@ implementation
 uses
   ClipBrd;
 
-procedure TfErrorForm.ShowErrorInformation(FileInfo: TFileListItem);
+procedure TfErrorForm.ShowErrorInformation(const FileInfo: TFileListItem);
 begin
 lblFileName.Caption := FileInfo.Name;
 lblFileSize.Caption := IntToStr(FileInfo.Size) + ' bytes';

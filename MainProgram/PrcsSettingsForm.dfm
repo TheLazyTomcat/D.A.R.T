@@ -463,7 +463,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Width = 26
       Height = 13
       Caption = 'lblFile'
-      Constraints.MaxWidth = 393
+      Constraints.MaxWidth = 545
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
