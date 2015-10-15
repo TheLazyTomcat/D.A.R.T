@@ -319,11 +319,9 @@ FilesManager.OnFileStatus := OnFileStatus;
 FilesManager.OnStatus := OnStatus;
 OnStatus(nil);
 diaOpenDialog.InitialDir := ExtractFileDir(ParamStr(0));
-{$IFNDEF FPC}
 mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
 mfErrorInfo.ShortCut := ShortCut(Ord('E'),[ssAlt]);
 mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
-{$ENDIF}
 LoadFilesFromParams;
 SetDropAccept(True);
 end;
