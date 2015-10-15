@@ -365,7 +365,7 @@ If FilesManager.Status = mstReady then
     If lvFiles.ItemIndex >= 0 then
       begin
         case FilesManager[lvFiles.ItemIndex].Status of
-          fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+          fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
         else
           fPrcsSettingsForm.ShowProcessingSettings(FilesManager[lvFiles.ItemIndex].Path,FilesManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
           SettingsChanged(lvFiles.ItemIndex);
@@ -467,7 +467,7 @@ end;
 procedure TfMainForm.mfErrorInfoClick(Sender: TObject);
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError) then
-  fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex].Name,FilesManager[lvFiles.ItemIndex].ErrorInfo);
+  fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
 end;
     
 //------------------------------------------------------------------------------

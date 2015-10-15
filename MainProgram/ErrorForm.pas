@@ -13,11 +13,12 @@ interface
 
 uses
   SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls,
-  Repairer;
+  FilesManager;
 
 type
   TfErrorForm = class(TForm)
     lblFileName: TLabel;
+    lblFileSize: TLabel;    
     bvlHorSplit: TBevel;
     lblText: TLabel;
     grbTechnical: TGroupBox;
@@ -34,7 +35,7 @@ type
   private
     { Private declarations }
   public
-    procedure ShowErrorInformation(const FileName: String; ErrorInfo: TErrorInfo);
+    procedure ShowErrorInformation(FileInfo: TFileListItem);
   end;
 
 var
@@ -51,14 +52,18 @@ implementation
 uses
   ClipBrd;
 
-procedure TfErrorForm.ShowErrorInformation(const FileName: String; ErrorInfo: TErrorInfo);
+procedure TfErrorForm.ShowErrorInformation(FileInfo: TFileListItem);
 begin
-lblFileName.Caption := FileName;
-lblText.Caption := ErrorInfo.Text;
-lblObject.Caption := Format('%s (0x%p)',[ErrorInfo.SourceClass,ErrorInfo.Source]);
-lblMethod.Caption := Format('[%d] %s',[ErrorInfo.MethodIdx,ErrorInfo.MethodName]);
-lblThread.Caption := IntToStr(ErrorInfo.ThreadID);
-lblExceptionClass.Caption := ErrorInfo.ExceptionClass;
+lblFileName.Caption := FileInfo.Name;
+lblFileSize.Caption := IntToStr(FileInfo.Size) + ' bytes';
+lblFileName.ShowHint := Canvas.TextWidth(lblFileName.Caption) > lblFileName.Width;
+If lblFileName.ShowHint then
+  lblFileName.Hint := lblFileName.Caption;
+lblText.Caption := FileInfo.ErrorInfo.Text;
+lblObject.Caption := Format('%s (0x%p)',[FileInfo.ErrorInfo.SourceClass,FileInfo.ErrorInfo.Source]);
+lblMethod.Caption := Format('[%d] %s',[FileInfo.ErrorInfo.MethodIdx,FileInfo.ErrorInfo.MethodName]);
+lblThread.Caption := IntToStr(FileInfo.ErrorInfo.ThreadID);
+lblExceptionClass.Caption := FileInfo.ErrorInfo.ExceptionClass;
 ShowModal;
 end;
 
@@ -68,9 +73,14 @@ procedure TfErrorForm.FormKeyPress(Sender: TObject; var Key: Char);
 begin
 If Key = ^C then
   begin
-    Clipboard.AsText := lblFileName.Caption + sLineBreak + lblText.Caption + sLineBreak +
-       lblObject.Caption + sLineBreak + lblMethod.Caption + sLineBreak +
-       lblThread.Caption + sLineBreak + lblExceptionClass.Caption;
+    Clipboard.AsText :=
+      lblFileName.Caption + sLineBreak +
+      lblFileSize.Caption + sLineBreak +
+      lblText.Caption + sLineBreak +
+      lblObject.Caption + sLineBreak +
+      lblMethod.Caption + sLineBreak +
+      lblThread.Caption + sLineBreak +
+      lblExceptionClass.Caption;
   end;
 end;
 
