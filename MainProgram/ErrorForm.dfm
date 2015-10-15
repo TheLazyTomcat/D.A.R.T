@@ -1,9 +1,9 @@
 object fErrorForm: TfErrorForm
   Left = 613
-  Top = 471
+  Top = 432
   BorderStyle = bsDialog
   Caption = 'Error information'
-  ClientHeight = 226
+  ClientHeight = 248
   ClientWidth = 400
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,7 +18,7 @@ object fErrorForm: TfErrorForm
   TextHeight = 13
   object lblText: TLabel
     Left = 8
-    Top = 40
+    Top = 64
     Width = 385
     Height = 57
     AutoSize = False
@@ -29,19 +29,21 @@ object fErrorForm: TfErrorForm
   object lblFileName: TLabel
     Left = 8
     Top = 8
-    Width = 3
+    Width = 385
     Height = 13
+    AutoSize = False
+    Caption = 'lblFileName'
   end
   object bvlHorSplit: TBevel
     Left = 8
-    Top = 32
+    Top = 56
     Width = 385
     Height = 9
     Shape = bsTopLine
   end
   object lblHint: TLabel
     Left = 25
-    Top = 208
+    Top = 232
     Width = 368
     Height = 13
     Alignment = taRightJustify
@@ -55,9 +57,16 @@ object fErrorForm: TfErrorForm
     Font.Style = []
     ParentFont = False
   end
+  object lblFileSize: TLabel
+    Left = 8
+    Top = 32
+    Width = 45
+    Height = 13
+    Caption = 'lblFileSize'
+  end
   object grbTechnical: TGroupBox
     Left = 8
-    Top = 104
+    Top = 128
     Width = 385
     Height = 97
     Caption = 'Technical information'

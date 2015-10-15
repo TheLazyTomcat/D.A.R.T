@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="39">
+    <Units Count="40">
       <Unit0>
         <Filename Value="SCS_Unlocker.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -30,8 +30,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="223"/>
-        <CursorPos X="54" Y="237"/>
+        <TopLine Value="107"/>
+        <CursorPos X="60" Y="112"/>
         <UsageCount Value="51"/>
       </Unit2>
       <Unit3>
@@ -78,8 +78,8 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="75"/>
-        <CursorPos X="40" Y="89"/>
+        <TopLine Value="268"/>
+        <CursorPos X="34" Y="280"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -293,6 +293,12 @@
         <CursorPos X="22" Y="2"/>
         <UsageCount Value="10"/>
       </Unit38>
+      <Unit39>
+        <Filename Value="..\..\MainForm.pas"/>
+        <HasResources Value="True"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit39>
     </Units>
     <CustomDefines Count="6">
       <Define0 Value="FPC"/>
@@ -302,7 +308,7 @@
       <Define4 Value="Debug"/>
       <Define5 Value="Release"/>
     </CustomDefines>
-    <JumpHistory Count="5" HistoryIndex="4">
+    <JumpHistory Count="15" HistoryIndex="14">
       <Position1>
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="475" Column="47" TopLine="242"/>
@@ -323,6 +329,46 @@
         <Filename Value="..\MainForm.pas"/>
         <Caret Line="252" TopLine="242"/>
       </Position5>
+      <Position6>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="89" Column="40" TopLine="75"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="100" Column="6" TopLine="87"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="87" Column="42" TopLine="82"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="122" Column="20" TopLine="101"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="280" Column="14" TopLine="271"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="544" Column="22" TopLine="533"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="122" Column="20" TopLine="110"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="280" Column="14" TopLine="268"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="544" Column="14" TopLine="523"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="122" Column="20" TopLine="110"/>
+      </Position15>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

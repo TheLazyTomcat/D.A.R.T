@@ -13,7 +13,7 @@ interface
 
 uses
   SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls,
-  Repairer;
+  FilesManager;
 
 type
   TfPrcsSettingsForm = class(TForm)
@@ -80,8 +80,7 @@ type
     procedure btnCloseClick(Sender: TObject);
     procedure btnAcceptClick(Sender: TObject);
   private
-    fFilePath:              String;
-    fProcessingSettings:    TProcessingSettings;
+    fFileInfo:              TFileListItem;
     fLoading:               Boolean;
     fAccepted:              Boolean;
     fSettingsDescriptions:  array[0..79] of String;
@@ -90,7 +89,7 @@ type
   public
     procedure SettingsToForm;
     procedure FormToSettings;
-    procedure ShowProcessingSettings(const FilePath: String; var ProcessingSettings: TProcessingSettings);
+    procedure ShowProcessingSettings(var FileInfo: TFileListItem);
   published  
     procedure RepairMethodClick(Sender: TObject);
     procedure CheckBoxClick(Sender: TObject);
@@ -110,14 +109,11 @@ implementation
 {$ENDIF}  
 
 uses
-  Windows, StrUtils,
-{$IFDEF FPC}
-  FileUtil;
-{$ELSE}
+  Windows, StrUtils, Repairer,{$IFDEF FPC}FileUtil,{$ENDIF}
 {$WARN UNIT_PLATFORM OFF}
   FileCtrl;
 {$WARN UNIT_PLATFORM ON}
-{$ENDIF}
+
 
 {$R '.\Resources\SettDescr.res'}
 
@@ -178,52 +174,52 @@ end;
 
 procedure TfPrcsSettingsForm.SettingsToForm;
 begin
-case fProcessingSettings.RepairMethod of
+case fFileInfo.ProcessingSettings.RepairMethod of
   rmRebuild:  rbRebuild.Checked := True;
   rmExtract:  rbExtract.Checked := True;
 end;
-lbleData.Text := fProcessingSettings.RepairData;
-cbIgnoreFileSignature.Checked := fProcessingSettings.IgnoreFileSignature;
-cbAssumeCompressionMethods.Checked := fProcessingSettings.AssumeCompressionMethods;
-cbInMemoryProcessing.Checked := fProcessingSettings.InMemoryProcessing;
-cbInMemoryProcessing.Enabled := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
-cbIgnoreProcessingErrors.Checked := fProcessingSettings.IgnoreProcessingErrors;
+lbleData.Text := fFileInfo.ProcessingSettings.RepairData;
+cbIgnoreFileSignature.Checked := fFileInfo.ProcessingSettings.IgnoreFileSignature;
+cbAssumeCompressionMethods.Checked := fFileInfo.ProcessingSettings.AssumeCompressionMethods;
+cbInMemoryProcessing.Checked := fFileInfo.ProcessingSettings.InMemoryProcessing;
+cbInMemoryProcessing.Enabled := fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
+cbIgnoreProcessingErrors.Checked := fFileInfo.ProcessingSettings.IgnoreProcessingErrors;
 //eocd
-cbIgnoreEndOfCentralDirectory.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
-cbIgnoreDiskSplit.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
-cbIgnoreNumberOfEntries.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
-cbIgnoreCentralDirectoryOffset.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
-cbIgnoreComment.Checked := fProcessingSettings.EndOfCentralDirectory.IgnoreComment;
-cbLimitSearch.Checked := fProcessingSettings.EndOfCentralDirectory.LimitSearch;
+cbIgnoreEndOfCentralDirectory.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
+cbIgnoreDiskSplit.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
+cbIgnoreNumberOfEntries.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries;
+cbIgnoreCentralDirectoryOffset.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset;
+cbIgnoreComment.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreComment;
+cbLimitSearch.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.LimitSearch;
 //central directory
-cbCDIgnoreCentralDirectory.Checked := fProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
-cbCDIgnoreSignature.Checked := fProcessingSettings.CentralDirectory.IgnoreSignature;
-cbCDIgnoreVersions.Checked := fProcessingSettings.CentralDirectory.IgnoreVersions;
-cbCDClearEncryptionFlags.Checked := fProcessingSettings.CentralDirectory.ClearEncryptionFlags;
-cbCDIgnoreCompressionMethod.Checked := fProcessingSettings.CentralDirectory.IgnoreCompressionMethod;
-cbCDIgnoreModTime.Checked := fProcessingSettings.CentralDirectory.IgnoreModTime;
-cbCDIgnoreModDate.Checked := fProcessingSettings.CentralDirectory.IgnoreModDate;
-cbCDIgnoreCRC32.Checked := fProcessingSettings.CentralDirectory.IgnoreCRC32;
-cbCDIgnoreSizes.Checked := fProcessingSettings.CentralDirectory.IgnoreSizes;
-cbCDIgnoreInternalFileAttributes.Checked := fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes;
-cbCDIgnoreExternalFileAttributes.Checked := fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes;
-cbCDIgnoreLocalHeaderOffset.Checked := fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset;
-cbCDIgnoreExtraField.Checked := fProcessingSettings.CentralDirectory.IgnoreExtraField;
-cbCDIgnoreFileComment.Checked := fProcessingSettings.CentralDirectory.IgnoreFileComment;
+cbCDIgnoreCentralDirectory.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCentralDirectory;
+cbCDIgnoreSignature.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreSignature;
+cbCDIgnoreVersions.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreVersions;
+cbCDClearEncryptionFlags.Checked := fFileInfo.ProcessingSettings.CentralDirectory.ClearEncryptionFlags;
+cbCDIgnoreCompressionMethod.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCompressionMethod;
+cbCDIgnoreModTime.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreModTime;
+cbCDIgnoreModDate.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreModDate;
+cbCDIgnoreCRC32.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCRC32;
+cbCDIgnoreSizes.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreSizes;
+cbCDIgnoreInternalFileAttributes.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes;
+cbCDIgnoreExternalFileAttributes.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes;
+cbCDIgnoreLocalHeaderOffset.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset;
+cbCDIgnoreExtraField.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreExtraField;
+cbCDIgnoreFileComment.Checked := fFileInfo.ProcessingSettings.CentralDirectory.IgnoreFileComment;
 //local headers
-cbLHIgnoreLocalHeaders.Checked := fProcessingSettings.LocalHeader.IgnoreLocalHeaders;
-cbLHIgnoreSignature.Checked := fProcessingSettings.LocalHeader.IgnoreSignature;
-cbLHIgnoreVersions.Checked := fProcessingSettings.LocalHeader.IgnoreVersions;
-cbLHClearEncryptionFlags.Checked := fProcessingSettings.LocalHeader.ClearEncryptionFlags;
-cbLHIgnoreCompressionMethod.Checked := fProcessingSettings.LocalHeader.IgnoreCompressionMethod;
-cbLHIgnoreModTime.Checked := fProcessingSettings.LocalHeader.IgnoreModTime;
-cbLHIgnoreModDate.Checked := fProcessingSettings.LocalHeader.IgnoreModDate;
-cbLHIgnoreCRC32.Checked := fProcessingSettings.LocalHeader.IgnoreCRC32;
-cbLHIgnoreSizes.Checked := fProcessingSettings.LocalHeader.IgnoreSizes;
-cbLHIgnoreFileName.Checked := fProcessingSettings.LocalHeader.IgnoreFileName;
-cbLHIgnoreExtraField.Checked := fProcessingSettings.LocalHeader.IgnoreExtraField;
+cbLHIgnoreLocalHeaders.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreLocalHeaders;
+cbLHIgnoreSignature.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreSignature;
+cbLHIgnoreVersions.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreVersions;
+cbLHClearEncryptionFlags.Checked := fFileInfo.ProcessingSettings.LocalHeader.ClearEncryptionFlags;
+cbLHIgnoreCompressionMethod.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreCompressionMethod;
+cbLHIgnoreModTime.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreModTime;
+cbLHIgnoreModDate.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreModDate;
+cbLHIgnoreCRC32.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreCRC32;
+cbLHIgnoreSizes.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreSizes;
+cbLHIgnoreFileName.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreFileName;
+cbLHIgnoreExtraField.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreExtraField;
 //data descriptor
-cbLHIgnoreDataDescriptor.Checked := fProcessingSettings.LocalHeader.IgnoreDataDescriptor;
+cbLHIgnoreDataDescriptor.Checked := fFileInfo.ProcessingSettings.LocalHeader.IgnoreDataDescriptor;
 end;
 
 //------------------------------------------------------------------------------
@@ -232,71 +228,73 @@ procedure TfPrcsSettingsForm.FormToSettings;
 begin
 If rbRebuild.Checked then
   begin
-    fProcessingSettings.RepairMethod := rmRebuild;
+    fFileInfo.ProcessingSettings.RepairMethod := rmRebuild;
   {$IFDEF FPC}
-    fProcessingSettings.RepairData := ExpandFileNameUTF8(lbleData.Text);
+    fFileInfo.ProcessingSettings.RepairData := ExpandFileNameUTF8(lbleData.Text);
   {$ELSE}
-    fProcessingSettings.RepairData := ExpandFileName(lbleData.Text);
+    fFileInfo.ProcessingSettings.RepairData := ExpandFileName(lbleData.Text);
   {$ENDIF}
   end;
 If rbExtract.Checked then
   begin
-    fProcessingSettings.RepairMethod := rmExtract;
+    fFileInfo.ProcessingSettings.RepairMethod := rmExtract;
   {$IFDEF FPC}
-    fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileNameUTF8(lbleData.Text));
+    fFileInfo.ProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileNameUTF8(lbleData.Text));
   {$ELSE}
-    fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileName(lbleData.Text));
+    fFileInfo.ProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileName(lbleData.Text));
   {$ENDIF}
   end;
-fProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
-fProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
-fProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
-fProcessingSettings.IgnoreProcessingErrors := cbIgnoreProcessingErrors.Checked;
+fFileInfo.ProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
+fFileInfo.ProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
+fFileInfo.ProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
+fFileInfo.ProcessingSettings.IgnoreProcessingErrors := cbIgnoreProcessingErrors.Checked;
 //eocd
-fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
-fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;
-fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries := cbIgnoreNumberOfEntries.Checked;
-fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset := cbIgnoreCentralDirectoryOffset.Checked;
-fProcessingSettings.EndOfCentralDirectory.IgnoreComment := cbIgnoreComment.Checked;
-fProcessingSettings.EndOfCentralDirectory.LimitSearch := cbLimitSearch.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries := cbIgnoreNumberOfEntries.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset := cbIgnoreCentralDirectoryOffset.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreComment := cbIgnoreComment.Checked;
+fFileInfo.ProcessingSettings.EndOfCentralDirectory.LimitSearch := cbLimitSearch.Checked;
 //central directory
-fProcessingSettings.CentralDirectory.IgnoreCentralDirectory := cbCDIgnoreCentralDirectory.Checked;
-fProcessingSettings.CentralDirectory.IgnoreSignature := cbCDIgnoreSignature.Checked;
-fProcessingSettings.CentralDirectory.IgnoreVersions := cbCDIgnoreVersions.Checked;
-fProcessingSettings.CentralDirectory.ClearEncryptionFlags := cbCDClearEncryptionFlags.Checked;
-fProcessingSettings.CentralDirectory.IgnoreCompressionMethod := cbCDIgnoreCompressionMethod.Checked;
-fProcessingSettings.CentralDirectory.IgnoreModTime := cbCDIgnoreModTime.Checked;
-fProcessingSettings.CentralDirectory.IgnoreModDate := cbCDIgnoreModDate.Checked;
-fProcessingSettings.CentralDirectory.IgnoreCRC32 := cbCDIgnoreCRC32.Checked;
-fProcessingSettings.CentralDirectory.IgnoreSizes := cbCDIgnoreSizes.Checked;
-fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes := cbCDIgnoreInternalFileAttributes.Checked;
-fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes := cbCDIgnoreExternalFileAttributes.Checked;
-fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset := cbCDIgnoreLocalHeaderOffset.Checked;
-fProcessingSettings.CentralDirectory.IgnoreExtraField := cbCDIgnoreExtraField.Checked;
-fProcessingSettings.CentralDirectory.IgnoreFileComment := cbCDIgnoreFileComment.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCentralDirectory := cbCDIgnoreCentralDirectory.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreSignature := cbCDIgnoreSignature.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreVersions := cbCDIgnoreVersions.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.ClearEncryptionFlags := cbCDClearEncryptionFlags.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCompressionMethod := cbCDIgnoreCompressionMethod.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreModTime := cbCDIgnoreModTime.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreModDate := cbCDIgnoreModDate.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreCRC32 := cbCDIgnoreCRC32.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreSizes := cbCDIgnoreSizes.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes := cbCDIgnoreInternalFileAttributes.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes := cbCDIgnoreExternalFileAttributes.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset := cbCDIgnoreLocalHeaderOffset.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreExtraField := cbCDIgnoreExtraField.Checked;
+fFileInfo.ProcessingSettings.CentralDirectory.IgnoreFileComment := cbCDIgnoreFileComment.Checked;
 //local headers
-fProcessingSettings.LocalHeader.IgnoreLocalHeaders := cbLHIgnoreLocalHeaders.Checked;
-fProcessingSettings.LocalHeader.IgnoreSignature := cbLHIgnoreSignature.Checked;
-fProcessingSettings.LocalHeader.IgnoreVersions := cbLHIgnoreVersions.Checked;
-fProcessingSettings.LocalHeader.ClearEncryptionFlags := cbLHClearEncryptionFlags.Checked;
-fProcessingSettings.LocalHeader.IgnoreCompressionMethod := cbLHIgnoreCompressionMethod.Checked;
-fProcessingSettings.LocalHeader.IgnoreModTime := cbLHIgnoreModTime.Checked;
-fProcessingSettings.LocalHeader.IgnoreModDate := cbLHIgnoreModDate.Checked;
-fProcessingSettings.LocalHeader.IgnoreCRC32 := cbLHIgnoreCRC32.Checked;
-fProcessingSettings.LocalHeader.IgnoreSizes := cbLHIgnoreSizes.Checked;
-fProcessingSettings.LocalHeader.IgnoreFileName := cbLHIgnoreFileName.Checked;
-fProcessingSettings.LocalHeader.IgnoreExtraField := cbLHIgnoreExtraField.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreLocalHeaders := cbLHIgnoreLocalHeaders.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreSignature := cbLHIgnoreSignature.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreVersions := cbLHIgnoreVersions.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.ClearEncryptionFlags := cbLHClearEncryptionFlags.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreCompressionMethod := cbLHIgnoreCompressionMethod.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreModTime := cbLHIgnoreModTime.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreModDate := cbLHIgnoreModDate.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreCRC32 := cbLHIgnoreCRC32.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreSizes := cbLHIgnoreSizes.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreFileName := cbLHIgnoreFileName.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreExtraField := cbLHIgnoreExtraField.Checked;
 //data descriptor
-fProcessingSettings.LocalHeader.IgnoreDataDescriptor := cbLHIgnoreDataDescriptor.Checked;
+fFileInfo.ProcessingSettings.LocalHeader.IgnoreDataDescriptor := cbLHIgnoreDataDescriptor.Checked;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.ShowProcessingSettings(const FilePath: String; var ProcessingSettings: TProcessingSettings);
+procedure TfPrcsSettingsForm.ShowProcessingSettings(var FileInfo: TFileListItem);
 begin
-fFilePath := FilePath;
-fProcessingSettings := ProcessingSettings;
-lblFile.Caption := ExtractFileName(FilePath);
+fFileInfo := FileInfo;
+lblFile.Caption := MinimizeName(fFileInfo.Path,Canvas,lblFile.Constraints.MaxWidth);
+lblFile.ShowHint := not AnsiSameText(lblFile.Caption,fFileInfo.Path) or (Canvas.TextWidth(lblFile.Caption) > lblFile.Constraints.MaxWidth);
+If lblFile.ShowHint then
+  lblFile.Hint := FileInfo.Path;
 fLoading := True;
 try
   SettingsToForm;
@@ -310,7 +308,7 @@ fAccepted := False;
 ShowModal;
 FormToSettings;
 If fAccepted then
-  ProcessingSettings := fProcessingSettings;
+  FileInfo.ProcessingSettings := fFileInfo.ProcessingSettings;
 end;
 
 //------------------------------------------------------------------------------
@@ -323,18 +321,18 @@ If Sender is TRadioButton then
     case TRadioButton(Sender).Tag of
       2:  begin
             lbleData.EditLabel.Caption := 'Output file:';
-            fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'unlocked_' + ExtractFileName(fFilePath);
+            fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'unlocked_' + fFileInfo.Name;
             cbIgnoreProcessingErrors.Enabled := False;
           end;
       3:  begin
             lbleData.EditLabel.Caption := 'Extract into:';
-            fProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFilePath,''));
+            fFileInfo.ProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ChangeFileExt(fFileInfo.Path,''));
             cbIgnoreProcessingErrors.Enabled := True;
           end;
     else
       cbIgnoreProcessingErrors.Enabled := False;    
     end;
-    lbleData.Text := fProcessingSettings.RepairData;
+    lbleData.Text := fFileInfo.ProcessingSettings.RepairData;
   end;
 end;
 
@@ -540,10 +538,10 @@ var
 begin
 If MessageDlg('Are you sure you want to load default settings?',mtWarning,[mbYes,mbNo],0) = mrYes then
   begin
-    TempMemoryAvailable := fProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
-    fProcessingSettings := DefaultProcessingSettings;
-    fProcessingSettings.RepairData := ExtractFilePath(fFilePath) + 'unlocked_' + Name;
-    fProcessingSettings.OtherSettings.InMemoryProcessingAllowed := TempMemoryAvailable;
+    TempMemoryAvailable := fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
+    fFileInfo.ProcessingSettings := DefaultProcessingSettings;
+    fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'unlocked_' + fFileInfo.Name;
+    fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed := TempMemoryAvailable;
     fLoading := True;
     try
       SettingsToForm;

@@ -1,5 +1,5 @@
 #1
-Name of the processed input file (without a path).
+Full path of the processed input file.
 #2
 Processed file will be completely rebuild into an output file.
 #3
