@@ -78,8 +78,8 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="268"/>
-        <CursorPos X="34" Y="280"/>
+        <TopLine Value="307"/>
+        <CursorPos Y="325"/>
         <UsageCount Value="25"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
