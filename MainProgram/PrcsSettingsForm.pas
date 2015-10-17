@@ -394,6 +394,8 @@ If (Sender is TCheckBox) and not fLoading then
                 begin
                   cbCDIgnoreCentralDirectory.Checked := False;
                   cbCDIgnoreLocalHeaderOffset.Checked := False;
+                  If cbCDIgnoreSizes.Checked and cbCDIgnoreCompressionMethod.Checked then
+                    cbCDIgnoreCompressionMethod.Checked := False;
                 end;
             end;
        64:  If cbCDIgnoreCentralDirectory.Checked then
