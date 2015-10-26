@@ -18,9 +18,10 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
+      <RevisionNr Value="1"/>
       <BuildNr Value="32"/>
       <Language Value="0405"/>
-      <StringTable Comments="Tool for unlocking SCS truck games mods" CompanyName="František Milt" FileDescription="SCS Unlocker application" InternalName="SCS Unlocker 2.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="SCS Unlocker 2" OriginalFilename="SCS_Unlocker.exe" ProductName="SCS Unlocker 2" ProductVersion="2.0.0"/>
+      <StringTable Comments="Tool for unlocking SCS truck games mods" CompanyName="František Milt" FileDescription="SCS Unlocker application" InternalName="SCS Unlocker 2.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="SCS Unlocker 2" OriginalFilename="SCS_Unlocker.exe" ProductName="SCS Unlocker 2" ProductVersion="2.0.1"/>
     </VersionInfo>
     <BuildModes Count="4">
       <Item1 Name="Debug_win_x86" Default="True"/>
