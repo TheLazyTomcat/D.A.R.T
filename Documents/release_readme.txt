@@ -1,6 +1,6 @@
 ﻿================================================================================
 
-                               SCS Unlocker 2.0.0
+                  D.A.R.T - Damaged Archives Repair Tool 1.0.1
 
 ================================================================================
 
@@ -10,49 +10,36 @@ Content of this document divided into individual parts, with line numbers at
 which each part starts.
 
   Index ...................................................   7
-  Disclaimer ..............................................  26
-  Description .............................................  39
-  Installation ............................................  59
-  How to use the program ..................................  69
-  Known issues ............................................  94
-  Source code ............................................. 101
-  Licensing ............................................... 110
-  Authors, contacts ....................................... 118
-  Links ................................................... 124
-  Copyright ............................................... 130
-
-
-
-Disclaimer
-------------------------------
-Although this program has "SCS" in its name, SCS Software is not responsible
-for it in any way. It is entirely work of author(s) listed below. If you have
-problems or questions regarding this program, please do NOT contact
-SCS Software's support, use contacts from section "Authors, contacts".
-Also, you, as a user, are responsible for everything you will do with this piece
-of software. Original intention of this program is to give users a simple way of
-unlocking modifications for the sake of learning or maintenance, not to steal
-others work.
+  Description .............................................  26
+  Installation ............................................  46
+  How to use the program ..................................  56
+  Changelog ...............................................  80
+  Known issues ............................................  95
+  Source code ............................................. 102
+  Licensing ............................................... 111
+  Authors, contacts ....................................... 119
+  Links ................................................... 125
+  Copyright ............................................... 131
 
 
 
 Description
 ------------------------------
-This tool is designed to unlock, or better said repair, SCS archives used as a
-storage for modifications created for SCS Software truck games (for example
-Euro Truck Simulator, 18 Wheels of Steel, etc.).
+This tool is designed to repair ZIP archives used as a storage for modifications
+created for SCS Software truck games (for example Euro Truck Simulator,
+18 Wheels of Steel, etc.).
 Virtually all mods created for those games are distributed in one or more SCS
-files (that is, a file with SCS extension), where such file is actually a zip
-archive. The problem is, many mod authors decided, for various reasons, to
-intentionally damage those files in a way that prevents normal user to
-decompress their content or even open them with common archive tools (WinZip,
-WinRAR, 7zip, ...), but the game can still load them. Such damaged file, if it
-could be opened at all, will be identified by most tools as locked. This program
-is able to repair and/or extract content of vast majority of those "locked"
+files (that is, a file with SCS extension), where such file is actually a ZIP
+archive. The problem is, many modification files are, for various reasons,
+damaged in a way that prevents normal user to decompress their content or even
+open them with common archive tools (WinZip, WinRAR, 7zip, ...), but the game
+is generally still able to load them. Such damaged file, if it could be opened
+at all, will be in most cases identified by many tools as locked. This program
+is able to repair and/or extract content of vast majority of those damaged
 files.
 
 NOTE - There are SCS files that are part of the game itself, but they are not
-       zip files and this program cannot work with them.
+       ZIP files and this program cannot work with them.
 
 
 
@@ -75,20 +62,34 @@ for advanced users. General use would be as follows:
   - right-click to the files list (large white rectangle in the upper part of
     the main window)...
   - ...a popup menu will appear, select "Add files..."
-  - in opened dialog, select file or files you want to unlock and confirm your
+  - in opened dialog, select file or files you want to repair and confirm your
     selection
   - [optional] right-click on a particular file and in opened menu select
     "File processing settings..."; a new window will appear; there, you can
     set individual settings that will be used when the file will be processed
   - click on "Start processing" button and wait for the end of processing
   - done
-  
-WARNING - It is possible for the program to finish processing successfully 
-          despite the fact that unlocking was unsuccessful. In such case, select
-          "Ignore end of central directory" and "Ignore central directory" 
-          settings for this file and try process it again. If that does not help 
-          either, ask in a forum mentioned in "Links" section.    
 
+WARNING - It is possible for the program to finish processing successfully
+          despite the fact that repairing was unsuccessful. In such case, select
+          "Ignore end of central directory" and "Ignore central directory"
+          settings for this file and try process it again. If that does not help
+          either, ask in a forum mentioned in "Links" section.
+
+
+Changelog
+------------------------------
+List of changes between individual versions of this program.
+
+SCS Unlocker 2.0.0 -> D.A.R.T 1.0.1 (project was renamed)
+  - project renamed to D.A.R.T - Damaged Archives Repair Tool
+  - date and time of stored file's last change is now written when archive is
+    being extracted
+  - limited life of preallocated buffers (lowers memory usage when processing
+    is not running)
+  - central directory sizes and compression method cannot be both ignored when
+    local headers are ignored
+  - other small changes and corrections
 
 
 Known issues
@@ -102,8 +103,8 @@ Source code
 ------------------------------
 You can get copy of full source code on either of the following git repository:
 
-https://bitbucket.org/ncs-sniper/scs_unlocker
-https://github.com/ncs-sniper/SCS_Unlocker
+https://bitbucket.org/ncs-sniper/d.a.r.t
+https://github.com/ncs-sniper/D.A.R.T
 
 
 
