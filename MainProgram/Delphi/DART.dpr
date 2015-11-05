@@ -5,7 +5,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 -------------------------------------------------------------------------------}
-program SCS_Unlocker;
+program DART;
 
 uses
   FastMM4,
@@ -22,7 +22,7 @@ uses
 
 begin
   Application.Initialize;
-  Application.Title := 'SCS Unlocker';
+  Application.Title := 'D.A.R.T';
   Application.CreateForm(TfMainForm, fMainForm);
   Application.CreateForm(TfErrorForm, fErrorForm);
   Application.CreateForm(TfPrcsSettingsForm, fPrcsSettingsForm);

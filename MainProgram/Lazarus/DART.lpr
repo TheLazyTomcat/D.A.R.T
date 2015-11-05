@@ -1,4 +1,4 @@
-program SCS_Unlocker;
+program DART;
 
 {$mode objfpc}{$H+}
 
@@ -17,6 +17,7 @@ uses
 {$R *.res}
 
 begin
+  Application.Title:='D.A.R.T';
 {$IFDEF Debug}
   If FileExists(ExtractFilePath(ParamStr(0)) + 'heap.trc') then
     DeleteFile(ExtractFilePath(ParamStr(0)) + 'heap.trc');

@@ -321,7 +321,7 @@ If Sender is TRadioButton then
     case TRadioButton(Sender).Tag of
       2:  begin
             lbleData.EditLabel.Caption := 'Output file:';
-            fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'unlocked_' + fFileInfo.Name;
+            fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'repaired_' + fFileInfo.Name;
             cbIgnoreProcessingErrors.Enabled := False;
           end;
       3:  begin
@@ -542,7 +542,7 @@ If MessageDlg('Are you sure you want to load default settings?',mtWarning,[mbYes
   begin
     TempMemoryAvailable := fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
     fFileInfo.ProcessingSettings := DefaultProcessingSettings;
-    fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'unlocked_' + fFileInfo.Name;
+    fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'repaired_' + fFileInfo.Name;
     fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed := TempMemoryAvailable;
     fLoading := True;
     try
