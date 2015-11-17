@@ -4,7 +4,7 @@ object fMainForm: TfMainForm
   Top = 112
   Width = 688
   BorderStyle = bsSingle
-  Caption = 'SCS Unlocker'
+  Caption = 'D.A.R.T - Damaged Archives Repair Tool'
   ClientHeight = 477
   ClientWidth = 688
   Color = clBtnFace
@@ -17,7 +17,7 @@ object fMainForm: TfMainForm
   OnDestroy = FormDestroy
   OnResize = FormResize
   Position = poScreenCenter
-  LCLVersion = '1.4.2.0'
+  LCLVersion = '1.4.4.0'
   object lblFiles: TLabel
     Left = 8
     Height = 13

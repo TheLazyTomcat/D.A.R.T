@@ -341,7 +341,7 @@ If fStatus = mstReady then
         Size := GetFileSize(Path);
         Status := fstReady;
         ProcessingSettings := DefaultProcessingSettings;
-        ProcessingSettings.RepairData := ExtractFilePath(Path) + 'unlocked_' + Name;
+        ProcessingSettings.RepairData := ExtractFilePath(Path) + 'repaired_' + Name;
         ProcessingSettings.OtherSettings.InMemoryProcessingAllowed := Size <= Trunc(fAvailableMemory * 0.25);
         DoFileStatus(Result);
       end;

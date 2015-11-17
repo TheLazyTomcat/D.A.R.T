@@ -7,7 +7,7 @@
 -------------------------------------------------------------------------------}
 {===============================================================================
 
-  Note that this file contains only things necessary for SCS Unlocker.
+  Note that this file contains only things necessary for D.A.R.T project.
   It is in no way complete header for zlib library.
 
 ===============================================================================}
