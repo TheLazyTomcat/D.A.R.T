@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -6,7 +6,7 @@
     <General>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="SCS_Unlocker"/>
+      <Title Value="D.A.R.T"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
@@ -17,10 +17,11 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
-      <MajorVersionNr Value="2"/>
-      <BuildNr Value="31"/>
+      <MajorVersionNr Value="1"/>
+      <RevisionNr Value="1"/>
+      <BuildNr Value="34"/>
       <Language Value="0405"/>
-      <StringTable Comments="Tool for unlocking SCS truck games mods" CompanyName="František Milt" FileDescription="SCS Unlocker application" InternalName="SCS Unlocker 2.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="SCS Unlocker 2" OriginalFilename="SCS_Unlocker.exe" ProductName="SCS Unlocker 2" ProductVersion="2.0.0"/>
+      <StringTable Comments="Tool for repairing *.zip archives with damaged headers" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.0.1"/>
     </VersionInfo>
     <BuildModes Count="4">
       <Item1 Name="Debug_win_x86" Default="True"/>
@@ -29,7 +30,7 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="Release\win_x86\SCS_Unlocker"/>
+            <Filename Value="Release\win_x86\DART"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
@@ -68,7 +69,7 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="Debug\win_x64\SCS_Unlocker"/>
+            <Filename Value="Debug\win_x64\DART"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
@@ -114,7 +115,7 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="Release\win_x64\SCS_Unlocker"/>
+            <Filename Value="Release\win_x64\DART"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
@@ -164,7 +165,7 @@
     </RequiredPackages>
     <Units Count="6">
       <Unit0>
-        <Filename Value="SCS_Unlocker.lpr"/>
+        <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
@@ -202,7 +203,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="Debug\win_x86\SCS_Unlocker"/>
+      <Filename Value="Debug\win_x86\DART"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

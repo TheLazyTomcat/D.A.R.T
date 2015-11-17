@@ -358,7 +358,9 @@ type
     procedure ProcessFile_Rebuild; virtual;
     procedure ProcessFile_Extract; virtual;
     procedure ProcessFile; virtual;
-    procedure InitializeProgressInfo; virtual;    
+    procedure InitializeProgressInfo; virtual;
+    procedure AllocateBuffers; virtual;
+    procedure FreeBuffers; virtual;
     procedure DoProgress(ProgressStage: TProgressStage; Data: Single); virtual;
     procedure DoError(MethodIdx: Integer; ErrorText: String; Values: array of const); overload; virtual;
     procedure DoError(MethodIdx: Integer; ErrorText: String); overload; virtual;
@@ -418,6 +420,10 @@ uses
 {$ENDIF}
 
 const
+{$IF not declared(FILE_WRITE_ATTRIBUTES)}
+  FILE_WRITE_ATTRIBUTES = 256;
+{$IFEND}
+
   // Size of the buffer used in progress-aware stream reading and writing
   IO_BufferSize  = $100000; {1MiB}
 
@@ -467,11 +473,12 @@ var
   ThreadFormatSettings: TFormatSettings;
 
 const
-  MethodNames: array[0..10] of String =
+  MethodNames: array[0..12] of String =
     ('CheckInputFileSignature','FindSignature','LoadEndOfCentralDirectory',
      'LoadCentralDirectory','LoadCentralDirectory.LoadCentralDirectoryHeader',
      'LoadLocalHeaders','LoadLocalHeaders.LoadLocalHeader','ProcessFile',
-     'ProcessFile_Rebuild','ProcessFile_Extract','DecompressBuffer');
+     'ProcessFile_Rebuild','ProcessFile_Extract','DecompressBuffer',
+     'ExtractInputFile.SetFileTime','ExtractInputFile.SetDirTime');
 
 {==============================================================================}
 {   TRepairer - Class Implementation                                           }
@@ -1448,6 +1455,34 @@ var
   UncompressedSize:       Integer;
   EntryProgressOffset:    Single;
   EntryProgressRange:     Single;
+
+  procedure WriteFileTime(const FileName: String; LastModTime, LastModDate: Word; Directory: Boolean = False);
+  var
+    FileHandle: THandle;
+    FileTime:   TFileTime;
+  begin
+    If Directory then
+      FileHandle := CreateFile(PChar(FileName),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL or FILE_FLAG_BACKUP_SEMANTICS,0)
+    else
+      FileHandle := CreateFile(PChar(FileName),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+    If FileHandle <> 0 then
+      try
+        If DosDateTimeToFileTime(LastModDate,LastModTime,{%H-}FileTime) then
+          begin
+            If LocalFileTimeToFileTime(FileTime,FileTime) then
+              begin
+                If not SetFileTime(FileHandle,nil,nil,@FileTime) then
+                  DoError(11,'Cannot write file time (%d).',[getlasterror]);
+              end
+            else DoError(11,'Cannot convert local file time to file time (%d).',[getlasterror]);
+          end
+        else DoError(11,'Cannot convert DOS time to file time (%d).',[getlasterror]);
+      finally
+        CloseHandle(FileHandle);
+      end
+    else DoError(11,'Cannot open file "%s" (%d).',[FileName,GetLastError]);
+  end;
+
 begin
 DoProgress(psEntriesProcessing,0.0);
 EntryProgressOffset := 0.0;
@@ -1461,7 +1496,9 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
       FullFileName := IncludeTrailingPathDelimiter(fProcessingSettings.RepairData) +
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
     {$ENDIF}
-      ForceDirectories(ExtractFileDir(FullFileName));
+      If not DirectoryExists(ExtractFileDir(FullFileName)) then
+        ForceDirectories(ExtractFileDir(FullFileName));
+      WriteFileTime(ExtractFileDir(FullFileName),LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate,True);
       If (ExtractFileName(FullFileName) <> '') and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
         begin
           EntryOutputFileStream := TFileStream.Create(FullFileName,fmCreate or fmShareDenyWrite);
@@ -1507,7 +1544,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
                       finally
                       {$IFNDEF preallocated_buffers}
                         FreeMem(UncompressedBuffer,UncompressedSize);
-                      {$ENDIF}  
+                      {$ENDIF}
                       end;
                     end;
               else
@@ -1519,8 +1556,9 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
             finally
               FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
             end;
-          {$ENDIF}  
+          {$ENDIF}
             EntryOutputFileStream.Size := EntryOutputFileStream.Position;
+            WriteFileTime(FullFileName,LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate);
           finally
             EntryOutputFileStream.Free;
           end;
@@ -1597,26 +1635,31 @@ DoProgress(psProcessing,0.0);
 InputFileName := UTF8ToAnsi(Self.InputFileName);
 {$ENDIF}
 try
-  If fProcessingSettings.InMemoryProcessing then
-    fInputFileStream := TMemoryStream.Create
-  else
-    fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+  AllocateBuffers;
   try
     If fProcessingSettings.InMemoryProcessing then
-      ProgressLoadFile(InputFileName,fInputFileStream);
-    If fInputFileStream.Size <= 0 then
-      DoError(7,'Input file does not contain any data.');
-    If not fProcessingSettings.IgnoreFileSignature then
-      CheckInputFileSignature;
-    case fProcessingSettings.RepairMethod of
-      rmRebuild:  ProcessFile_Rebuild;
-      rmExtract:  ProcessFile_Extract;
+      fInputFileStream := TMemoryStream.Create
     else
-      DoError(7,'Unknown repair method (%d).',[Integer(fProcessingSettings.RepairMethod)]);
+      fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+    try
+      If fProcessingSettings.InMemoryProcessing then
+        ProgressLoadFile(InputFileName,fInputFileStream);
+      If fInputFileStream.Size <= 0 then
+        DoError(7,'Input file does not contain any data.');
+      If not fProcessingSettings.IgnoreFileSignature then
+        CheckInputFileSignature;
+      case fProcessingSettings.RepairMethod of
+        rmRebuild:  ProcessFile_Rebuild;
+        rmExtract:  ProcessFile_Extract;
+      else
+        DoError(7,'Unknown repair method (%d).',[Integer(fProcessingSettings.RepairMethod)]);
+      end;
+      DoProgress(psProcessing,2.0);
+    finally
+      fInputFileStream.Free;
     end;
-    DoProgress(psProcessing,2.0);
   finally
-    fInputFileStream.Free;
+    FreeBuffers;
   end;
 except
   on E: Exception do
@@ -1661,7 +1704,29 @@ If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
 fProgressInfo[psEntriesProcessing].Offset := fProgressInfo[psLocalHeadersLoading].Offset + fProgressInfo[psLocalHeadersLoading].Range;
 fProgressInfo[psEntriesProcessing].Range := InnerProcessingRange - (fProgressInfo[psLocalHeadersLoading].Range + fProgressInfo[psCDHeadersLoading].Range + fProgressInfo[psEOCDLoading].Range);
 end;
- 
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.AllocateBuffers;
+begin
+{$IFDEF preallocated_buffers}
+AllocateBuffer(fIOBuffer,IO_BufferSize);
+AllocateBuffer(fEntryCompressed,CED_BufferSize);
+AllocateBuffer(fEntryUncompressed,UED_BufferSize);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.FreeBuffers;
+begin
+{$IFDEF preallocated_buffers}
+FreeBuffer(fIOBuffer);
+FreeBuffer(fEntryCompressed);
+FreeBuffer(fEntryUncompressed);
+{$ENDIF}
+end;
+
 //------------------------------------------------------------------------------
 
 procedure TRepairer.DoProgress(ProgressStage: TProgressStage; Data: Single);
@@ -1715,22 +1780,12 @@ fErrorData.SourceClass := Self.ClassName;
 fErrorData.MethodIdx := -1;
 fErrorData.MethodName := 'unknown method';
 fErrorData.ThreadID := GetCurrentThreadID;
-{$IFDEF preallocated_buffers}
-AllocateBuffer(fIOBuffer,IO_BufferSize);
-AllocateBuffer(fEntryCompressed,CED_BufferSize);
-AllocateBuffer(fEntryUncompressed,UED_BufferSize);
-{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 destructor TRepairer.Destroy;
 begin
-{$IFDEF preallocated_buffers}
-FreeBuffer(fIOBuffer);
-FreeBuffer(fEntryCompressed);
-FreeBuffer(fEntryUncompressed);
-{$ENDIF}
 inherited;
 end;
 

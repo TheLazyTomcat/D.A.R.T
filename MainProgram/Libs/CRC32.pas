@@ -9,9 +9,9 @@
 
   CRC32 Calculation
 
-  ©František Milt 2015-04-29
+  ©František Milt 2015-11-09
 
-  Version 1.4.6
+  Version 1.4.7
 
   Polynomial 0x04c11db7
 
@@ -19,21 +19,31 @@
 unit CRC32;
 
 {$DEFINE LargeBuffer}
-{.$DEFINE UseStringStream}
+
+{$IF defined(CPUX86_64) or defined(CPUX64)}
+  {$DEFINE x64}
+  {$IF defined(WINDOWS) or defined(MSWINDOWS)}
+    {$DEFINE ASM_x64}
+  {$ELSE}
+    {$DEFINE PurePascal}
+  {$IFEND}
+{$ELSEIF defined(CPU386)}
+  {$DEFINE x86}
+{$ELSE}    
+  {$DEFINE PurePascal}
+{$IFEND}
+
+{$IF defined(FPC) and not defined(PurePascal)}
+  {$ASMMODE Intel}
+{$IFEND}
 
 interface
 
 uses
-  Classes;
+  Classes, AuxTypes;
 
 type
-{$IFDEF x64}
-  TSize = UInt64;
-{$ELSE}
-  TSize = LongWord;
-{$ENDIF}
-
-  TCRC32 = LongWord;
+  TCRC32 = UInt32;
   PCRC32 = ^TCRC32;
 
 const
@@ -45,9 +55,9 @@ Function TryStrToCRC32(const Str: String; out CRC32: TCRC32): Boolean;
 Function StrToCRC32Def(const Str: String; Default: TCRC32): TCRC32;
 Function SameCRC32(A,B: TCRC32): Boolean;
 
-Function BufferCRC32(CRC32: TCRC32; const Buffer; Size: TSize): TCRC32; overload;
+Function BufferCRC32(CRC32: TCRC32; const Buffer; Size: TMemSize): TCRC32; overload;
 
-Function BufferCRC32(const Buffer; Size: TSize): TCRC32; overload;
+Function BufferCRC32(const Buffer; Size: TMemSize): TCRC32; overload;
 
 Function AnsiStringCRC32(const Str: AnsiString): TCRC32;
 Function WideStringCRC32(const Str: WideString): TCRC32;
@@ -62,10 +72,10 @@ type
   TCRC32Context = type Pointer;
 
 Function CRC32_Init: TCRC32Context;
-procedure CRC32_Update(Context: TCRC32Context; const Buffer; Size: TSize);
-Function CRC32_Final(var Context: TCRC32Context; const Buffer; Size: TSize): TCRC32; overload;
+procedure CRC32_Update(Context: TCRC32Context; const Buffer; Size: TMemSize);
+Function CRC32_Final(var Context: TCRC32Context; const Buffer; Size: TMemSize): TCRC32; overload;
 Function CRC32_Final(var Context: TCRC32Context): TCRC32; overload;
-Function CRC32_Hash(const Buffer; Size: TSize): TCRC32;
+Function CRC32_Hash(const Buffer; Size: TMemSize): TCRC32;
 
 implementation
 
@@ -164,31 +174,12 @@ end;
 
 Function SameCRC32(A,B: TCRC32): Boolean;
 begin
-Result := LongWord(A) = LongWord(B);
+Result := UInt32(A) = UInt32(B);
 end;
 
 //==============================================================================
 
-Function _BufferCRC32(CRC32: TCRC32; const Buffer; Size: TSize{$IF DEFINED(x64) AND NOT DEFINED(PurePascal)}; CRCTablePtr: Pointer{$IFEND}): TCRC32; register; {$IFNDEF PurePascal}assembler;{$ENDIF}
-{$IFDEF PurePascal}
-var
-  i:    TSize;
-  Buff: PByte;
-begin
-Result := not CRC32;
-If Size > 0 then
-  begin
-    Buff := @Buffer;
-    For i := 0 to Pred(Size) do
-      begin
-        Result := CRCTable[Byte(Result xor TCRC32(Buff^))] xor (Result shr 8);
-        Inc(Buff);
-      end;
-  end;
-Result := not Result;
-end;
-{$ELSE}
-{$IFDEF FPC}{$ASMMODE intel}{$ENDIF}
+Function _BufferCRC32(CRC32: TCRC32; const Buffer; Size: TMemSize{$IFDEF ASM_x64}; CRCTablePtr: Pointer{$ENDIF}): TCRC32; register;{$IFNDEF PurePascal}assembler;
 asm
 {$IFDEF x64}
 {******************************************************************************}
@@ -257,18 +248,32 @@ asm
   @RoutineEnd:  MOV   Result, EAX
 {$ENDIF}
 end;
-{$ENDIF}
+{$ELSE PurePascal}
+var
+  i:    TMemSize;
+  Buff: PByte;
+begin
+Result := not CRC32;
+Buff := @Buffer;
+For i := 1 to Size do
+  begin
+    Result := CRCTable[Byte(Result xor TCRC32(Buff^))] xor (Result shr 8);
+    Inc(Buff);
+  end;
+Result := not Result;
+end;
+{$ENDIF PurePascal}
 
 //------------------------------------------------------------------------------
 
-Function BufferCRC32(CRC32: TCRC32; const Buffer; Size: TSize): TCRC32;
+Function BufferCRC32(CRC32: TCRC32; const Buffer; Size: TMemSize): TCRC32;
 begin
-Result := _BufferCRC32(CRC32,Buffer,Size{$IF DEFINED(x64) AND NOT DEFINED(PurePascal)},@CRCTable{$IFEND});
+Result := _BufferCRC32(CRC32,Buffer,Size{$IFDEF ASM_x64},@CRCTable{$ENDIF});
 end;
 
 //==============================================================================
 
-Function BufferCRC32(const Buffer; Size: TSize): TCRC32;
+Function BufferCRC32(const Buffer; Size: TMemSize): TCRC32;
 begin
 Result := BufferCRC32(InitialCRC32,Buffer,Size);
 end;
@@ -276,62 +281,23 @@ end;
 //==============================================================================
 
 Function AnsiStringCRC32(const Str: AnsiString): TCRC32;
-{$IFDEF UseStringStream}
-var
-  StringStream: TStringStream;
-begin
-StringStream := TStringStream.Create(Str);
-try
-  Result := StreamCRC32(StringStream);
-finally
-  StringStream.Free;
-end;
-end;
-{$ELSE}
 begin
 Result := BufferCRC32(PAnsiChar(Str)^,Length(Str) * SizeOf(AnsiChar));
 end;
-{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function WideStringCRC32(const Str: WideString): TCRC32;
-{$IFDEF UseStringStream}
-var
-  StringStream: TStringStream;
-begin
-StringStream := TStringStream.Create(Str);
-try
-  Result := StreamCRC32(StringStream);
-finally
-  StringStream.Free;
-end;
-end;
-{$ELSE}
 begin
 Result := BufferCRC32(PWideChar(Str)^,Length(Str) * SizeOf(WideChar));
 end;
-{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function StringCRC32(const Str: String): TCRC32;
-{$IFDEF UseStringStream}
-var
-  StringStream: TStringStream;
-begin
-StringStream := TStringStream.Create(Str);
-try
-  Result := StreamCRC32(StringStream);
-finally
-  StringStream.Free;
-end;
-end;
-{$ELSE}
 begin
 Result := BufferCRC32(PChar(Str)^,Length(Str) * SizeOf(Char));
 end;
-{$ENDIF}
 
 //==============================================================================
 
@@ -395,14 +361,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure CRC32_Update(Context: TCRC32Context; const Buffer; Size: TSize);
+procedure CRC32_Update(Context: TCRC32Context; const Buffer; Size: TMemSize);
 begin
 PCRC32Context_Internal(Context)^.CRC32 := BufferCRC32(PCRC32Context_Internal(Context)^.CRC32,Buffer,Size);
 end;
 
 //------------------------------------------------------------------------------
 
-Function CRC32_Final(var Context: TCRC32Context; const Buffer; Size: TSize): TCRC32;
+Function CRC32_Final(var Context: TCRC32Context; const Buffer; Size: TMemSize): TCRC32;
 begin
 CRC32_Update(Context,Buffer,Size);
 Result := CRC32_Final(Context);
@@ -419,7 +385,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function CRC32_Hash(const Buffer; Size: TSize): TCRC32;
+Function CRC32_Hash(const Buffer; Size: TMemSize): TCRC32;
 begin
 Result := BufferCRC32(Buffer,Size);
 end;

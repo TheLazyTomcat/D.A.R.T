@@ -2,7 +2,7 @@ object fMainForm: TfMainForm
   Left = 327
   Top = 112
   BorderStyle = bsSingle
-  Caption = 'SCS Unlocker'
+  Caption = 'D.A.R.T - Damaged Archives Repair Tool'
   ClientHeight = 477
   ClientWidth = 688
   Color = clBtnFace

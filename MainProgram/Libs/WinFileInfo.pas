@@ -9,17 +9,21 @@
 
   WinFileInfo
 
-  ©František Milt 2015-06-22
+  ©František Milt 2015-11-16
 
   Version 1.0.1
 
 ===============================================================================}
 unit WinFileInfo;
 
+{$IF not(defined(MSWINDOWS) or defined(WINDOWS))}
+  {$MESSAGE FATAL 'Unsupported operating system.'}
+{$IFEND}
+
 interface
 
 uses
-  Windows, SysUtils;
+  Windows, SysUtils, AuxTypes;
 
 const
   // Loading strategy flags.
@@ -114,13 +118,6 @@ const
   VFT2_FONT_VECTOR   = $00000002;
 
 
-type
-{$IFDEF x64}
-  PtrUInt = UInt64;
-{$ELSE}
-  PtrUInt = LongWord;
-{$ENDIF}
-
 {==============================================================================}
 {   Auxiliary structures                                                       }
 {--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --}
@@ -128,6 +125,7 @@ type
 { a more user-friendly and better accessible way.                              }
 {==============================================================================}
 
+type
   TFileAttributesDecoded = record
     Archive:            Boolean;
     Compressed:         Boolean;
@@ -153,10 +151,10 @@ type
 // part of version information resource.
 
   TFixedFileInfo_VersionMembers = record
-    Major:    Word;
-    Minor:    Word;
-    Release:  Word;
-    Build:    Word;
+    Major:    UInt16;
+    Minor:    UInt16;
+    Release:  UInt16;
+    Build:    UInt16;
   end;  
 
   TFixedFileInfo_FileFlags = record
@@ -190,9 +188,9 @@ type
     LanguageName: String;
     LanguageStr:  String;
     case Integer of
-      0: (Language:     Word;
-          CodePage:     Word);
-      1: (Translation:  LongWord);     
+      0: (Language:     UInt16;
+          CodePage:     UInt16);
+      1: (Translation:  UInt32);
   end;
 
   TStringTableItem = record
@@ -202,7 +200,7 @@ type
 
   TStringTable = record
     Translation:  TTranslationItem;
-    Strings:      Array of TStringTableItem;
+    Strings:      array of TStringTableItem;
   end;
 
 //------------------------------------------------------------------------------
@@ -211,49 +209,49 @@ type
 
   TVersionInfoStruct_String = record
     Address:    Pointer;
-    Size:       PtrUInt;
-    Key:        String;
-    ValueSize:  PtrUInt;
+    Size:       TMemSize;
+    Key:        WideString;
+    ValueSize:  TMemSize;
     Value:      Pointer;
   end;
 
   TVersionInfoStruct_StringTable = record
     Address:  Pointer;
-    Size:     PtrUInt;
-    Key:      String;
-    Strings:  Array of TVersionInfoStruct_String;
+    Size:     TMemSize;
+    Key:      WideString;
+    Strings:  array of TVersionInfoStruct_String;
   end;
 
   TVersionInfoStruct_StringFileInfo = record
     Address:      Pointer;
-    Size:         PtrUInt;
-    Key:          String;
-    StringTables: Array of TVersionInfoStruct_StringTable;
+    Size:         TMemSize;
+    Key:          WideString;
+    StringTables: array of TVersionInfoStruct_StringTable;
   end;
 
   TVersionInfoStruct_Var = record
     Address:    Pointer;
-    Size:       PtrUInt;
-    Key:        String;
-    ValueSize:  PtrUInt;    
+    Size:       TMemSize;
+    Key:        WideString;
+    ValueSize:  TMemSize;
     Value:      Pointer;
   end;
 
   TVersionInfoStruct_VarFileInfo = record
     Address:  Pointer;
-    Size:     PtrUInt;
-    Key:      String;
-    Vars:     Array of TVersionInfoStruct_Var;
+    Size:     TMemSize;
+    Key:      WideString;
+    Vars:     array of TVersionInfoStruct_Var;
   end;
 
   TVersionInfoStruct = record
     Address:            Pointer;
-    Size:               PtrUInt;
-    Key:                String;
+    Size:               TMemSize;
+    Key:                WideString;
     FixedFileInfo:      Pointer;
-    FixedFileInfoSize:  PtrUInt;
-    StringFileInfos:    Array of TVersionInfoStruct_StringFileInfo;
-    VarFileInfos:       Array of TVersionInfoStruct_VarFileInfo;
+    FixedFileInfoSize:  TMemSize;
+    StringFileInfos:    array of TVersionInfoStruct_StringFileInfo;
+    VarFileInfos:       array of TVersionInfoStruct_VarFileInfo;
   end;
 
 {==============================================================================}
@@ -266,12 +264,12 @@ type
     fExists:                  Boolean;
     fLongName:                String;
     fShortName:               String;
-    fSize:                    Int64;
+    fSize:                    UInt64;
     fSizeStr:                 String;
     fCreationTime:            TDateTime;
     fLastAccessTime:          TDateTime;
     fLastWriteTime:           TDateTime;
-    fAttributesFlags:         LongWord;
+    fAttributesFlags:         DWord;
     fAttributesStr:           String;
     fAttributesText:          String;
     fAttributesDecoded:       TFileAttributesDecoded;
@@ -279,24 +277,24 @@ type
     fVersionInfoFFIPresent:   Boolean;
     fVersionInfoFFI:          TVSFixedFileInfo;
     fVersionInfoFFIDecoded:   TFixedFileInfoDecoded;
-    fVersionInfoStringTables: Array of TStringTable;
+    fVersionInfoStringTables: array of TStringTable;
     fVersionInfoParsed:       Boolean;
     fVersionInfoStruct:       TVersionInfoStruct;
-    fLoadingStrategy:         LongWord;
+    fLoadingStrategy:         UInt32;
     fFormatSettings:          TFormatSettings;
     fFileHandle:              THandle;
-    fVerInfoSize:             PtrUInt;
+    fVerInfoSize:             TMemSize;
     fVerInfoData:             Pointer;
-    Function GetVersionInfoTranslations(Index: Integer): TTranslationItem;
+    Function GetVersionInfoTranslation(Index: Integer): TTranslationItem;
     Function GetVersionInfoStringTableCount: Integer;
-    Function GetVersionInfoStringTables(Index: Integer): TStringTable;
-    Function GetVersionInfoKeysCount(Table: Integer): Integer;
-    Function GetVersionInfoKeys(Table,Index: Integer): String;
-    Function GetVersionInfoStringsCount(Table: Integer): Integer;
-    Function GetVersionInfoStrings(Table,Index: Integer): TStringTableItem;
-    Function GetVersionInfoValues(Language,Key: String): String;
+    Function GetVersionInfoStringTable(Index: Integer): TStringTable;
+    Function GetVersionInfoKeyCount(Table: Integer): Integer;
+    Function GetVersionInfoKey(Table,Index: Integer): String;
+    Function GetVersionInfoStringCount(Table: Integer): Integer;
+    Function GetVersionInfoString(Table,Index: Integer): TStringTableItem;
+    Function GetVersionInfoValue(const Language,Key: String): String;
   protected
-    Function LoadingStrategyFlag(Flag: LongWord): Boolean; virtual;
+    Function LoadingStrategyFlag(Flag: UInt32): Boolean; virtual;
     procedure VersionInfo_LoadStrings; virtual;
     procedure VersionInfo_EnumerateKeys; virtual;
     procedure VersionInfo_Parse; virtual;
@@ -310,23 +308,23 @@ type
     procedure Initialize(const FileName: String); virtual;
     procedure Finalize; virtual;
   public
-    constructor Create(LoadingStrategy: LongWord = WFI_LS_All); overload;
-    constructor Create(const FileName: String; LoadingStrategy: LongWord = WFI_LS_All); overload;
+    constructor Create(LoadingStrategy: UInt32 = WFI_LS_All); overload;
+    constructor Create(const FileName: String; LoadingStrategy: UInt32 = WFI_LS_All); overload;
     destructor Destroy; override;
     procedure Refresh; virtual;
-    Function IndexOfVersionInfoStringTable(Translation: LongWord): Integer; virtual;
-    Function IndexOfStringInVersionInfoStringTable(Table: Integer; Key: String): Integer; virtual;
+    Function IndexOfVersionInfoStringTable(Translation: DWord): Integer; virtual;
+    Function IndexOfVersionInfoString(Table: Integer; const Key: String): Integer; virtual;
     Function CreateReport: String; virtual;
     property Exists: Boolean read fExists;
     property Name: String read fLongName;
     property LongName: String read fLongName;
     property ShortName: String read fShortName;
-    property Size: Int64 read fSize;
+    property Size: UInt64 read fSize;
     property SizeStr: String read fSizeStr;
     property CreationTime: TDateTime read fCreationTime;
     property LastAccessTime: TDateTime read fLastAccessTime;
     property LastWriteTime: TDateTime read fLastWriteTime;
-    property AttributesFlags: LongWord read fAttributesFlags;
+    property AttributesFlags: DWord read fAttributesFlags;
     property AttributesStr: String read fAttributesStr;
     property AttributesText: String read fAttributesText;
     property AttributesDecoded: TFileAttributesDecoded read fAttributesDecoded;
@@ -335,22 +333,30 @@ type
     property VersionInfoFixedFileInfo: TVSFixedFileInfo read fVersionInfoFFI;
     property VersionInfoFixedFileInfoDecoded: TFixedFileInfoDecoded read fVersionInfoFFIDecoded;
     property VersionInfoTranslationCount: Integer read GetVersionInfoStringTableCount;
-    property VersionInfoTranslations[Index: Integer]: TTranslationItem read GetVersionInfoTranslations;
+    property VersionInfoTranslations[Index: Integer]: TTranslationItem read GetVersionInfoTranslation;
     property VersionInfoStringTableCount: Integer read GetVersionInfoStringTableCount;
-    property VersionInfoStringTables[Index: Integer]: TStringTable read GetVersionInfoStringTables;
-    property VersionInfoKeysCount[Table: Integer]: Integer read GetVersionInfoKeysCount;
-    property VersionInfoKeys[Table,Index: Integer]: String read GetVersionInfoKeys;
-    property VersionInfoStringsCount[Table: Integer]: Integer read GetVersionInfoStringsCount;
-    property VersionInfoStrings[Table,Index: Integer]: TStringTableItem read GetVersionInfoStrings;
-    property VersionInfoValues[Language,Key: String]: String read GetVersionInfoValues; default;
+    property VersionInfoStringTables[Index: Integer]: TStringTable read GetVersionInfoStringTable;
+    property VersionInfoKeyCount[Table: Integer]: Integer read GetVersionInfoKeyCount;
+    property VersionInfoKeys[Table,Index: Integer]: String read GetVersionInfoKey;
+    property VersionInfoStringCount[Table: Integer]: Integer read GetVersionInfoStringCount;
+    property VersionInfoString[Table,Index: Integer]: TStringTableItem read GetVersionInfoString;
+    property VersionInfoValues[const Language,Key: String]: String read GetVersionInfoValue; default;
     property VersionInfoParsed: Boolean read fVersionInfoParsed;
     property VersionInfoStruct: TVersionInfoStruct read fVersionInfoStruct;
-    property LoadingStrategy: LongWord read fLoadingStrategy write fLoadingStrategy;    
+    property LoadingStrategy: UInt32 read fLoadingStrategy write fLoadingStrategy;    
     property FormatSettings: TFormatSettings read fFormatSettings write fFormatSettings;
     property FileHandle: THandle read fFileHandle;
     property VerInfoSize: PtrUInt read fVerInfoSize;
     property VerInfoData: Pointer read fVerInfoData;
   end;
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                         Public functions declaration                         }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+Function SizeToStr(Size: UInt64): String;
 
 implementation
 
@@ -363,13 +369,13 @@ Function GetFileSizeEx(hFile: THandle; lpFileSize: PInt64): BOOL; stdcall; exter
 
 type
   TAttributeString = record
-    Flag: LongWord;
+    Flag: DWord;
     Text: String;
     Str:  String;
   end;
 
   TFlagText = record
-    Flag: LongWord;
+    Flag: DWord;
     Text: String;
   end;
 
@@ -447,6 +453,39 @@ const
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
+{                        Public functions implementation                       }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+Function SizeToStr(Size: UInt64): String;
+const
+  BinaryPrefix: array[0..8] of String = ('','Ki','Mi','Gi','Ti','Pi','Ei','Zi','Yi');
+  PrefixShift = 10;
+var
+  Offset: Integer;
+  Deci:   Integer;
+  Num:    Double;
+begin
+Offset := -1;
+repeat
+Inc(Offset);
+until ((Size shr (PrefixShift * Succ(Offset))) = 0) or (Offset >= 8);
+case Size shr (PrefixShift * Offset) of
+   1..9:  Deci := 2;
+  10..99: Deci := 1;
+else
+  Deci := 0;
+end;
+Num := (Size shr (PrefixShift * Offset));
+If Offset > 0 then
+  Num := Num + ((Size shr (PrefixShift * Pred(Offset))) and 1023) / 1024
+else
+  Deci := 0;
+Result := Format('%.*f %sB',[Deci,Num,BinaryPrefix[Offset]])
+end;
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
 {                       TWinFileInfo class implementation                      }
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -455,9 +494,9 @@ const
 {   TWinFileInfo - private methods                                             }
 {------------------------------------------------------------------------------}
 
-Function TWinFileInfo.GetVersionInfoTranslations(Index: Integer): TTranslationItem;
+Function TWinFileInfo.GetVersionInfoTranslation(Index: Integer): TTranslationItem;
 begin
-Result := GetVersionInfoStringTables(Index).Translation;
+Result := GetVersionInfoStringTable(Index).Translation;
 end;
 
 //------------------------------------------------------------------------------
@@ -469,7 +508,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoStringTables(Index: Integer): TStringTable;
+Function TWinFileInfo.GetVersionInfoStringTable(Index: Integer): TStringTable;
 begin
 If (Index >= Low(fVersionInfoStringTables)) and (Index <= High(fVersionInfoStringTables)) then
   Result := fVersionInfoStringTables[Index]
@@ -479,16 +518,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoKeysCount(Table: Integer): Integer;
+Function TWinFileInfo.GetVersionInfoKeyCount(Table: Integer): Integer;
 begin
-Result := Length(GetVersionInfoStringTables(Table).Strings);
+Result := Length(GetVersionInfoStringTable(Table).Strings);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoKeys(Table,Index: Integer): String;
+Function TWinFileInfo.GetVersionInfoKey(Table,Index: Integer): String;
 begin
-with GetVersionInfoStringTables(Table) do
+with GetVersionInfoStringTable(Table) do
   begin
     If (Index >= Low(Strings)) and (Index <= High(Strings)) then
       Result := Strings[Index].Key
@@ -499,16 +538,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoStringsCount(Table: Integer): Integer;
+Function TWinFileInfo.GetVersionInfoStringCount(Table: Integer): Integer;
 begin
-Result := Length(GetVersionInfoStringTables(Table).Strings);
+Result := Length(GetVersionInfoStringTable(Table).Strings);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoStrings(Table,Index: Integer): TStringTableItem;
+Function TWinFileInfo.GetVersionInfoString(Table,Index: Integer): TStringTableItem;
 begin
-with GetVersionInfoStringTables(Table) do
+with GetVersionInfoStringTable(Table) do
   begin
     If (Index >= Low(Strings)) and (Index <= High(Strings)) then
       Result := Strings[Index]
@@ -519,14 +558,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.GetVersionInfoValues(Language,Key: String): String;
+Function TWinFileInfo.GetVersionInfoValue(const Language,Key: String): String;
 var
   StrPtr:   Pointer;
-  StrSize:  LongWord;
+  StrSize:  UInt32;
 begin
 Result := '';
 If fVersionInfoPresent then
-  If VerQueryValue(fVerInfoData,PChar('\StringFileInfo\' + Language + '\' + Key),{%H-}StrPtr,{%H-}StrSize) then
+  If VerQueryValue(fVerInfoData,PChar(Format('\StringFileInfo\%s\%s',[Language,Key])),{%H-}StrPtr,{%H-}StrSize) then
     Result := PChar(StrPtr);
 end;
 
@@ -534,7 +573,7 @@ end;
 {   TWinFileInfo - protected methods                                           }
 {------------------------------------------------------------------------------}
 
-Function TWinFileInfo.LoadingStrategyFlag(Flag: LongWord): Boolean;
+Function TWinFileInfo.LoadingStrategyFlag(Flag: UInt32): Boolean;
 begin
 Result := (fLoadingStrategy and Flag) <> 0;
 end;
@@ -545,20 +584,21 @@ procedure TWinFileInfo.VersionInfo_LoadStrings;
 var
   Table,i:  Integer;
   StrPtr:   Pointer;
-  StrSize:  LongWord;
+  StrSize:  UInt32;
 begin
 For Table := Low(fVersionInfoStringTables) to High(fVersionInfoStringTables) do
   with fVersionInfoStringTables[Table] do
     begin
       For i := Low(Strings) to High(Strings) do
         begin
-          If VerQueryValue(fVerInfoData,PChar('\StringFileInfo\' + Translation.LanguageStr + '\' + Strings[i].Key),{%H-}StrPtr,{%H-}StrSize) then
+          If VerQueryValue(fVerInfoData,PChar(Format('\StringFileInfo\%s\%s',[Translation.LanguageStr,Strings[i].Key])),{%H-}StrPtr,{%H-}StrSize) then
+          {$If defined(FPC) and not defined(Unicode)}
+            Strings[i].Value := AnsiToUTF8(PChar(StrPtr))
+          {$ELSE}
             Strings[i].Value := PChar(StrPtr)
+          {$IFEND}
           else
             Strings[i].Value := '';
-          {$If defined(FPC) and not defined(Unicode)}
-            Strings[i].Value := AnsiToUTF8(Strings[i].Value);
-          {$IFEND}
         end;
     end;
 end;
@@ -598,8 +638,8 @@ type
   PVIS_Base = ^TVIS_Base;
   TVIS_Base = record
     Address:  Pointer;
-    Size:     PtrUInt;
-    Key:      String;
+    Size:     TMemSize;
+    Key:      WideString;
   end;
 var
   CurrentAddress: Pointer;
@@ -620,7 +660,7 @@ var
   procedure ParseBlock(var Ptr: Pointer; BlockBase: Pointer);
   begin
     PVIS_Base(BlockBase)^.Address := Ptr;
-    PVIS_Base(BlockBase)^.Size := PWord(PVIS_Base(BlockBase)^.Address)^;
+    PVIS_Base(BlockBase)^.Size := PUInt16(PVIS_Base(BlockBase)^.Address)^;
     PVIS_Base(BlockBase)^.Key := {%H-}PWideChar({%H-}PtrUInt(PVIS_Base(BlockBase)^.Address) + 6);
   {$IF defined(FPC) and not defined(Unicode)}
     PVIS_Base(BlockBase)^.Key := AnsiToUTF8(PVIS_Base(BlockBase)^.Key);
@@ -639,12 +679,11 @@ var
 //--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
 
 begin
-If (fVerInfoSize >= 6) and (fVerInfoSize >= PWord(fVerInfoData)^) then
+If (fVerInfoSize >= 6) and (fVerInfoSize >= PUInt16(fVerInfoData)^) then
   try
     CurrentAddress := fVerInfoData;
     ParseBlock(CurrentAddress,@fVersionInfoStruct);
-    CurrentAddress := Align32bit(CurrentAddress);
-    fVersionInfoStruct.FixedFileInfoSize := {%H-}PWord({%H-}PtrUInt(fVersionInfoStruct.Address) + 2)^;
+    fVersionInfoStruct.FixedFileInfoSize := {%H-}PUInt16({%H-}PtrUInt(fVersionInfoStruct.Address) + 2)^;
     fVersionInfoStruct.FixedFileInfo := CurrentAddress;
     CurrentAddress := Align32bit({%H-}Pointer({%H-}PtrUInt(CurrentAddress) + fVersionInfoStruct.FixedFileInfoSize));
     while CheckPointer(CurrentAddress,@fVersionInfoStruct) do
@@ -667,7 +706,7 @@ If (fVerInfoSize >= 6) and (fVerInfoSize >= PWord(fVerInfoData)^) then
                         begin
                           SetLength(Strings,Length(Strings) + 1);
                           ParseBlock(CurrentAddress,@Strings[High(Strings)]);
-                          Strings[High(Strings)].ValueSize := {%H-}PWord({%H-}PtrUInt(Strings[High(Strings)].Address) + 2)^;
+                          Strings[High(Strings)].ValueSize := {%H-}PUInt16({%H-}PtrUInt(Strings[High(Strings)].Address) + 2)^;
                           Strings[High(Strings)].Value := CurrentAddress;
                           CurrentAddress := Align32bit({%H-}Pointer({%H-}PtrUInt(Strings[High(Strings)].Address) + Strings[High(Strings)].Size));
                         end;
@@ -686,7 +725,7 @@ If (fVerInfoSize >= 6) and (fVerInfoSize >= PWord(fVerInfoData)^) then
                   begin
                     SetLength(Vars,Length(Vars) + 1);
                     ParseBlock(CurrentAddress,@Vars[High(Vars)]);
-                    Vars[High(Vars)].ValueSize := {%H-}PWord({%H-}PtrUInt(Vars[High(Vars)].Address) + 2)^;
+                    Vars[High(Vars)].ValueSize := {%H-}PUInt16({%H-}PtrUInt(Vars[High(Vars)].Address) + 2)^;
                     Vars[High(Vars)].Value := CurrentAddress;
                     CurrentAddress := Align32bit({%H-}Pointer({%H-}PtrUInt(Vars[High(Vars)].Address) + Vars[High(Vars)].Size));
                   end;
@@ -710,16 +749,16 @@ end;
 procedure TWinFileInfo.VersionInfo_LoadTranslations;
 var
   TrsPtr:   Pointer;
-  TrsSize:  LongWord;
-  i:        LongWord;
+  TrsSize:  UInt32;
+  i:        Integer;
 begin
 If VerQueryValue(fVerInfoData,'\VarFileInfo\Translation',{%H-}TrsPtr,{%H-}TrsSize) then
   begin
-    SetLength(fVersionInfoStringTables,TrsSize div SizeOf(LongWord));
+    SetLength(fVersionInfoStringTables,TrsSize div SizeOf(UInt32));
     For i := Low(fVersionInfoStringTables) to High(fVersionInfoStringTables) do
       with fVersionInfoStringTables[i].Translation do
         begin
-          Translation := {%H-}PLongWord({%H-}PtrUInt(TrsPtr) + (i * SizeOf(LongWord)))^;
+          Translation := {%H-}PUInt32({%H-}PtrUInt(TrsPtr) + (UInt32(i) * SizeOf(UInt32)))^;
           SetLength(LanguageName,256);
           SetLength(LanguageName,VerLanguageName(Translation,PChar(LanguageName),Length(LanguageName)));
         {$If defined(FPC) and not defined(Unicode)}
@@ -735,20 +774,19 @@ end;
 procedure TWinFileInfo.VersionInfo_LoadFixedFileInfo;
 var
   FFIPtr:           Pointer;
-  FFISize:          LongWord;
-  FFIWorkFileFlags: LongWord;
+  FFISize:          UInt32;
+  FFIWorkFileFlags: DWord;
 
 //--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
 
-  Function VersionToStr(Low, High: LongWord): String;
+  Function VersionToStr(Low, High: DWord): String;
   begin
-    Result := IntToStr(High shr 16) + '.' + IntToStr(High and $FFFF) +
-              '.' + IntToStr(Low shr 16) + '.' + IntToStr(Low and $FFFF);
+    Result := Format('%d.%d.%d.%d',[High shr 16,High and $FFFF,Low shr 16,Low and $FFFF]);
   end;
 
 //--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
 
-  Function GetFlagText(Flag: LongWord; Data: array of TFlagText; NotFound: String): String;
+  Function GetFlagText(Flag: DWord; Data: array of TFlagText; NotFound: String): String;
   var
     i:  Integer;
   begin
@@ -811,7 +849,7 @@ end;
 
 procedure TWinFileInfo.LoadVersionInfo;
 var
-  Dummy:  LongWord;
+  Dummy:  DWord;
 begin
 fVerInfoSize := GetFileVersionInfoSize(PChar(fLongName),{%H-}Dummy);
 fVersionInfoPresent := fVerInfoSize > 0;
@@ -820,20 +858,22 @@ If fVersionInfoPresent then
     fVerInfoData := AllocMem(fVerInfoSize);
     If GetFileVersionInfo(PChar(fLongName),0,fVerInfoSize,fVerInfoData) then
       begin
-        If LoadingStrategyFlag(WFI_LS_LoadFixedFileInfo) then VersionInfo_LoadFixedFileInfo;
+        If LoadingStrategyFlag(WFI_LS_LoadFixedFileInfo) then
+          VersionInfo_LoadFixedFileInfo;
         VersionInfo_LoadTranslations;        
         If LoadingStrategyFlag(WFI_LS_ParseVersionInfo) then
           begin
             VersionInfo_Parse;
             VersionInfo_EnumerateKeys;
           end;
-        VersionInfo_LoadStrings;          
+        VersionInfo_LoadStrings;
       end
     else
       begin
         FreeMem(fVerInfoData,fVerInfoSize);
         fVerInfoData := nil;
         fVerInfoSize := 0;
+        fVersionInfoPresent := False;
       end;
   end;
 end;
@@ -842,7 +882,7 @@ end;
 
 procedure TWinFileInfo.LoadAttributes;
 
-  Function CheckAttribute(AttributeFlag: LongWord): Boolean;
+  Function CheckAttribute(AttributeFlag: DWord): Boolean;
   var
     i:  Integer;
   begin
@@ -898,9 +938,9 @@ var
       begin
         If FileTimeToSystemTime(LocalTime,{%H-}SystemTime) then
           Result := SystemTimeToDateTime(SystemTime)
-        else raise Exception.CreateFmt('TWinFileInfo.GetFileTime::FileTimeToDateTime: Unable to convert to system time ("%s",0x%x).',[fLongName,GetLastError]);
+        else raise Exception.CreateFmt('TWinFileInfo.LoadTime.FileTimeToDateTime: Unable to convert to system time ("%s",0x%x).',[fLongName,GetLastError]);
       end
-    else raise Exception.CreateFmt('TWinFileInfo.GetFileTime::FileTimeToDateTime: Unable to convert to local time ("%s",0x%x).',[fLongName,GetLastError]);
+    else raise Exception.CreateFmt('TWinFileInfo.LoadTime.FileTimeToDateTime: Unable to convert to local time ("%s",0x%x).',[fLongName,GetLastError]);
   end;
 
 begin
@@ -910,37 +950,17 @@ If GetFileTime(fFileHandle,@Creation,@LastAccess,@LastWrite) then
     fLastAccessTime := FileTimeToDateTime(LastAccess);
     fLastWriteTime := FileTimeToDateTime(LastWrite);
   end
-else raise Exception.CreateFmt('TWinFileInfo.GetFileTime: Unable to obtain file time ("%s",0x%x).',[fLongName,GetLastError]);
+else raise Exception.CreateFmt('TWinFileInfo.LoadTime: Unable to obtain file time ("%s",0x%x).',[fLongName,GetLastError]);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TWinFileInfo.LoadSize;
-const
-  BinaryPrefix: Array[0..6] of String = ('','Ki','Mi','Gi','Ti','Pi','Ei');
-  PrefixShift = 10;
-var
-  SizeTemp:       Int64;
-  ShiftCounter:   Integer;
-  DecimalDigits:  Integer;
-  SizeFloat:      Extended;
 begin
 If GetFileSizeEx(fFileHandle,@fSize) then
-  begin
-    SizeTemp := fSize;
-    ShiftCounter := -1;
-    while SizeTemp <> 0 do
-      begin
-        SizeTemp := SizeTemp shr PrefixShift;
-        Inc(ShiftCounter);
-      end;
-    SizeFloat := fSize / Int64(1 shl (PrefixShift * ShiftCounter));
-    If SizeFloat <= 10.0 then DecimalDigits := 2 else
-      If SizeFloat <= 100.0 then DecimalDigits := 1
-        else DecimalDigits := 0;
-    fSizeStr := FloatToStrF(SizeFloat,ffFixed,18,DecimalDigits,fFormatSettings) + ' ' + BinaryPrefix[ShiftCounter] + 'B';
-  end
-else raise Exception.CreateFmt('TWinFileInfo.GetFileSize: Unable to obtain file size ("%s",0x%x).',[fLongName,GetLastError]);
+  fSizeStr := SizeToStr(fSize)
+else
+  raise Exception.CreateFmt('TWinFileInfo.GetFileSize: Unable to obtain file size ("%s",0x%x).',[fLongName,GetLastError]);
 end;
 
 //------------------------------------------------------------------------------
@@ -1017,7 +1037,7 @@ end;
 {   TWinFileInfo - public methods                                              }
 {------------------------------------------------------------------------------}
 
-constructor TWinFileInfo.Create(LoadingStrategy: LongWord = WFI_LS_All);
+constructor TWinFileInfo.Create(LoadingStrategy: UInt32 = WFI_LS_All);
 var
   ModuleFileName: String;
 begin
@@ -1028,7 +1048,7 @@ end;
 
 //--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
 
-constructor TWinFileInfo.Create(const FileName: String; LoadingStrategy: LongWord = WFI_LS_All);
+constructor TWinFileInfo.Create(const FileName: String; LoadingStrategy: Uint32 = WFI_LS_All);
 begin
 inherited Create;
 fLoadingStrategy := LoadingStrategy;
@@ -1054,7 +1074,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.IndexOfVersionInfoStringTable(Translation: LongWord): Integer;
+Function TWinFileInfo.IndexOfVersionInfoStringTable(Translation: DWord): Integer;
 begin
 For Result := Low(fVersionInfoStringTables) to High(fVersionInfoStringTables) do
   If fVersionInfoStringTables[Result].Translation.Translation = Translation then Exit;
@@ -1063,9 +1083,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TWinFileInfo.IndexOfStringInVersionInfoStringTable(Table: Integer; Key: String): Integer;
+Function TWinFileInfo.IndexOfVersionInfoString(Table: Integer; const Key: String): Integer;
 begin
-with GetVersionInfoStringTables(Table) do
+with GetVersionInfoStringTable(Table) do
   For Result := Low(Strings) to High(Strings) do
     If AnsiSameText(Strings[Result].Key,Key) then Exit;
 Result := -1;
@@ -1164,7 +1184,7 @@ with TStringList.Create do
         If VersionInfoTranslationCount > 0 then
           begin
             Add(sLineBreak + 'Version info translations:' + sLineBreak);
-            Add('  Translation count:' + IntToStr(VersionInfoTranslationCount));
+            Add('  Translation count: ' + IntToStr(VersionInfoTranslationCount));
               For i := 0 to Pred(VersionInfoTranslationCount) do
                 begin
                 Add(sLineBreak + Format('  Translation %d:',[i]));
@@ -1179,15 +1199,15 @@ with TStringList.Create do
         If VersionInfoStringTableCount > 0 then
           begin
             Add(sLineBreak + 'Version info string tables:' + sLineBreak);
-            Add('  String table count:' + IntToStr(VersionInfoStringTableCount));
+            Add('  String table count: ' + IntToStr(VersionInfoStringTableCount));
               For i := 0 to Pred(VersionInfoStringTableCount) do
                 begin
                 Add(sLineBreak + Format('  String table %d (%s):',[i,fVersionInfoStringTables[i].Translation.LanguageName]));
                   Len := 0;
-                  For j := 0 to Pred(VersionInfoKeysCount[i]) do
+                  For j := 0 to Pred(VersionInfoKeyCount[i]) do
                     If Length(VersionInfoKeys[i,j]) > Len then Len := Length(VersionInfoKeys[i,j]);
-                  For j := 0 to Pred(VersionInfoStringsCount[i]) do
-                    Add(Format('    %s: %s%s',[VersionInfoStrings[i,j].Key,StringOfChar(' ',Len - Length(VersionInfoStrings[i,j].Key)),VersionInfoStrings[i,j].Value]));
+                  For j := 0 to Pred(VersionInfoStringCount[i]) do
+                    Add(Format('    %s: %s%s',[VersionInfoString[i,j].Key,StringOfChar(' ',Len - Length(VersionInfoString[i,j].Key)),VersionInfoString[i,j].Value]));
                 end;
             end
           else Add(sLineBreak + 'No string table found.');

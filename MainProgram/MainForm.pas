@@ -187,36 +187,11 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.OnFileStatus(Sender: TObject; FileIndex: Integer);
-
-  Function FileSizeStr(FileSize: Int64): String;
-  const
-    BinaryPrefix: Array[0..8] of String = ('','Ki','Mi','Gi','Ti','Pi','Ei','Zi','Yi');
-  var
-    ShiftCounter:   Integer;
-    DecimalDigits:  Integer;
-  begin
-    ShiftCounter := 0;
-    DecimalDigits := 0;
-    If FileSize <> 0 then
-      begin
-        while (FileSize shr (ShiftCounter * 10)) <> 0 do
-          Inc(ShiftCounter);
-        Dec(ShiftCounter);  
-        case FileSize shr (ShiftCounter * 10) of
-          0..9:   DecimalDigits := 2;
-         10..99:  DecimalDigits := 1;
-        else
-          DecimalDigits := 0;
-        end;
-      end;
-    Result := FloatToStrF(FileSize / (Int64(1) shl (ShiftCounter * 10)),ffFixed,18,DecimalDigits) + ' ' + BinaryPrefix[ShiftCounter] + 'B';
-  end;
-
 begin
 If (lvFiles.Items[FileIndex].SubItems[List_NameColumn] = '') or fSettingsChanged then
   begin
     lvFiles.Items[FileIndex].SubItems[List_NameColumn] := FilesManager[FileIndex].Name;
-    lvFiles.Items[FileIndex].SubItems[List_SizeColumn] := FileSizeStr(FilesManager[FileIndex].Size);
+    lvFiles.Items[FileIndex].SubItems[List_SizeColumn] := SizeToStr(FilesManager[FileIndex].Size);
     case FilesManager[FileIndex].ProcessingSettings.RepairMethod of
       rmRebuild:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Rebuild file';
       rmExtract:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Extract archive';

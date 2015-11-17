@@ -1,5 +1,6 @@
 ﻿--------------------------------------------------------------------------------
-                             SCS Unlocker - source
+                     D.A.R.T - Damaged Archives Repair Tool
+                                     source
 --------------------------------------------------------------------------------
 
 Description
@@ -46,10 +47,10 @@ Exception being following folders and their entire content:
 
 Repositories
 ----------------------------------------
-You can get actual copies of SCS Unlocker on either of these git repositories:
+You can get actual copies of D.A.R.T on either of these git repositories:
 
-https://bitbucket.org/ncs-sniper/scs_unlocker
-https://github.com/ncs-sniper/SCS_Unlocker
+https://bitbucket.org/ncs-sniper/d.a.r.t
+https://github.com/ncs-sniper/D.A.R.T
 
 Note - Master branch does not contain binaries, they can be found in a branch
        called bin (this branch will not be updated as often as master branch).
