@@ -26,7 +26,7 @@ interface
 {$ENDIF}
 
 uses
-  Classes;
+  Classes, AuxTypes;
 
 // Text constant identifying what method is used to call zlib ------------------
 const
@@ -287,12 +287,6 @@ const
 {==============================================================================}
 
 type
-{$IFDEF x64}
-  PtrUInt = UInt64;
-{$ELSE}
-  PtrUInt = LongWord;
-{$ENDIF}
-
   TProgressStage = (psError,psProcessing,psLoading,psEOCDLoading,psCDHeadersLoading,
                     psLocalHeadersLoading,psEntriesProcessing,psSaving,psNoProgress);
 
@@ -405,11 +399,24 @@ type
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
 
+{$IF not Declared(FPC_FULLVERSION)}
+const
+(*
+  Delphi 7 requires this, otherwise they throw error on comparison in
+  {$IF FPC_FULLVERSION < ...} condition.
+*)
+  FPC_FULLVERSION = Integer(0);
+{$IFEND}  
+
 implementation
 
 uses
   Windows, SysUtils, StrUtils, Math, CRC32
 {$IFDEF FPC}
+  , LazUTF8
+  {$IF not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils
+  {$IFEND}
   {$IFNDEF zlib_lib}, PasZLib{$ENDIF}
 {$ELSE}
   , ZLibExAPI
@@ -1094,10 +1101,11 @@ var
   BufferSize: PtrUInt;
 begin
 DoProgress(psLoading,0.0);
-{$IFDEF FPC}
-FileName := UTF8ToAnsi(FileName);
-{$ENDIF}
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+FileStream := TFileStream.Create(UTF8ToSys(FileName),fmOpenRead or fmShareDenyWrite);
+{$ELSE}
 FileStream := TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
+{$IFEND}
 try
   Stream.Seek(0,soFromBeginning);
   If FileStream.Size > 0 then
@@ -1138,10 +1146,11 @@ var
   BufferSize: PtrUInt;
 begin
 DoProgress(psSaving,0.0);
-{$IFDEF FPC}
-FileName := UTF8ToAnsi(FileName);
-{$ENDIF}
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+FileStream := TFileStream.Create(UTF8ToSys(FileName),fmCreate or fmShareDenyWrite);
+{$ELSE}
 FileStream := TFileStream.Create(FileName,fmCreate or fmShareDenyWrite);
+{$IFEND}
 try
   Stream.Seek(0,soFromBeginning);
   If Stream.Size > 0 then
@@ -1289,7 +1298,6 @@ end;
 
 procedure TRepairer.RebuildInputFile;
 var
-  OutputFileName:           String;
   RebuildFileStream:        TStream;
   i:                        Integer;
   EntryFileBuffer:          Pointer;
@@ -1301,16 +1309,19 @@ var
   EntryProgressRange:       Single;
 begin
 DoProgress(psEntriesProcessing,0.0);
-{$IFDEF FPC}
-OutputFileName := UTF8ToAnsi(fProcessingSettings.RepairData);
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+ForceDirectoriesUTF8(ExtractFileDir(fProcessingSettings.RepairData));
 {$ELSE}
-OutputFileName := fProcessingSettings.RepairData;
-{$ENDIF}
-ForceDirectories(ExtractFileDir(OutputFileName));
+ForceDirectories(ExtractFileDir(fProcessingSettings.RepairData));
+{$IFEND}
 If fProcessingSettings.InMemoryProcessing then
   RebuildFileStream := TMemoryStream.Create
 else
-  RebuildFileStream := TFileStream.Create(OutputFileName,fmCreate or fmShareDenyWrite);
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  RebuildFileStream := TFileStream.Create(UTF8ToSys(fProcessingSettings.RepairData),fmCreate or fmShareDenyWrite);
+{$ELSE}
+  RebuildFileStream := TFileStream.Create(fProcessingSettings.RepairData,fmCreate or fmShareDenyWrite);
+{$IFEND}
 try
   If fProcessingSettings.InMemoryProcessing then
     RebuildFileStream.Size := Trunc(fInputFileStream.Size * 1.1);
@@ -1435,7 +1446,7 @@ try
   // finalize
   RebuildFileStream.Size := RebuildFileStream.Position;
   If fProcessingSettings.InMemoryProcessing then
-    ProgressSaveFile(OutputFileName,RebuildFileStream);
+    ProgressSaveFile(fProcessingSettings.RepairData,RebuildFileStream);
 finally
   RebuildFileStream.Free;
 end;
@@ -1462,21 +1473,27 @@ var
     FileTime:   TFileTime;
   begin
     If Directory then
+  {$IF Defined(FPC) and not Defined(Unicode)}
+      FileHandle := CreateFile(PChar(UTF8ToWinCP(FileName)),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL or FILE_FLAG_BACKUP_SEMANTICS,0)
+    else
+      FileHandle := CreateFile(PChar(UTF8ToWinCP(FileName)),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+  {$ELSE}
       FileHandle := CreateFile(PChar(FileName),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL or FILE_FLAG_BACKUP_SEMANTICS,0)
     else
       FileHandle := CreateFile(PChar(FileName),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
-    If FileHandle <> 0 then
+  {$IFEND}
+    If FileHandle <> INVALID_HANDLE_VALUE then
       try
         If DosDateTimeToFileTime(LastModDate,LastModTime,{%H-}FileTime) then
           begin
             If LocalFileTimeToFileTime(FileTime,FileTime) then
               begin
                 If not SetFileTime(FileHandle,nil,nil,@FileTime) then
-                  DoError(11,'Cannot write file time (%d).',[getlasterror]);
+                  DoError(11,'Cannot write file time (%d).',[GetLastError]);
               end
-            else DoError(11,'Cannot convert local file time to file time (%d).',[getlasterror]);
+            else DoError(11,'Cannot convert local file time to file time (%d).',[GetLastError]);
           end
-        else DoError(11,'Cannot convert DOS time to file time (%d).',[getlasterror]);
+        else DoError(11,'Cannot convert DOS time to file time (%d).',[GetLastError]);
       finally
         CloseHandle(FileHandle);
       end
@@ -1489,19 +1506,23 @@ EntryProgressOffset := 0.0;
 For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
   with fInputFileStructure.Entries[i] do
     try
-    {$IFDEF FPC}
-      FullFileName := IncludeTrailingPathDelimiter(UTF8ToAnsi(fProcessingSettings.RepairData)) +
-                      AnsiReplaceStr(LocalHeader.FileName,'/','\');
-    {$ELSE}
       FullFileName := IncludeTrailingPathDelimiter(fProcessingSettings.RepairData) +
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
-    {$ENDIF}
+    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      If not DirectoryExistsUTF8(ExtractFileDir(FullFileName)) then
+        ForceDirectoriesUTF8(ExtractFileDir(FullFileName));
+    {$ELSE}
       If not DirectoryExists(ExtractFileDir(FullFileName)) then
         ForceDirectories(ExtractFileDir(FullFileName));
+    {$IFEND}
       WriteFileTime(ExtractFileDir(FullFileName),LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate,True);
       If (ExtractFileName(FullFileName) <> '') and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
         begin
+        {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+          EntryOutputFileStream := TFileStream.Create(UTF8ToSys(FullFileName),fmCreate or fmShareDenyWrite);
+        {$ELSE}
           EntryOutputFileStream := TFileStream.Create(FullFileName,fmCreate or fmShareDenyWrite);
+        {$IFEND}
           try
             If UtilityData.NeedsSizes then
               begin
@@ -1625,25 +1646,22 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProcessFile;
-{$IFDEF FPC}
-var
-  InputFileName:  String;
-{$ENDIF}
 begin
 DoProgress(psProcessing,0.0);
-{$IFDEF FPC}
-InputFileName := UTF8ToAnsi(Self.InputFileName);
-{$ENDIF}
 try
   AllocateBuffers;
   try
     If fProcessingSettings.InMemoryProcessing then
       fInputFileStream := TMemoryStream.Create
     else
-      fInputFileStream := TFileStream.Create(InputFileName,fmOpenRead or fmShareDenyWrite);
+    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      fInputFileStream := TFileStream.Create(UTF8ToSys(fInputFileName),fmOpenRead or fmShareDenyWrite);
+    {$ELSE}
+      fInputFileStream := TFileStream.Create(fInputFileName,fmOpenRead or fmShareDenyWrite);
+    {$IFEND}
     try
       If fProcessingSettings.InMemoryProcessing then
-        ProgressLoadFile(InputFileName,fInputFileStream);
+        ProgressLoadFile(fInputFileName,fInputFileStream);
       If fInputFileStream.Size <= 0 then
         DoError(7,'Input file does not contain any data.');
       If not fProcessingSettings.IgnoreFileSignature then
@@ -1852,7 +1870,7 @@ end;
 constructor TRepairerThread.Create(ProcessingSettings: TProcessingSettings; InputFileName: String);
 begin
 inherited Create(True);
-// to ensure thread safety..
+// to ensure thread safety...
 UniqueString(ProcessingSettings.RepairData);
 UniqueString(InputFileName);
 fRepairer := TRepairer.Create(ProcessingSettings,InputFileName);

@@ -4,7 +4,6 @@ pushd .
 
 cd ..\MainProgram\Resources
 call "Build zlib (windres).bat"
-call "Build SettDescr (windres).bat"
 call "Build SettDescr (brcc32).bat"
 
 cd ..\Delphi

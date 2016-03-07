@@ -24,6 +24,8 @@ type
   end;
 {$ENDIF}
 
+  { TfMainForm }
+
   TfMainForm = class(TForm)
     lblFiles: TLabel;
     lvFiles: TListView;
@@ -85,8 +87,11 @@ var
 implementation
 
 uses
-  {$IFNDEF FPC}Windows,{$ELSE}FileUtil,{$ENDIF} ShellAPI,
-  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo;
+  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
+  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils, LazUTF8
+{$IFEND};
 
 {$IFDEF FPC}
   {$R *.lfm}
@@ -154,12 +159,12 @@ procedure TfMainForm.LoadCopyrightInfo;
 begin
 with TWinFileInfo.Create(WFI_LS_LoadVersionInfo or WFI_LS_LoadFixedFileInfo or WFI_LS_DecodeFixedFileInfo) do
   begin
-    stbStatusBar.Panels[0].Text := {$IFDEF FPC}AnsiToUTF8({$ENDIF}
+    stbStatusBar.Panels[0].Text :=
       VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
       VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' ' +
       {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64 '{$ELSE}+ '32 '{$ENDIF} + zlib_method_str +
       ' #' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
-      {$IFDEF Debug}+ ' debug'{$ENDIF}{$IFDEF FPC}){$ENDIF};
+      {$IFDEF Debug}+ ' debug'{$ENDIF};
     Free;
   end;
 end;
@@ -246,25 +251,34 @@ end;
 
 procedure TfMainForm.LoadFilesFromParams;
 var
-  i:  Integer;
+  i:        Integer;
+  FileName: String;
 begin
 If ParamCount > 0 then
   For i := 1 to ParamCount do
-    If {$IFDEF FPC}FileExistsUTF8(ParamStr(i)){$ELSE}FileExists(ParamStr(i)){$ENDIF}  and (FilesManager.IndexOf(ParamStr(i)) < 0) then
-      begin
-        with lvFiles.Items.Add do
-          begin
-            SubItems.Add('');
-            SubItems.Add('');
-            SubItems.Add('');
-            SubItems.Add('');
-          end;
-      {$IFDEF FPC}
-        FilesManager.Add(ExpandFileNameUTF8(ParamStr(i)));
-      {$ELSE}
-        FilesManager.Add(ExpandFileName(ParamStr(i)));
-      {$ENDIF}
+    begin
+    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      FileName := SysToUTF8(ParamStr(i));
+      If FileExistsUTF8(FileName) and (FilesManager.IndexOf(FileName) < 0) then
+    {$ELSE}
+      FileName := ParamStr(i);
+      If FileExists(FileName) and (FilesManager.IndexOf(FileName) < 0) then
+    {$IFEND}
+        begin
+          with lvFiles.Items.Add do
+            begin
+              SubItems.Add('');
+              SubItems.Add('');
+              SubItems.Add('');
+              SubItems.Add('');
+            end;
+        {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+          FilesManager.Add(ExpandFileNameUTF8(FileName));
+        {$ELSE}
+          FilesManager.Add(ExpandFileName(FileName));
+        {$IFEND}
       end;
+    end;
 end;
 
 //------------------------------------------------------------------------------
@@ -293,7 +307,11 @@ FilesManager.OnProgress := OnProgress;
 FilesManager.OnFileStatus := OnFileStatus;
 FilesManager.OnStatus := OnStatus;
 OnStatus(nil);
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+diaOpenDialog.InitialDir := ExtractFileDir(SysToUTF8(ParamStr(0)));
+{$ELSE}
 diaOpenDialog.InitialDir := ExtractFileDir(ParamStr(0));
+{$IFEND}
 mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
 mfErrorInfo.ShortCut := ShortCut(Ord('E'),[ssAlt]);
 mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
@@ -399,9 +417,9 @@ begin
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount > 0) then
   begin
     If lvFiles.SelCount > 1 then
-      MsgText := 'Are you sure you want remove selected files (%d)?'
+      MsgText := 'Are you sure you want to remove selected files (%d)?'
     else
-      MsgText := 'Are you sure you want remove selected file?';
+      MsgText := 'Are you sure you want to remove selected file?';
     If MessageDlg(Format(MsgText,[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
       For i := Pred(FilesManager.Count) downto 0 do
         If lvFiles.Items[i].Selected then
@@ -417,7 +435,7 @@ end;
 procedure TfMainForm.mfClearClick(Sender: TObject);
 begin
 If (FilesManager.Status = mstReady) and (lvFiles.Items.Count > 0) then
-  If MessageDlg('Are you sure you want clear the entire list?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
+  If MessageDlg('Are you sure you want to clear the entire list?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
     begin
       lvFiles.Clear;
       FilesManager.Clear;
@@ -497,14 +515,17 @@ end;
 //------------------------------------------------------------------------------
 
 {$IFDEF FPC}
-procedure TfMainForm.FormDropFiles(Sender: TObject;
-  const FileNames: array of String);
+procedure TfMainForm.FormDropFiles(Sender: TObject; const FileNames: array of String);
 var
   i:  Integer;
 begin
 If FilesManager.Status = mstReady then
   For i := Low(FileNames) to High(FileNames) do
+  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
     If FileExistsUTF8(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+  {$ELSE}
+    If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+  {$IFEND}
       begin
         with lvFiles.Items.Add do
           begin
