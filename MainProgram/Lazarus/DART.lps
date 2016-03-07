@@ -8,6 +8,7 @@
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <CursorPos Y="25"/>
         <UsageCount Value="67"/>
         <Loaded Value="True"/>
@@ -49,7 +50,6 @@
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="5"/>
         <TopLine Value="393"/>
         <CursorPos X="17" Y="1643"/>
