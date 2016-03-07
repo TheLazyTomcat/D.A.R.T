@@ -12,7 +12,7 @@ interface
 {$IFDEF FPC}{$MODE Delphi}{$ENDIF}
 
 uses
-  Classes, Repairer;
+  Classes, Repairer{$IFNDEF FPC}, AuxTypes{$ENDIF};
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -21,12 +21,6 @@ uses
 {==============================================================================}
 
 type
-{$IF defined(FPC) or (CompilerVersion >= 18)}
-  TMemSize = UInt64;
-{$ELSE}
-  TMemSize = Int64;
-{$IFEND}
-
   TFileStatus = (fstUnknown,fstReady,fstProcessing,fstDone,fstError);
 
   TFileListItem = record
@@ -58,7 +52,7 @@ type
     fRepairer:          TRepairerThread;
     fTerminatingThread: array of TThread;
     fProgress:          Single;
-    fAvailableMemory:   TMemSize;
+    fAvailableMemory:   UInt64;
     fOnProgress:        TProgressEvent;
     fOnFileStatus:      TProgressEvent;
     fOnStatus:          TNotifyEvent;
@@ -101,19 +95,22 @@ type
 implementation
 
 uses
-  Windows, SysUtils;
+  Windows, SysUtils
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils, LazUTF8
+{$IFEND};
 
 type
   TMemoryStatusEx = record
     dwLength:                 LongWord;
     dwMemoryLoad:             LongWord;
-    ullTotalPhys:             TMemSize;
-    ullAvailPhys:             TMemSize;
-    ullTotalPageFile:         TMemSize;
-    ullAvailPageFile:         TMemSize;
-    ullTotalVirtual:          TMemSize;
-    ullAvailVirtual:          TMemSize;
-    ullAvailExtendedVirtual:  TMemSize;
+    ullTotalPhys:             UInt64;
+    ullAvailPhys:             UInt64;
+    ullTotalPageFile:         UInt64;
+    ullAvailPageFile:         UInt64;
+    ullTotalVirtual:          UInt64;
+    ullAvailVirtual:          UInt64;
+    ullAvailExtendedVirtual:  UInt64;
   end;
   PMemoryStatusEx = ^TMemoryStatusEx;
 
@@ -127,17 +124,21 @@ Function GetFileSize(const FilePath: String): Int64;
 var
   SearchResult: TSearchRec;
 begin
-{$IFDEF FPC}
-If FindFirst(UTF8ToAnsi(FilePath),faAnyFile,SearchResult) = 0 then
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+If FindFirstUTF8(FilePath,faAnyFile,SearchResult) = 0 then
 {$ELSE}
 If FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
-{$ENDIF}
+{$IFEND}
   begin
-    {$WARN SYMBOL_PLATFORM OFF}
+  {$WARN SYMBOL_PLATFORM OFF}
     Int64Rec(Result).Hi := SearchResult.FindData.nFileSizeHigh;
     Int64Rec(Result).Lo := SearchResult.FindData.nFileSizeLow;
-    {$WARN SYMBOL_PLATFORM ON}
+  {$WARN SYMBOL_PLATFORM ON}
+  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+    FindCloseUTF8(SearchResult);
+  {$ELSE}
     FindClose(SearchResult);
+  {$IFEND}
     end
   else Result := 0;
 end;
@@ -320,10 +321,16 @@ end;
 //------------------------------------------------------------------------------
 
 Function TFilesManager.IndexOf(const FilePath: String): Integer;
+var
+  i:  Integer;
 begin
-For Result := Low(fFileList) to High(fFileList) do
-  If AnsiSameText(FilePath,fFileList[Result].Path) then Exit;
 Result := -1;
+For i := Low(fFileList) to High(fFileList) do
+  If AnsiSameText(FilePath,fFileList[i].Path) then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
  
 //------------------------------------------------------------------------------

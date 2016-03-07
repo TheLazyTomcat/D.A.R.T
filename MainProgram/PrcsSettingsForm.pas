@@ -109,10 +109,13 @@ implementation
 {$ENDIF}  
 
 uses
-  Windows, StrUtils, Repairer,{$IFDEF FPC}FileUtil,{$ENDIF}
+  Windows, StrUtils, Repairer,
 {$WARN UNIT_PLATFORM OFF}
-  FileCtrl;
+  FileCtrl
 {$WARN UNIT_PLATFORM ON}
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils, LazUTF8
+{$IFEND};
 
 
 {$R '.\Resources\SettDescr.res'}
@@ -130,10 +133,16 @@ var
   TempStr:        String;
 
   Function FindNextTag(Start: Integer): Integer;
+  var
+    ii: Integer;
   begin
-    For Result := Start to Pred(TempStrList.Count) do
-      If AnsiStartsText('#',TempStrList[Result]) then Exit;
     Result := TempStrList.Count;
+    For ii := Start to Pred(TempStrList.Count) do
+      If AnsiStartsText('#',TempStrList[ii]) then
+        begin
+          Result := ii;
+          Break;
+        end;
   end;
 
 begin
@@ -229,20 +238,20 @@ begin
 If rbRebuild.Checked then
   begin
     fFileInfo.ProcessingSettings.RepairMethod := rmRebuild;
-  {$IFDEF FPC}
+  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
     fFileInfo.ProcessingSettings.RepairData := ExpandFileNameUTF8(lbleData.Text);
   {$ELSE}
     fFileInfo.ProcessingSettings.RepairData := ExpandFileName(lbleData.Text);
-  {$ENDIF}
+  {$IFEND}
   end;
 If rbExtract.Checked then
   begin
     fFileInfo.ProcessingSettings.RepairMethod := rmExtract;
-  {$IFDEF FPC}
+  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
     fFileInfo.ProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileNameUTF8(lbleData.Text));
   {$ELSE}
     fFileInfo.ProcessingSettings.RepairData := IncludeTrailingPathDelimiter(ExpandFileName(lbleData.Text));
-  {$ENDIF}
+  {$IFEND}
   end;
 fFileInfo.ProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fFileInfo.ProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
@@ -491,33 +500,26 @@ var
 begin
 case btnBrowse.Tag of
   2:  begin
-      {$IFDEF FPC}
+      {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
         TempStr := ExpandFileNameUTF8(lbleData.Text);
         If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then
       {$ELSE}
         TempStr := ExpandFileName(lbleData.Text);
         If DirectoryExists(ExtractFileDir(TempStr)) then
-      {$ENDIF}
+      {$IFEND}
           diaSaveDialog.InitialDir := ExtractFileDir(TempStr);
         diaSaveDialog.FileName := TempStr;  
         If diaSaveDialog.Execute then
           lbleData.Text := diaSaveDialog.FileName;
       end;
   3:  begin
-      {$IFDEF FPC}
+      {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
         TempStr := ExpandFileNameUTF8(IncludeTrailingPathDelimiter(lbleData.Text));
         If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then TempStr := ExtractFileDir(TempStr)
           else If DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(TempStr + '..\'))) then
             TempStr := ExtractFileDir(ExpandFileNameUTF8(TempStr + '..\'))
           else
-            TempStr := ExtractFileDir(ParamStr(0));
-        with TSelectDirectoryDialog.Create(Self) do
-          begin
-            Title := 'Select folder for archive extraction.';
-            InitialDir := TempStr;
-            If Execute then
-              lbleData.Text := FileName;
-          end;
+            TempStr := ExtractFileDir(SysToUTF8(ParamStr(0)));
       {$ELSE}
         TempStr := ExpandFileName(IncludeTrailingPathDelimiter(lbleData.Text));
         If DirectoryExists(ExtractFileDir(TempStr)) then TempStr := ExtractFileDir(TempStr)
@@ -525,6 +527,16 @@ case btnBrowse.Tag of
             TempStr := ExtractFileDir(ExpandFileName(TempStr + '..\'))
           else
             TempStr := ExtractFileDir(ParamStr(0));
+      {$IFEND}
+      {$IFDEF FPC}
+        with TSelectDirectoryDialog.Create(Self) do
+          begin
+            Title := 'Select folder for archive extraction.';
+            InitialDir := TempStr;
+            If Execute then
+              lbleData.Text := IncludeTrailingPathDelimiter(FileName);
+          end;
+      {$ELSE}
         If SelectDirectory('Select folder for archive extraction.','',TempStr) then
           lbleData.Text := IncludeTrailingPathDelimiter(TempStr);
       {$ENDIF}

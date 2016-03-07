@@ -10,9 +10,9 @@
 
   Auxiliary types
 
-  ©František Milt 2015-11-14
+  ©František Milt 2016-01-05
 
-  Version 1.0.1
+  Version 1.0.3
 
 ===============================================================================}
 unit AuxTypes;
@@ -38,15 +38,15 @@ type
 {$IF (SizeOf(LongInt) = 4) and (SizeOf(LongWord) = 4)}
   Int32  = LongInt;       UInt32  = LongWord;
 {$ELSE}
-{$IF (SizeOf(Integer) <> 4) and (SizeOf(Cardinal) <> 4)}
-  {$MESSAGE FATAL 'Wrong size of type 32bit integers'}
-{$ELSE}
+  {$IF (SizeOf(Integer) <> 4) or (SizeOf(Cardinal) <> 4)}
+    {$MESSAGE FATAL 'Wrong size of 32bit integers'}
+  {$ELSE}
   Int32  = Integer;       UInt32  = Cardinal;
-{$IFEND}
+  {$IFEND}
 {$IFEND}
   PInt32 = ^Int32;        PUInt32 = ^UInt32;
 
-{$IF defined(DCC) or declared(CompilerVersion) and not defined(FPC)}
+{$IF (defined(DCC) or declared(CompilerVersion)) and not defined(FPC)}
   // assumes Delphi (DCC symbol is not defined in older Delphi than XE2)
   {$IF (CompilerVersion <= 17)}
   UInt64 = Int64;   
@@ -70,12 +70,14 @@ type
 {$ELSE}
   {$MESSAGE FATAL 'Unsupported size of pointer type'}
 {$IFEND}
+  PPtrInt  = ^PtrInt;
+  PPtrUInt = ^PtrUInt;
 
-  TStrSize = Int32;
-  TMemSize = PtrUInt;
+  TStrSize = Int32;       PStrSize = ^TStrSize;
+  TMemSize = PtrUInt;     PMemSize = ^TMemSize;
 
-  NativeInt  = PtrInt;
-  NativeUInt = PtrUInt;
+  NativeInt  = PtrInt;    PNativeInt  = ^NativeInt;
+  NativeUInt = PtrUInt;   PNativeUInt = ^NativeUInt;
 
 //== Floats ====================================================================
 
@@ -109,7 +111,7 @@ type
   PUnicodeString = ^UnicodeString;
 
 {$IF not declared(UTF8Char)}
-  UTF8Char = AnsiChar;
+  UTF8Char = type AnsiChar;
 {$IFEND}
   PUTF8Char = ^UTF8Char;
 

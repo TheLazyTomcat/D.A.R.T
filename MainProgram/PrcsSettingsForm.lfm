@@ -1,7 +1,7 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 60
+  Left = 298
   Height = 624
-  Top = 59
+  Top = 113
   Width = 944
   BorderStyle = bsDialog
   Caption = 'Processing settings'
@@ -14,7 +14,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poMainFormCenter
-  LCLVersion = '1.4.2.0'
+  LCLVersion = '1.6.0.4'
   object lblSettingDescription: TLabel
     Left = 576
     Height = 13

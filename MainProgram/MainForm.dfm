@@ -1,5 +1,5 @@
 object fMainForm: TfMainForm
-  Left = 327
+  Left = 584
   Top = 112
   BorderStyle = bsSingle
   Caption = 'D.A.R.T - Damaged Archives Repair Tool'

@@ -1,6 +1,6 @@
 ﻿================================================================================
 
-                  D.A.R.T - Damaged Archives Repair Tool 1.0.1
+                  D.A.R.T - Damaged Archives Repair Tool 1.0.2
 
 ================================================================================
 
@@ -14,12 +14,12 @@ which each part starts.
   Installation ............................................  46
   How to use the program ..................................  56
   Changelog ...............................................  80
-  Known issues ............................................  95
-  Source code ............................................. 102
-  Licensing ............................................... 111
-  Authors, contacts ....................................... 119
-  Links ................................................... 125
-  Copyright ............................................... 131
+  Known issues ............................................ 101
+  Source code ............................................. 108
+  Licensing ............................................... 117
+  Authors, contacts ....................................... 125
+  Links ................................................... 131
+  Copyright ............................................... 137
 
 
 
@@ -80,6 +80,12 @@ WARNING - It is possible for the program to finish processing successfully
 Changelog
 ------------------------------
 List of changes between individual versions of this program.
+
+D.A.R.T 1.0.1 -> D.A.R.T 1.0.2
+  - large number of corrections in Lazarus/FPC builds to ensure proper handling
+    of non-ascii characters in file paths
+  - orher small changes and corrections
+
 
 SCS Unlocker 2.0.0 -> D.A.R.T 1.0.1 (project was renamed)
   - project renamed to D.A.R.T - Damaged Archives Repair Tool

@@ -1,7 +1,7 @@
 object fMainForm: TfMainForm
-  Left = 327
+  Left = 583
   Height = 477
-  Top = 112
+  Top = 119
   Width = 688
   BorderStyle = bsSingle
   Caption = 'D.A.R.T - Damaged Archives Repair Tool'
@@ -15,9 +15,10 @@ object fMainForm: TfMainForm
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnDropFiles = FormDropFiles
   OnResize = FormResize
   Position = poScreenCenter
-  LCLVersion = '1.4.4.0'
+  LCLVersion = '1.6.0.4'
   object lblFiles: TLabel
     Left = 8
     Height = 13
