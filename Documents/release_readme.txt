@@ -136,4 +136,4 @@ Forum thread: http://forum.scssoft.com/viewtopic.php?f=41&t=192120
 
 Copyright
 ------------------------------
-©2015 František Milt, all rights reserved
+©2015-2016 František Milt, all rights reserved
