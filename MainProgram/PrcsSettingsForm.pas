@@ -16,6 +16,9 @@ uses
   FilesManager;
 
 type
+
+  { TfPrcsSettingsForm }
+
   TfPrcsSettingsForm = class(TForm)
     diaSaveDialog: TSaveDialog;
     grbGeneral: TGroupBox;
@@ -29,7 +32,8 @@ type
     cbIgnoreFileSignature: TCheckBox;
     cbAssumeCompressionMethods: TCheckBox;
     cbInMemoryProcessing: TCheckBox;
-    cbIgnoreProcessingErrors: TCheckBox;       
+    cbIgnoreProcessingErrors: TCheckBox;
+    cbLogIgnoredErrors: TCheckBox;
     grdEndOfCentralDirectory: TGroupBox;
     cbIgnoreEndOfCentralDirectory: TCheckBox;
     cbIgnoreDiskSplit: TCheckBox;
@@ -193,6 +197,7 @@ cbAssumeCompressionMethods.Checked := fFileInfo.ProcessingSettings.AssumeCompres
 cbInMemoryProcessing.Checked := fFileInfo.ProcessingSettings.InMemoryProcessing;
 cbInMemoryProcessing.Enabled := fFileInfo.ProcessingSettings.OtherSettings.InMemoryProcessingAllowed;
 cbIgnoreProcessingErrors.Checked := fFileInfo.ProcessingSettings.IgnoreProcessingErrors;
+cbLogIgnoredErrors.Checked := fFileInfo.ProcessingSettings.LogIgnoredErrors;
 //eocd
 cbIgnoreEndOfCentralDirectory.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory;
 cbIgnoreDiskSplit.Checked := fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit;
@@ -257,6 +262,7 @@ fFileInfo.ProcessingSettings.IgnoreFileSignature := cbIgnoreFileSignature.Checke
 fFileInfo.ProcessingSettings.AssumeCompressionMethods := cbAssumeCompressionMethods.Checked;
 fFileInfo.ProcessingSettings.InMemoryProcessing := cbInMemoryProcessing.Checked;
 fFileInfo.ProcessingSettings.IgnoreProcessingErrors := cbIgnoreProcessingErrors.Checked;
+fFileInfo.ProcessingSettings.LogIgnoredErrors := cbLogIgnoredErrors.Checked;
 //eocd
 fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory := cbIgnoreEndOfCentralDirectory.Checked;
 fFileInfo.ProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit := cbIgnoreDiskSplit.Checked;
@@ -310,6 +316,7 @@ try
 finally
   fLoading := False;
 end;
+cbIgnoreProcessingErrors.OnClick(cbIgnoreProcessingErrors);
 cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
 cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
 cbLHIgnoreLocalHeaders.OnClick(cbLHIgnoreLocalHeaders);
@@ -341,6 +348,7 @@ If Sender is TRadioButton then
     else
       cbIgnoreProcessingErrors.Enabled := False;    
     end;
+    cbIgnoreProcessingErrors.OnClick(cbIgnoreProcessingErrors);
     lbleData.Text := fFileInfo.ProcessingSettings.RepairData;
   end;
 end;
@@ -352,6 +360,7 @@ begin
 If (Sender is TCheckBox) and not fLoading then
   begin
     case TCheckBox(Sender).Tag of
+        9:  cbLogIgnoredErrors.Enabled := cbIgnoreProcessingErrors.Checked and cbIgnoreProcessingErrors.Enabled;
        20:  begin
               cbIgnoreDiskSplit.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;
               cbIgnoreNumberOfEntries.Enabled := not cbIgnoreEndOfCentralDirectory.Checked;

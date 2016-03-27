@@ -228,6 +228,7 @@ type
     AssumeCompressionMethods: Boolean;
     InMemoryProcessing:       Boolean;
     IgnoreProcessingErrors:   Boolean;
+    LogIgnoredErrors:         Boolean;
     EndOfCentralDirectory:    TEndOfCentralDirectoryProcessingSettings;
     CentralDirectory:         TCentralDirectoryProcessingSettings;
     LocalHeader:              TLocalHeaderProcessingSettings;
@@ -242,6 +243,7 @@ const
     AssumeCompressionMethods: False;
     InMemoryProcessing:       False;
     IgnoreProcessingErrors:   False;
+    LogIgnoredErrors:         False;  
     EndOfCentralDirectory: (
       IgnoreEndOfCentralDirectory:  False;
       IgnoreDiskSplit:              True;
@@ -319,7 +321,7 @@ type
 {==============================================================================}
   TRepairer = class(TObject)
   private
-    fTerminated:          Integer;
+    fTerminated:          Integer;  // 0 = continue, +x = internal error, -x = terminated
     fProcessingSettings:  TProcessingSettings;
     fInputFileName:       String;
     fInputFileStream:     TStream;
@@ -331,6 +333,7 @@ type
     fEntryCompressed:     TBuffer;
     fEntryUncompressed:   TBuffer;
   {$ENDIF}
+    fIgnoredErrors:       TStringList;
     fOnProgress:          TProgressEvent;
   protected
     procedure ValidateProcessingSettings; virtual;
@@ -356,8 +359,8 @@ type
     procedure AllocateBuffers; virtual;
     procedure FreeBuffers; virtual;
     procedure DoProgress(ProgressStage: TProgressStage; Data: Single); virtual;
-    procedure DoError(MethodIdx: Integer; ErrorText: String; Values: array of const); overload; virtual;
-    procedure DoError(MethodIdx: Integer; ErrorText: String); overload; virtual;
+    procedure DoError(MethodIdx: Integer; ErrorText: String; Values: array of const; TerminationFlag: Integer = 1); overload; virtual;
+    procedure DoError(MethodIdx: Integer; ErrorText: String; TerminationFlag: Integer = 1); overload; virtual;
   public
     constructor Create(ProcessingSettings: TProcessingSettings; InputFileName: String);
     destructor Destroy; override;
@@ -628,6 +631,9 @@ If EOCDPosition >= 0 then
                   begin
                     SetLength(Comment,BinPart.CommentLength);
                     fInputFileStream.ReadBuffer(PAnsiChar(Comment)^,BinPart.CommentLength);
+                  {$IFDEF FPC}
+                    Comment := WinCPToUTF8(Comment);
+                  {$ENDIF}
                   end
                 else DoError(2,'Not enough data for end of central directory comment.');
               end;
@@ -694,6 +700,9 @@ var
         // load file name
         SetLength(FileName,BinPart.FilenameLength);
         fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+      {$IFDEF FPC}
+        FileName := WinCPToUTF8(FileName);
+      {$ENDIF}
         // file attributes must be done here because file name is required
         If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
           BinPart.InternalFileAttributes := 0;
@@ -725,6 +734,9 @@ var
           begin
             SetLength(FileComment,BinPart.FileCommentLength);
             fInputFileStream.ReadBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
+          {$IFDEF FPC}
+            FileComment := WinCPToUTF8(FileComment);
+          {$ENDIF}
           end;
     end;
   end;
@@ -833,6 +845,9 @@ var
           begin
             SetLength(FileName,BinPart.FileNameLength);
             fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+          {$IFDEF FPC}
+            FileName := WinCPToUTF8(FileName);
+          {$ENDIF}
           end;
         // extra field
         If fProcessingSettings.LocalHeader.IgnoreExtraField then
@@ -946,7 +961,7 @@ else
               DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
               If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
                 If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
-                  DoError(5,'Mismatch in local and central directory file name for entry #%d.',[i]);
+                  DoError(5,'Mismatch in local and central directory file name for entry #%d (%s; %s).',[i,FileName,fInputFileStructure.Entries[i].LocalHeader.FileName]);
             end;
       end
     else
@@ -1236,7 +1251,7 @@ var
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
+          DoError(10,' zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
         else
           DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
       {$ELSE}
@@ -1585,10 +1600,15 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
           end;
         end;
     except
-      If fProcessingSettings.IgnoreProcessingErrors then
-        InterlockedExchange(fTerminated,0)
-      else
-        raise;
+     on E: Exception do
+       begin
+          If fProcessingSettings.IgnoreProcessingErrors and (InterlockedExchangeAdd(fTerminated,0) >= 0) then
+            begin
+              InterlockedExchange(fTerminated,0);
+              fIgnoredErrors.Add(Format('%s: %s',[E.ClassName,E.Message]));
+            end
+          else raise;
+        end;
     end;
 DoProgress(psEntriesProcessing,1.0);
 end;
@@ -1670,9 +1690,18 @@ try
         rmRebuild:  ProcessFile_Rebuild;
         rmExtract:  ProcessFile_Extract;
       else
-        DoError(7,'Unknown repair method (%d).',[Integer(fProcessingSettings.RepairMethod)]);
+        DoError(7,'Unknown repair method (%d).',[Ord(fProcessingSettings.RepairMethod)]);
       end;
       DoProgress(psProcessing,2.0);
+      If (fProcessingSettings.RepairMethod = rmExtract) and fProcessingSettings.IgnoreProcessingErrors and
+        fProcessingSettings.LogIgnoredErrors and (fIgnoredErrors.Count > 0) then
+        begin
+        {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+          fIgnoredErrors.SaveToFile(UTF8ToSys(fInputFileName + '.ignored_errors.log'));
+        {$ELSE}
+          fIgnoredErrors.SaveToFile(fInputFileName + '.ignored_errors.log');
+        {$IFEND}
+        end;
     finally
       fInputFileStream.Free;
     end;
@@ -1752,7 +1781,7 @@ begin
 If ProgressStage <> psProcessing then
   If Data > 1.0 then Data := 1.0;
 If (ProgressStage <> psError) and (InterlockedExchange(fTerminated,0) <> 0) then
-  DoError(-1,'Processing terminated. Data can be in inconsistent state.');
+  DoError(-1,'Processing terminated. Data can be in inconsistent state.',-1);
 If ProgressStage <> psNoProgress then
   begin
     Data := fProgressInfo[ProgressStage].Offset + (fProgressInfo[ProgressStage].Range * Data);
@@ -1762,22 +1791,22 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer.DoError(MethodIdx: Integer; ErrorText: String; Values: array of const);
+procedure TRepairer.DoError(MethodIdx: Integer; ErrorText: String; Values: array of const; TerminationFlag: Integer = 1);
 begin
 fErrorData.MethodIdx := MethodIdx;
 If (MethodIdx >= Low(MethodNames)) and (MethodIdx <= High(MethodNames)) then
   fErrorData.MethodName := MethodNames[MethodIdx]
 else
   fErrorData.MethodName := 'unknown method';
-InterlockedExchange(fTerminated,-1);
+InterlockedExchange(fTerminated,TerminationFlag);
 raise ERepairerException.Create(Format(ErrorText,Values,ThreadFormatSettings));
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-procedure TRepairer.DoError(MethodIdx: Integer; ErrorText: String);
+procedure TRepairer.DoError(MethodIdx: Integer; ErrorText: String; TerminationFlag: Integer = 1);
 begin
-DoError(MethodIdx,ErrorText,[]);
+DoError(MethodIdx,ErrorText,[],TerminationFlag);
 end;
 
 {------------------------------------------------------------------------------}
@@ -1798,12 +1827,14 @@ fErrorData.SourceClass := Self.ClassName;
 fErrorData.MethodIdx := -1;
 fErrorData.MethodName := 'unknown method';
 fErrorData.ThreadID := GetCurrentThreadID;
+fIgnoredErrors := TStringList.Create
 end;
 
 //------------------------------------------------------------------------------
 
 destructor TRepairer.Destroy;
 begin
+fIgnoredErrors.Free;
 inherited;
 end;
 

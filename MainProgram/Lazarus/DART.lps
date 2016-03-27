@@ -4,13 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="50">
+    <Units Count="54">
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
+        <TopLine Value="7"/>
         <CursorPos Y="25"/>
-        <UsageCount Value="67"/>
+        <UsageCount Value="69"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -21,7 +21,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="67"/>
+        <UsageCount Value="69"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -30,10 +30,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="98"/>
-        <CursorPos Y="116"/>
-        <UsageCount Value="67"/>
+        <TopLine Value="68"/>
+        <CursorPos X="97" Y="84"/>
+        <UsageCount Value="69"/>
         <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -43,26 +44,33 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="3"/>
         <TopLine Value="33"/>
-        <CursorPos X="78" Y="15"/>
-        <UsageCount Value="67"/>
+        <CursorPos X="15" Y="44"/>
+        <UsageCount Value="69"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="393"/>
-        <CursorPos X="17" Y="1643"/>
-        <UsageCount Value="67"/>
+        <TopLine Value="848"/>
+        <CursorPos Y="848"/>
+        <UsageCount Value="69"/>
+        <Bookmarks Count="4">
+          <Item0 X="9" Y="1515" ID="1"/>
+          <Item1 X="23" Y="629" ID="2"/>
+          <Item2 X="40" Y="700" ID="3"/>
+          <Item3 X="59" Y="846" ID="4"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\FilesManager.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="82"/>
-        <CursorPos Y="99"/>
-        <UsageCount Value="67"/>
+        <TopLine Value="150"/>
+        <CursorPos Y="167"/>
+        <UsageCount Value="69"/>
         <Loaded Value="True"/>
       </Unit5>
       <Unit6>
@@ -78,9 +86,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="516"/>
-        <CursorPos Y="94"/>
-        <UsageCount Value="32"/>
+        <TopLine Value="341"/>
+        <CursorPos Y="354"/>
+        <UsageCount Value="33"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit7>
@@ -96,7 +104,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1154"/>
         <CursorPos Y="1173"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="10"/>
       </Unit9>
       <Unit10>
         <Filename Value="D:\Lazarus\components\lazutils\fileutil.pas"/>
@@ -372,132 +380,155 @@
         <CursorPos X="3" Y="111"/>
         <UsageCount Value="10"/>
       </Unit49>
+      <Unit50>
+        <Filename Value="PrcsSettingsForm.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="108"/>
+        <CursorPos X="9" Y="602"/>
+        <UsageCount Value="10"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="..\PrcsSettingsForm.lfm"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="D:\Lazarus\fpc\3.0.0\source\rtl\inc\ustringh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="117"/>
+        <CursorPos X="18" Y="130"/>
+        <UsageCount Value="10"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="D:\Lazarus\fpc\3.0.0\source\rtl\inc\ustrings.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2107"/>
+        <CursorPos X="5" Y="2114"/>
+        <UsageCount Value="10"/>
+      </Unit53>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
         <Filename Value="..\PrcsSettingsForm.pas"/>
-        <Caret Line="294" Column="28" TopLine="285"/>
+        <Caret Line="84" Column="97" TopLine="68"/>
       </Position1>
       <Position2>
-        <Filename Value="..\PrcsSettingsForm.pas"/>
-        <Caret Line="112" Column="65" TopLine="102"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1795" Column="97" TopLine="1777"/>
       </Position2>
       <Position3>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="14" Column="19" TopLine="5"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="1789" Column="50" TopLine="1485"/>
       </Position3>
       <Position4>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1629" Column="6" TopLine="1530"/>
+        <Caret Line="1790" TopLine="1777"/>
       </Position4>
       <Position5>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1483" Column="9" TopLine="1475"/>
+        <Caret Line="1503" Column="9" TopLine="1473"/>
       </Position5>
       <Position6>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1852" Column="30" TopLine="1690"/>
+        <Caret Line="1478" TopLine="1473"/>
       </Position6>
       <Position7>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1289" Column="17" TopLine="1285"/>
+        <Caret Line="1480" TopLine="1473"/>
       </Position7>
       <Position8>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1302" Column="15" TopLine="1285"/>
+        <Caret Line="1483" Column="46" TopLine="1472"/>
       </Position8>
       <Position9>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1304" Column="15" TopLine="1285"/>
+        <Caret Line="1791" TopLine="1768"/>
       </Position9>
       <Position10>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1306" Column="47" TopLine="1295"/>
+        <Caret Line="561" Column="72" TopLine="553"/>
       </Position10>
       <Position11>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1310" Column="57" TopLine="1301"/>
+        <Caret Line="608" Column="40" TopLine="586"/>
       </Position11>
       <Position12>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1308" Column="52" TopLine="1300"/>
+        <Caret Line="633" Column="48" TopLine="612"/>
       </Position12>
       <Position13>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1310" Column="57" TopLine="1300"/>
+        <Caret Line="656" Column="36" TopLine="634"/>
       </Position13>
       <Position14>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1435" Column="36" TopLine="1420"/>
+        <Caret Line="699" Column="36" TopLine="679"/>
       </Position14>
       <Position15>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="345" Column="30" TopLine="333"/>
+        <Caret Line="719" Column="40" TopLine="705"/>
       </Position15>
       <Position16>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1084" Column="36" TopLine="1083"/>
+        <Caret Line="730" Column="40" TopLine="710"/>
       </Position16>
       <Position17>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1643" Column="24" TopLine="1621"/>
+        <Caret Line="791" Column="36" TopLine="769"/>
       </Position17>
       <Position18>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="134" Column="46" TopLine="110"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="837" Column="58" TopLine="818"/>
       </Position18>
       <Position19>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="122" Column="34" TopLine="110"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="838" Column="40" TopLine="818"/>
       </Position19>
       <Position20>
-        <Filename Value="..\FilesManager.pas"/>
-        <Caret Line="326" Column="39" TopLine="310"/>
+        <Filename Value="..\Repairer.pas"/>
+        <Caret Line="849" Column="40" TopLine="829"/>
       </Position20>
       <Position21>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1658" Column="20" TopLine="1638"/>
+        <Caret Line="863" Column="44" TopLine="843"/>
       </Position21>
       <Position22>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1482" Column="9" TopLine="1471"/>
+        <Caret Line="1197" Column="22" TopLine="1175"/>
       </Position22>
       <Position23>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1438" TopLine="1420"/>
+        <Caret Line="608" Column="40" TopLine="596"/>
       </Position23>
       <Position24>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1300" Column="2" TopLine="1287"/>
+        <Caret Line="625" Column="75" TopLine="612"/>
       </Position24>
       <Position25>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1477" Column="9" TopLine="1466"/>
+        <Caret Line="1503" Column="9" TopLine="1491"/>
       </Position25>
       <Position26>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1620" Column="46" TopLine="1609"/>
+        <Caret Line="634" Column="19" TopLine="616"/>
       </Position26>
       <Position27>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1300" Column="2" TopLine="1287"/>
+        <Caret Line="134" Column="39" TopLine="131"/>
       </Position27>
       <Position28>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="1477" Column="9" TopLine="1466"/>
+        <Caret Line="635" Column="37" TopLine="617"/>
       </Position28>
       <Position29>
-        <Filename Value="..\MainForm.pas"/>
-        <Caret Line="93" Column="16" TopLine="78"/>
-      </Position29>
-      <Position30>
         <Filename Value="..\Repairer.pas"/>
-        <Caret Line="409" Column="68" TopLine="390"/>
-      </Position30>
+        <Caret Line="847" TopLine="828"/>
+      </Position29>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="1">
+    <BreakPoints Count="2">
       <Item1>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
@@ -505,24 +536,21 @@
         <Source Value="..\test.pas"/>
         <Line Value="17"/>
       </Item1>
+      <Item2>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="..\Repairer.pas"/>
+        <Line Value="1515"/>
+      </Item2>
     </BreakPoints>
-    <Watches Count="5">
+    <Watches Count="2">
       <Item1>
         <Expression Value="FileName"/>
       </Item1>
       <Item2>
-        <Expression Value="FileHandle"/>
-        <DisplayStyle Value="wdfHex"/>
+        <Expression Value="FullFileName"/>
       </Item2>
-      <Item3>
-        <Expression Value="ModuleFileName"/>
-      </Item3>
-      <Item4>
-        <Expression Value="fLongName"/>
-      </Item4>
-      <Item5>
-        <Expression Value="fAttributesFlags"/>
-      </Item5>
     </Watches>
   </Debugging>
 </CONFIG>

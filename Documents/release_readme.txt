@@ -1,6 +1,6 @@
 ﻿================================================================================
 
-                  D.A.R.T - Damaged Archives Repair Tool 1.0.2
+                  D.A.R.T - Damaged Archives Repair Tool 1.1.0
 
 ================================================================================
 
@@ -14,12 +14,12 @@ which each part starts.
   Installation ............................................  46
   How to use the program ..................................  56
   Changelog ...............................................  80
-  Known issues ............................................ 101
-  Source code ............................................. 108
-  Licensing ............................................... 117
-  Authors, contacts ....................................... 125
-  Links ................................................... 131
-  Copyright ............................................... 137
+  Known issues ............................................ 104
+  Source code ............................................. 111
+  Licensing ............................................... 120
+  Authors, contacts ....................................... 128
+  Links ................................................... 134
+  Copyright ............................................... 140
 
 
 
@@ -81,7 +81,10 @@ Changelog
 ------------------------------
 List of changes between individual versions of this program.
 
-D.A.R.T 1.0.1 -> D.A.R.T 1.0.2
+D.A.R.T 1.0.1 -> D.A.R.T 1.1.0
+  - added an option to log ignored processing errors
+  - corrected bug where extraction could not be stopped by the user when
+    ignoring of processing errors was activated
   - large number of corrections in Lazarus/FPC builds to ensure proper handling
     of non-ascii characters in file paths
   - orher small changes and corrections

@@ -1,7 +1,7 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 298
+  Left = 301
   Height = 624
-  Top = 113
+  Top = 99
   Width = 944
   BorderStyle = bsDialog
   Caption = 'Processing settings'
@@ -102,6 +102,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Top = 66
       Width = 182
       Caption = 'Limit search to one buffer (~1MiB)'
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
       TabOrder = 5
     end
@@ -450,10 +451,10 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     TabOrder = 0
     OnMouseMove = GroupBoxMouseMove
     object bvlGeneralhorSplit: TBevel
-      Left = 0
+      Left = 6
       Height = 9
       Top = 112
-      Width = 729
+      Width = 545
       Shape = bsTopLine
     end
     object vblGeneralHorSplit_File: TBevel
@@ -555,6 +556,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Top = 122
       Width = 123
       Caption = 'In memory processing'
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
       TabOrder = 6
     end
@@ -565,8 +567,20 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Top = 146
       Width = 136
       Caption = 'Ignore processing errors'
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
       TabOrder = 7
+    end
+    object cbLogIgnoredErrors: TCheckBox
+      Tag = 10
+      Left = 190
+      Height = 17
+      Top = 146
+      Width = 165
+      Caption = 'Log ignored processings errors'
+      OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 8
     end
   end
   object meSettingDescription: TMemo

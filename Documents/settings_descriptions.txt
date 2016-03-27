@@ -29,14 +29,19 @@ When this setting is activated, the input file is completely loaded into memory 
 
 This can be used eg. when input archive contains extremely large number of very small files. Loading and saving of such archive the normal way could take very long time.
 
-The input file must be smaller then or equal to 25% of total physical memory available to the process, otherwise this setting is not available.
-Note that 32bit builds are limited to 2GiB of memory, irrespective of actual size of memory installed in your computer, meaning input file are limited to 512MiB.
+The input file must be smaller than or equal to 25% of total physical memory available to the process, otherwise this setting is not available.
+Note that 32bit builds are limited to 2GiB of memory, irrespective of actual size of memory installed in your computer, meaning input file size is limited to 512MiB.
 #9
 Available only when archive extraction is selected as processing method.
 
 When active, errors raised while individual entries are processed are ignored and processing continues on the next entry. Takes effect only in the data processing, errors raised while the headers are loaded or processed still cause processing termination.
 
 WARNING - use this option with extreme caution and only if you are 100% sure what are you doing.
+#10
+Available only when ignoring of processing errors is active.
+
+When active, all ignored errors (error messages) are logged into a file, so they can be studied lated. Log file has the same name as input file with appended ".ignored_errors.log" suffix.
+Note that log file might be saved empty when no error was encountered during processing.
 #20
 When active, the end of central directory record is not searched for and loaded from the input file. All values of individual fields are reconstructed from other data loaded later from the archive or are filled with default values (zero, empty string).
 #21
