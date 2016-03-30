@@ -69,7 +69,11 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   {$ENDIF}
   protected
-    fSettingsChanged: Boolean;
+    fSettingsChanged:     Boolean;
+    fDefaultAppTitle:     String;
+    fProgressAppTitle:    String;
+    fDefaultFormCaption:  String;
+    fProgressFormCaption: String;
     procedure SettingsChanged(FileIndex: Integer);
   public
     FilesManager: TFilesManager;
@@ -185,7 +189,14 @@ If FilesManager[FileIndex].Status = fstProcessing then
       end;
     Temp := Trunc(prbOverallProgress.Max * FilesManager.Progress);
     If Temp <> prbOverallProgress.Position then
-      prbOverallProgress.Position := Temp;
+      begin
+        prbOverallProgress.Position := Temp;
+        If FilesManager.Status in [mstProcessing, mstTerminating] then
+          begin
+            Application.Title := Format(fProgressAppTitle,[FilesManager.Progress * 100]);
+            Caption := Format(fProgressFormCaption,[FilesManager.Progress * 100]);
+          end;  
+      end;
   end;
 end;
 
@@ -241,7 +252,11 @@ begin
 mnuFiles.OnPopup(nil);
 SetDropAccept(FilesManager.Status = mstReady);
 case FilesManager.Status of
-  mstReady:       btnProcessing.Caption := 'Start processing';
+  mstReady:       begin
+                    btnProcessing.Caption := 'Start processing';
+                    Application.Title := fDefaultAppTitle;
+                    Caption := fDefaultFormCaption;
+                  end;
   mstProcessing:  btnProcessing.Caption := 'Stop processing';
   mstTerminating: btnProcessing.Caption := 'Terminating processing, please wait...';
 end;
@@ -297,6 +312,10 @@ end;
 procedure TfMainForm.FormCreate(Sender: TObject);
 begin
 fSettingsChanged := False;
+fDefaultAppTitle := Application.Title;
+fProgressAppTitle := fDefaultAppTitle + ' - %.0f%%';
+fDefaultFormCaption := Caption;
+fProgressFormCaption := fDefaultFormCaption + ' (%.0f%%)';
 stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
 prbOverallProgress.DoubleBuffered := True;

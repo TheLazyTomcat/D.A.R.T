@@ -51,7 +51,6 @@
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="5"/>
         <TopLine Value="848"/>
         <CursorPos Y="848"/>
@@ -85,6 +84,7 @@
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="341"/>
         <CursorPos Y="354"/>
