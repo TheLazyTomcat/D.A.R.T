@@ -9,6 +9,7 @@ uses
 
   Repairer,
   FilesManager,
+  TaskbarProgress,
 
   MainForm,
   PrcsSettingsForm,

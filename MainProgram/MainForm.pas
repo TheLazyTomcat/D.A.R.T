@@ -92,7 +92,7 @@ implementation
 
 uses
   {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
-  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo
+  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
 {$IFEND};
@@ -195,6 +195,7 @@ If FilesManager[FileIndex].Status = fstProcessing then
           begin
             Application.Title := Format(fProgressAppTitle,[FilesManager.Progress * 100]);
             Caption := Format(fProgressFormCaption,[FilesManager.Progress * 100]);
+            SetTaskbarProgressValue(FilesManager.Progress);
           end;  
       end;
   end;
@@ -256,8 +257,12 @@ case FilesManager.Status of
                     btnProcessing.Caption := 'Start processing';
                     Application.Title := fDefaultAppTitle;
                     Caption := fDefaultFormCaption;
+                    SetTaskbarProgressState(tpsNoProgress);
                   end;
-  mstProcessing:  btnProcessing.Caption := 'Stop processing';
+  mstProcessing:  begin
+                    btnProcessing.Caption := 'Stop processing';
+                    SetTaskbarProgressState(tpsNormal);
+                  end;
   mstTerminating: btnProcessing.Caption := 'Terminating processing, please wait...';
 end;
 end;
@@ -505,6 +510,7 @@ If FilesManager.Count > 0 then
     mstProcessing:  FilesManager.StopProcessing;
     mstTerminating: begin
                       FilesManager.PauseProcessing;
+                      SetTaskbarProgressState(tpsPaused);
                       If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
                                     'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
                                     'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
