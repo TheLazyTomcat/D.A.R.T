@@ -69,8 +69,9 @@
       <Unit6>
         <Filename Value="..\TaskbarProgress.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="113"/>
+        <TopLine Value="158"/>
         <CursorPos X="24" Y="125"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
@@ -87,9 +88,7 @@
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="328"/>
         <CursorPos Y="354"/>
         <UsageCount Value="33"/>
         <Loaded Value="True"/>
@@ -403,60 +402,7 @@
         <UsageCount Value="10"/>
       </Unit54>
     </Units>
-    <JumpHistory Count="13" HistoryIndex="12">
-      <Position1>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="131" TopLine="119"/>
-      </Position1>
-      <Position2>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="133" TopLine="119"/>
-      </Position2>
-      <Position3>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="141" TopLine="119"/>
-      </Position3>
-      <Position4>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="143" TopLine="121"/>
-      </Position4>
-      <Position5>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="131" Column="4" TopLine="121"/>
-      </Position5>
-      <Position6>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="133" TopLine="121"/>
-      </Position6>
-      <Position7>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="135" TopLine="121"/>
-      </Position7>
-      <Position8>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="143" TopLine="125"/>
-      </Position8>
-      <Position9>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="131" TopLine="125"/>
-      </Position9>
-      <Position10>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="133" TopLine="125"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="135" TopLine="125"/>
-      </Position11>
-      <Position12>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="154" Column="73" TopLine="141"/>
-      </Position12>
-      <Position13>
-        <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="125" Column="40" TopLine="116"/>
-      </Position13>
-    </JumpHistory>
+    <JumpHistory HistoryIndex="-1"/>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="2">

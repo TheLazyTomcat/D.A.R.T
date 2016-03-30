@@ -32,8 +32,6 @@ This can be used eg. when input archive contains extremely large number of very 
 The input file must be smaller than or equal to 25% of total physical memory available to the process, otherwise this setting is not available.
 Note that 32bit builds are limited to 2GiB of memory, irrespective of actual size of memory installed in your computer, meaning input file size is limited to 512MiB.
 #9
-Available only when archive extraction is selected as processing method.
-
 When active, errors raised while individual entries are processed are ignored and processing continues on the next entry. Takes effect only in the data processing, errors raised while the headers are loaded or processed still cause processing termination.
 
 WARNING - use this option with extreme caution and only if you are 100% sure what are you doing.
