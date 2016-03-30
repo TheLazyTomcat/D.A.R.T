@@ -338,7 +338,7 @@ If Sender is TRadioButton then
       2:  begin
             lbleData.EditLabel.Caption := 'Output file:';
             fFileInfo.ProcessingSettings.RepairData := ExtractFilePath(fFileInfo.Path) + 'repaired_' + fFileInfo.Name;
-            cbIgnoreProcessingErrors.Enabled := False;
+            cbIgnoreProcessingErrors.Enabled := True;
           end;
       3:  begin
             lbleData.EditLabel.Caption := 'Extract into:';

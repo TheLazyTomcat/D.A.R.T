@@ -403,7 +403,7 @@
         <UsageCount Value="10"/>
       </Unit54>
     </Units>
-    <JumpHistory Count="14" HistoryIndex="13">
+    <JumpHistory Count="13" HistoryIndex="12">
       <Position1>
         <Filename Value="..\TaskbarProgress.pas"/>
         <Caret Line="131" TopLine="119"/>
@@ -450,16 +450,12 @@
       </Position11>
       <Position12>
         <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="131" TopLine="136"/>
+        <Caret Line="154" Column="73" TopLine="141"/>
       </Position12>
       <Position13>
         <Filename Value="..\TaskbarProgress.pas"/>
-        <Caret Line="154" Column="73" TopLine="141"/>
-      </Position13>
-      <Position14>
-        <Filename Value="..\TaskbarProgress.pas"/>
         <Caret Line="125" Column="40" TopLine="116"/>
-      </Position14>
+      </Position13>
     </JumpHistory>
   </ProjectSession>
   <Debugging>

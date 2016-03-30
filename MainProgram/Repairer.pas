@@ -152,6 +152,7 @@ type
     DataOffset:                 Int64;
     NeedsCRC32:                 Boolean;
     NeedsSizes:                 Boolean;
+    Erroneous:                  Boolean;  
   end;
 
 //--- Main structure -----------------------------------------------------------
@@ -349,7 +350,7 @@ type
     procedure ProgressSaveFile(FileName: String; Stream: TStream); virtual;
     procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
-    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single); virtual;
+    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntry: TEntry); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
     procedure ProcessFile_Rebuild; virtual;
@@ -500,8 +501,6 @@ const
 
 procedure TRepairer.ValidateProcessingSettings;
 begin
-If fProcessingSettings.RepairMethod <> rmExtract then
-  fProcessingSettings.IgnoreProcessingErrors := False;
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
   fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
   fProcessingSettings.LocalHeader.IgnoreLocalHeaders := False;
@@ -1234,7 +1233,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single);
+procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntry: TEntry);
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -1251,14 +1250,14 @@ var
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(10,' zlib: ' + z_errmsg[2 - aResultCode] + ' - ' + PAnsiChar(ZStream.msg))
+          DoError(10,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),ProcessedEntry.CentralDirectoryHeader.FileName])
         else
-          DoError(10,'zlib: ' + z_errmsg[2 - aResultCode]);
+          DoError(10,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],ProcessedEntry.CentralDirectoryHeader.FileName]);
       {$ELSE}
         If Length(ZStream.msg) > 0 then
-          DoError(10,'zlib: ' + zError(2 - aResultCode) + ' - ' + ZStream.msg)
+          DoError(10,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,ProcessedEntry.CentralDirectoryHeader.FileName])
         else
-          DoError(10,'zlib: ' + zError(2 - aResultCode));
+          DoError(10,'zlib: %s (entry "%s")',[zError(2 - aResultCode),ProcessedEntry.CentralDirectoryHeader.FileName]);
       {$IFEND}
       end;
   end;
@@ -1343,7 +1342,7 @@ try
   EntryProgressOffset := 0.0;
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
     with fInputFileStructure.Entries[i] do
-      begin
+      try
         UtilityData.OriginalLocalHeaderOffset := CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader;
         If UtilityData.NeedsSizes then
           begin
@@ -1389,7 +1388,7 @@ try
           ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
           If DecompressForProcessing then
             begin
-              DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2);
+              DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,fInputFileStructure.Entries[i]);
               try
                 If UtilityData.NeedsCRC32 then
                   begin
@@ -1438,20 +1437,43 @@ try
         finally
           FreeMem(EntryFileBuffer,LocalHeader.BinPart.CompressedSize);
         end;
-      {$ENDIF}  
+      {$ENDIF}
         EntryProgressOffset := (UtilityData.DataOffset + LocalHeader.BinPart.CompressedSize) / fInputFileStream.Size;
         DoProgress(psEntriesProcessing,EntryProgressOffset);
+        UtilityData.Erroneous := False;
+      except
+        on E: Exception do
+          begin
+            UtilityData.Erroneous := True;
+            If fProcessingSettings.IgnoreProcessingErrors and (InterlockedExchangeAdd(fTerminated,0) >= 0) then
+              begin
+                InterlockedExchange(fTerminated,0);
+                fIgnoredErrors.Add(Format('%s: %s',[E.ClassName,E.Message]));
+              end
+            else raise;
+          end;
       end;
   fInputFileStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset := LongWord(RebuildFileStream.Position);
   // write central directory
   For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) do
-    with fInputFileStructure.Entries[i].CentralDirectoryHeader do
-      begin
-        RebuildFileStream.WriteBuffer(BinPart,SizeOf(TCentralDirectoryFileHeaderRecord));
-        RebuildFileStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-        RebuildFileStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
-        RebuildFileStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
-      end;
+    If fInputFileStructure.Entries[i].UtilityData.Erroneous then
+      with fInputFileStructure.EndOfCentralDirectory.BinPart,fInputFileStructure.Entries[i].CentralDirectoryHeader.BinPart do
+        begin
+          Dec(EntriesOnDisk);
+          Dec(Entries);
+          Dec(CentralDirectorySize,SizeOf(TCentralDirectoryFileHeaderRecord));
+          Dec(CentralDirectorySize,FileNameLength);
+          Dec(CentralDirectorySize,ExtraFieldLength);
+          Dec(CentralDirectorySize,FileCommentLength);
+      end
+    else
+      with fInputFileStructure.Entries[i].CentralDirectoryHeader do
+        begin
+          RebuildFileStream.WriteBuffer(BinPart,SizeOf(TCentralDirectoryFileHeaderRecord));
+          RebuildFileStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+          RebuildFileStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
+          RebuildFileStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
+        end;
   // write end of central directory
   with fInputFileStructure.EndOfCentralDirectory do
     begin
@@ -1574,7 +1596,7 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
               ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
               case LocalHeader.BinPart.CompressionMethod of
                 8:  begin
-                      DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2);
+                      DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,fInputFileStructure.Entries[i]);
                       try
                         ProgressStreamWrite(EntryOutputFileStream,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
                       finally
@@ -1693,8 +1715,7 @@ try
         DoError(7,'Unknown repair method (%d).',[Ord(fProcessingSettings.RepairMethod)]);
       end;
       DoProgress(psProcessing,2.0);
-      If (fProcessingSettings.RepairMethod = rmExtract) and fProcessingSettings.IgnoreProcessingErrors and
-        fProcessingSettings.LogIgnoredErrors and (fIgnoredErrors.Count > 0) then
+      If fProcessingSettings.IgnoreProcessingErrors and fProcessingSettings.LogIgnoredErrors and (fIgnoredErrors.Count > 0) then
         begin
         {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
           fIgnoredErrors.SaveToFile(UTF8ToSys(fInputFileName + '.ignored_errors.log'));
