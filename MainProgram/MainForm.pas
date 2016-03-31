@@ -91,7 +91,7 @@ var
 implementation
 
 uses
-  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
+  Windows, ShellAPI,
   ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
@@ -365,9 +365,9 @@ var
   i:        Integer;
   NewWidth: Integer;
 begin
-NewWidth := lvFiles.Width + lvFiles.Columns[1].Width - 25;
+NewWidth := lvFiles.Width - (2 * GetSystemMetrics(SM_CXEDGE)) - GetSystemMetrics(SM_CXVSCROLL);
 For i := 0 to Pred(lvFiles.Columns.Count) do
-  Dec(NewWidth,lvFiles.Columns[i].Width);
+  If i <> 1 then Dec(NewWidth,lvFiles.Columns[i].Width);
 lvFiles.Columns[1].Width := NewWidth;
 end;
 

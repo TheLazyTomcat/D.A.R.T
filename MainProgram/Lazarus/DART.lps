@@ -4,12 +4,12 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Debug_win_x86"/>
-    <Units Count="55">
+    <Units Count="56">
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
         <CursorPos Y="20"/>
-        <UsageCount Value="69"/>
+        <UsageCount Value="72"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -20,7 +20,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <WindowIndex Value="-1"/>
-        <UsageCount Value="69"/>
+        <UsageCount Value="72"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
@@ -31,7 +31,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="68"/>
         <CursorPos X="97" Y="84"/>
-        <UsageCount Value="69"/>
+        <UsageCount Value="72"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\ErrorForm.pas"/>
@@ -40,9 +40,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="33"/>
-        <CursorPos X="15" Y="44"/>
-        <UsageCount Value="69"/>
+        <CursorPos X="45" Y="48"/>
+        <UsageCount Value="72"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\Repairer.pas"/>
@@ -50,7 +49,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="848"/>
         <CursorPos Y="848"/>
-        <UsageCount Value="69"/>
+        <UsageCount Value="72"/>
         <Bookmarks Count="4">
           <Item0 X="9" Y="1515" ID="1"/>
           <Item1 X="23" Y="629" ID="2"/>
@@ -64,17 +63,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="150"/>
         <CursorPos Y="167"/>
-        <UsageCount Value="69"/>
+        <UsageCount Value="72"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\TaskbarProgress.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="158"/>
-        <CursorPos X="24" Y="125"/>
-        <UsageCount Value="20"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="24" Y="129"/>
+        <UsageCount Value="23"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\Libs\lazarus.zlib.128\zlib_dll.pas"/>
@@ -88,9 +84,11 @@
         <ComponentName Value="fMainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <CursorPos Y="354"/>
-        <UsageCount Value="33"/>
+        <TopLine Value="343"/>
+        <CursorPos X="33" Y="375"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit8>
@@ -401,8 +399,58 @@
         <CursorPos X="5" Y="2114"/>
         <UsageCount Value="10"/>
       </Unit54>
+      <Unit55>
+        <Filename Value="ErrorForm.pas"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit55>
     </Units>
-    <JumpHistory HistoryIndex="-1"/>
+    <JumpHistory Count="11" HistoryIndex="10">
+      <Position1>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="354"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="374" TopLine="357"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="357" Column="43" TopLine="357"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="376" TopLine="357"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="374" Column="36" TopLine="357"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="375" TopLine="362"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="374" Column="37" TopLine="362"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="375" TopLine="362"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="376" TopLine="362"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="375" TopLine="362"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\MainForm.pas"/>
+        <Caret Line="374" Column="40" TopLine="362"/>
+      </Position11>
+    </JumpHistory>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="2">
@@ -423,10 +471,10 @@
     </BreakPoints>
     <Watches Count="2">
       <Item1>
-        <Expression Value="FileName"/>
+        <Expression Value="NewWidth"/>
       </Item1>
       <Item2>
-        <Expression Value="FullFileName"/>
+        <Expression Value="i"/>
       </Item2>
     </Watches>
   </Debugging>

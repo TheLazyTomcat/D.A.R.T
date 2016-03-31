@@ -1,6 +1,6 @@
 ﻿================================================================================
 
-                  D.A.R.T - Damaged Archives Repair Tool 1.1.0
+                  D.A.R.T - Damaged Archives Repair Tool 1.1.x
 
 ================================================================================
 
@@ -14,12 +14,12 @@ which each part starts.
   Installation ............................................  46
   How to use the program ..................................  56
   Changelog ...............................................  80
-  Known issues ............................................ 104
-  Source code ............................................. 111
-  Licensing ............................................... 120
-  Authors, contacts ....................................... 128
-  Links ................................................... 134
-  Copyright ............................................... 140
+  Known issues ............................................ 109
+  Source code ............................................. 116
+  Licensing ............................................... 125
+  Authors, contacts ....................................... 133
+  Links ................................................... 139
+  Copyright ............................................... 145
 
 
 
@@ -82,7 +82,12 @@ Changelog
 List of changes between individual versions of this program.
 
 D.A.R.T 1.0.1 -> D.A.R.T 1.1.0
+  - processing errors can now be ignored in archive rebuil mode (used to be
+    available only when extracting archive)
   - added an option to log ignored processing errors
+  - error text (in error window) is now displayed in memo instead of static text
+  - overall percentage is shown in main window title bar and on taskbar button,
+    overall progress is displayed in taskbar button (Windows 7+)
   - corrected bug where extraction could not be stopped by the user when
     ignoring of processing errors was activated
   - large number of corrections in Lazarus/FPC builds to ensure proper handling
