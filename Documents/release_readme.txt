@@ -5,26 +5,27 @@
 ================================================================================
 
 Index
-------------------------------
+--------------------------------------------------
 Content of this document divided into individual parts, with line numbers at
 which each part starts.
 
   Index ...................................................   7
-  Description .............................................  26
-  Installation ............................................  46
-  How to use the program ..................................  56
-  Changelog ...............................................  80
-  Known issues ............................................ 109
-  Source code ............................................. 116
-  Licensing ............................................... 125
-  Authors, contacts ....................................... 133
-  Links ................................................... 139
-  Copyright ............................................... 145
+  Description .............................................  27
+  Installation ............................................  47
+  How to use the program ..................................  57
+  Workarounds for common processing errors ................  82
+  Changelog ............................................... 175
+  Known issues ............................................ 205
+  Source code ............................................. 212
+  Licensing ............................................... 221
+  Authors, contacts ....................................... 229
+  Links ................................................... 235
+  Copyright ............................................... 241
 
 
 
 Description
-------------------------------
+--------------------------------------------------
 This tool is designed to repair ZIP archives used as a storage for modifications
 created for SCS Software truck games (for example Euro Truck Simulator,
 18 Wheels of Steel, etc.).
@@ -44,7 +45,7 @@ NOTE - There are SCS files that are part of the game itself, but they are not
 
 
 Installation
-------------------------------
+--------------------------------------------------
 There is no need to install this program, just put it anywhere on your disk
 where you have access rights and that should be enough.
 There are three identical builds of this program - L32 (Lazarus 32bit),
@@ -54,7 +55,7 @@ use, there is no functional difference or limitation.
 
 
 How to use the program
-------------------------------
+--------------------------------------------------
 This program was created to be as simple as possible, yet offering some settings
 for advanced users. General use would be as follows:
 
@@ -77,8 +78,102 @@ WARNING - It is possible for the program to finish processing successfully
           either, ask in a forum mentioned in "Links" section.
 
 
+
+Workarounds for common processing errors
+--------------------------------------------------
+Not every damaged archive can be repaired using default processing settings.
+In such case, a processing error is almost always raised - you can use this
+error and following list and try to repair the file with described changes in
+processing setings.
+This list is not in any way complete. If you cannot repair the file even with
+described settings, you should seek help in a forum mentioned further.
+Each item in the list is a specific error text accompanied with one or more
+suggestions what to do to eliminate the error in next processing (note that the
+suggestions are independent of each other, meaning you can use only one for a
+particular error, not all of them; also, some suggested settings are already
+part of default settings and they are mentioned only for the sake of
+completeness)
+
+
+  "Bad file signature (0xXXXXXXXX)."
+    - make sure you have selected proper file
+    - activate [General settings] > [Ignore file signature]
+
+  "File is too small to contain valid signature (X bytes)."
+    - make sure you have selected proper file (this error means the file is
+      smaller than four bytes)
+    - activate [General settings] > [Ignore file signature]
+
+  "Not enough data for end of central directory comment."
+    - activate [End of central direcotry] > [Ignore comment]
+    - activate [End of central direcotry] > [Ignore end of central directory]
+
+  "Not enough data for end of central directory record."
+    - activate [End of central direcotry] > [Ignore end of central directory]
+
+  "End of central directory signature not found in the input stream."
+    - make sure you have selected proper file
+    - deactivate [End of central direcotry] > [Limit search to one buffer]
+    - activate [End of central direcotry] > [Ignore end of central directory]
+
+  "Bad central directory header signature (0xXXXXXXXX) for entry #Y."
+    - activate [Central directory headers] > [Ignore header signature]
+    - activate [Central directory headers] > [Ignore central directory]
+
+  "Unknown compression method (X) in central directory header for entry #Y."
+    - activate [Central directory headers] > [Ignore compression method]
+    - activate [General settings] > [Assume compression method]
+
+  "Start of central directory not found in the input stream."
+    - deactivate [End of central direcotry] > [Ignore central directory offset]
+
+  "Bad local header signature (0xXXXXXXXX) for entry #Y."
+    - activate [Local headers] > [Ignore header signature]
+    - activate [Local headers] > [Ignore local headers]
+
+  "Unknown compression method (X) in local header for entry #Y."
+    - activate [Local headers] > [Ignore compression method]
+    - activate [General settings] > [Assume compression method]
+
+  "Bad data descriptor signature (0xXXXXXXXX) for entry #Y."
+    - activate [Local headers] > [Ignore header signature]
+    - activate [Local headers] > [Ignore data descriptor]
+
+  "Data descriptor was not found (X)."
+    - activate [Local headers] > [Ignore data descriptor]
+
+  "No local header found for entry #X."
+    - activate [Central directory headers] > [Ignore local header offset]
+    - activate [Central directory headers] > [Ignore central directory]
+
+  "Mismatch in local and central directory file name for entry #X (...; ...)."
+    - activate [Local headers] > [Ignore file name]
+    - activate [Local headers] > [Ignore local headers]
+    - activate [Central directory headers] > [Ignore central directory]
+
+  "zlib: ... (entry "...")"
+    - activate [General settings] > [Ignore processing errors]
+
+  "Output is directed into an input file, cannot proceed."
+    - make sure you have not directed rebuild back into the source file
+
+  "Input file does not contain any valid entries."
+    - make sure the processed file contains any sensible data and is in fact
+      a ZIP archive
+
+  "Input file does not contain any data."
+    - make sure you have selected proper file (this error indicates that the
+      file is empty)
+
+  "Processing terminated. Data can be in inconsistent state."
+    - you have prematurely ended the processing, do not do it if you don't
+      really need to
+    - run the processing again and let it finish
+
+
+
 Changelog
-------------------------------
+--------------------------------------------------
 List of changes between individual versions of this program.
 
 D.A.R.T 1.0.1 -> D.A.R.T 1.1.0
@@ -106,15 +201,16 @@ SCS Unlocker 2.0.0 -> D.A.R.T 1.0.1 (project was renamed)
   - other small changes and corrections
 
 
+
 Known issues
-------------------------------
+--------------------------------------------------
 This section lists all known issues and bugs that made their way to the final
 release.
 
 
 
 Source code
-------------------------------
+--------------------------------------------------
 You can get copy of full source code on either of the following git repository:
 
 https://bitbucket.org/ncs-sniper/d.a.r.t
@@ -123,7 +219,7 @@ https://github.com/ncs-sniper/D.A.R.T
 
 
 Licensing
-------------------------------
+--------------------------------------------------
 This program is licensed under the terms of Mozilla Public License Version 2.0.
 You can find full text of this license in file license.txt or on web page
 https://www.mozilla.org/MPL/2.0/.
@@ -131,17 +227,17 @@ https://www.mozilla.org/MPL/2.0/.
 
 
 Authors, contacts
-------------------------------
+--------------------------------------------------
 František Milt, frantisek.milt@gmail.com
 
 
 
 Links
-------------------------------
+--------------------------------------------------
 Forum thread: http://forum.scssoft.com/viewtopic.php?f=41&t=192120
 
 
 
 Copyright
-------------------------------
+--------------------------------------------------
 ©2015-2016 František Milt, all rights reserved
