@@ -350,7 +350,7 @@ type
     procedure ProgressSaveFile(FileName: String; Stream: TStream); virtual;
     procedure ProgressStreamRead(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
     procedure ProgressStreamWrite(Stream: TStream; Buffer: Pointer; Size: Integer; ProgressOffset, ProgressRange: Single); virtual;
-    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntry: TEntry); virtual;
+    procedure DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntryFile: String); virtual;
     procedure RebuildInputFile; virtual;
     procedure ExtractInputFile; virtual;
     procedure ProcessFile_Rebuild; virtual;
@@ -630,9 +630,6 @@ If EOCDPosition >= 0 then
                   begin
                     SetLength(Comment,BinPart.CommentLength);
                     fInputFileStream.ReadBuffer(PAnsiChar(Comment)^,BinPart.CommentLength);
-                  {$IFDEF FPC}
-                    Comment := WinCPToUTF8(Comment);
-                  {$ENDIF}
                   end
                 else DoError(2,'Not enough data for end of central directory comment.');
               end;
@@ -699,9 +696,6 @@ var
         // load file name
         SetLength(FileName,BinPart.FilenameLength);
         fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-      {$IFDEF FPC}
-        FileName := WinCPToUTF8(FileName);
-      {$ENDIF}
         // file attributes must be done here because file name is required
         If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
           BinPart.InternalFileAttributes := 0;
@@ -733,9 +727,6 @@ var
           begin
             SetLength(FileComment,BinPart.FileCommentLength);
             fInputFileStream.ReadBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
-          {$IFDEF FPC}
-            FileComment := WinCPToUTF8(FileComment);
-          {$ENDIF}
           end;
     end;
   end;
@@ -844,9 +835,6 @@ var
           begin
             SetLength(FileName,BinPart.FileNameLength);
             fInputFileStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-          {$IFDEF FPC}
-            FileName := WinCPToUTF8(FileName);
-          {$ENDIF}
           end;
         // extra field
         If fProcessingSettings.LocalHeader.IgnoreExtraField then
@@ -960,7 +948,11 @@ else
               DoProgress(psLocalHeadersLoading,(i + 1) / Length(fInputFileStructure.Entries));
               If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
                 If not AnsiSameText(FileName,fInputFileStructure.Entries[i].LocalHeader.FileName) then
+                {$IFDEF FPC}
+                  DoError(5,'Mismatch in local and central directory file name for entry #%d (%s; %s).',[i,WinCPToUTF8(FileName),WinCPToUTF8(fInputFileStructure.Entries[i].LocalHeader.FileName)]);
+                {$ELSE}
                   DoError(5,'Mismatch in local and central directory file name for entry #%d (%s; %s).',[i,FileName,fInputFileStructure.Entries[i].LocalHeader.FileName]);
+                {$ENDIF}
             end;
       end
     else
@@ -1233,7 +1225,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntry: TEntry);
+procedure TRepairer.DecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressOffset, ProgressRange: Single; ProcessedEntryFile: String);
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -1250,14 +1242,14 @@ var
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(10,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),ProcessedEntry.CentralDirectoryHeader.FileName])
+          DoError(10,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),ProcessedEntryFile])
         else
-          DoError(10,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],ProcessedEntry.CentralDirectoryHeader.FileName]);
+          DoError(10,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],ProcessedEntryFile]);
       {$ELSE}
         If Length(ZStream.msg) > 0 then
-          DoError(10,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,ProcessedEntry.CentralDirectoryHeader.FileName])
+          DoError(10,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,ProcessedEntryFile])
         else
-          DoError(10,'zlib: %s (entry "%s")',[zError(2 - aResultCode),ProcessedEntry.CentralDirectoryHeader.FileName]);
+          DoError(10,'zlib: %s (entry "%s")',[zError(2 - aResultCode),ProcessedEntryFile]);
       {$IFEND}
       end;
   end;
@@ -1388,7 +1380,12 @@ try
           ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
           If DecompressForProcessing then
             begin
-              DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,fInputFileStructure.Entries[i]);
+              DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,
+                              {$IFDEF FPC}
+                                WinCPToUTF8(fInputFileStructure.Entries[i].CentralDirectoryHeader.FileName));
+                              {$ELSE}
+                                fInputFileStructure.Entries[i].CentralDirectoryHeader.FileName);
+                              {$ENDIF}
               try
                 If UtilityData.NeedsCRC32 then
                   begin
@@ -1544,7 +1541,11 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
   with fInputFileStructure.Entries[i] do
     try
       FullFileName := IncludeTrailingPathDelimiter(fProcessingSettings.RepairData) +
+                    {$IFDEF FPC}
+                      AnsiReplaceStr(WinCPToUTF8(LocalHeader.FileName),'/','\');
+                    {$ELSE}
                       AnsiReplaceStr(LocalHeader.FileName,'/','\');
+                    {$ENDIF}
     {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
       If not DirectoryExistsUTF8(ExtractFileDir(FullFileName)) then
         ForceDirectoriesUTF8(ExtractFileDir(FullFileName));
@@ -1596,7 +1597,12 @@ For i := Low(fInputFileStructure.Entries) to High(fInputFileStructure.Entries) d
               ProgressStreamRead(fInputFileStream,EntryFileBuffer,LocalHeader.BinPart.CompressedSize,EntryProgressOffset,EntryProgressRange * 0.4);
               case LocalHeader.BinPart.CompressionMethod of
                 8:  begin
-                      DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,fInputFileStructure.Entries[i]);
+                      DecompressBuffer(EntryFileBuffer,LocalHeader.BinPart.CompressedSize,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.4),EntryProgressRange * 0.2,
+                                      {$IFDEF FPC}
+                                        WinCPToUTF8(fInputFileStructure.Entries[i].CentralDirectoryHeader.FileName));
+                                      {$ELSE}
+                                        fInputFileStructure.Entries[i].CentralDirectoryHeader.FileName);
+                                      {$ENDIF}
                       try
                         ProgressStreamWrite(EntryOutputFileStream,UncompressedBuffer,UncompressedSize,EntryProgressOffset + (EntryProgressRange * 0.6),EntryProgressRange * 0.4);
                       finally
