@@ -187,7 +187,7 @@ D.A.R.T 1.0.1 -> D.A.R.T 1.1.0
     ignoring of processing errors was activated
   - large number of corrections in Lazarus/FPC builds to ensure proper handling
     of non-ascii characters in file paths
-  - orher small changes and corrections
+  - other small changes and corrections
 
 
 SCS Unlocker 2.0.0 -> D.A.R.T 1.0.1 (project was renamed)
