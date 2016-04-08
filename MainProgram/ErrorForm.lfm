@@ -1,153 +1,158 @@
 object fErrorForm: TfErrorForm
-  Left = 613
-  Top = 432
+  Left = 860
+  Height = 256
+  Top = 468
+  Width = 400
   BorderStyle = bsDialog
   Caption = 'Error information'
-  ClientHeight = 248
+  ClientHeight = 256
   ClientWidth = 400
   Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
-  Font.Style = []
-  Position = poMainFormCenter
+  KeyPreview = True
   OnKeyPress = FormKeyPress
-  PixelsPerInch = 96
-  object lblText: TLabel
-    Left = 8
-    Top = 64
-    Width = 385
-    Height = 57
-    AutoSize = False
-    Color = clBtnFace
-    ParentColor = False
-    WordWrap = True
-  end
+  Position = poMainFormCenter
+  LCLVersion = '1.6.0.4'
   object lblFileName: TLabel
     Left = 8
+    Height = 13
     Top = 8
     Width = 385
-    Height = 13
     AutoSize = False
     Caption = 'lblFileName'
+    ParentColor = False
   end
   object bvlHorSplit: TBevel
     Left = 8
+    Height = 9
     Top = 56
     Width = 385
-    Height = 9
     Shape = bsTopLine
   end
   object lblHint: TLabel
     Left = 25
-    Top = 232
-    Width = 368
     Height = 13
+    Top = 240
+    Width = 368
     Alignment = taRightJustify
-    Caption = 
-      'Press <Ctrl + C> to copy information displayed in this window in' +
-      'to clipboard.'
-    Font.Charset = DEFAULT_CHARSET
+    Caption = 'Press <Ctrl + C> to copy information displayed in this window into clipboard.'
     Font.Color = clGray
     Font.Height = -11
     Font.Name = 'Tahoma'
-    Font.Style = []
+    ParentColor = False
     ParentFont = False
   end
   object lblFileSize: TLabel
     Left = 8
+    Height = 13
     Top = 32
     Width = 45
-    Height = 13
     Caption = 'lblFileSize'
+    ParentColor = False
   end
   object grbTechnical: TGroupBox
     Left = 8
-    Top = 128
-    Width = 385
     Height = 97
+    Top = 136
+    Width = 385
     Caption = 'Technical information'
-    TabOrder = 0
+    ClientHeight = 79
+    ClientWidth = 381
+    TabOrder = 1
     object lblExceptionClass_l: TLabel
       Left = 134
+      Height = 13
       Top = 58
       Width = 89
-      Height = 13
       Alignment = taRightJustify
       Caption = 'Exception class:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblObject_l: TLabel
       Left = 23
+      Height = 13
       Top = 10
       Width = 40
-      Height = 13
       Alignment = taRightJustify
       Caption = 'Object:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblMethod_l: TLabel
       Left = 17
+      Height = 13
       Top = 34
       Width = 46
-      Height = 13
       Alignment = taRightJustify
       Caption = 'Method:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblThread_l: TLabel
       Left = 4
+      Height = 13
       Top = 58
       Width = 59
-      Height = 13
       Alignment = taRightJustify
       Caption = 'Thread ID:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblObject: TLabel
       Left = 70
+      Height = 1
       Top = 10
-      Width = 3
-      Height = 13
+      Width = 1
+      ParentColor = False
     end
     object lblMethod: TLabel
       Left = 70
+      Height = 1
       Top = 34
-      Width = 3
-      Height = 13
+      Width = 1
+      ParentColor = False
     end
     object lblThread: TLabel
       Left = 70
+      Height = 1
       Top = 58
-      Width = 3
-      Height = 13
+      Width = 1
+      ParentColor = False
     end
     object lblExceptionClass: TLabel
       Left = 230
+      Height = 1
       Top = 58
-      Width = 3
-      Height = 13
+      Width = 1
+      ParentColor = False
     end
+  end
+  object meText: TMemo
+    Left = 8
+    Height = 65
+    Top = 64
+    Width = 385
+    ReadOnly = True
+    ScrollBars = ssHorizontal
+    TabOrder = 0
   end
 end

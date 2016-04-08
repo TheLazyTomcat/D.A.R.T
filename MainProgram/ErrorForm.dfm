@@ -1,9 +1,9 @@
 object fErrorForm: TfErrorForm
-  Left = 613
-  Top = 432
+  Left = 847
+  Top = 419
   BorderStyle = bsDialog
   Caption = 'Error information'
-  ClientHeight = 248
+  ClientHeight = 256
   ClientWidth = 400
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -11,21 +11,12 @@ object fErrorForm: TfErrorForm
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   Position = poMainFormCenter
   OnKeyPress = FormKeyPress
   PixelsPerInch = 96
   TextHeight = 13
-  object lblText: TLabel
-    Left = 8
-    Top = 64
-    Width = 385
-    Height = 57
-    AutoSize = False
-    Color = clBtnFace
-    ParentColor = False
-    WordWrap = True
-  end
   object lblFileName: TLabel
     Left = 8
     Top = 8
@@ -43,7 +34,7 @@ object fErrorForm: TfErrorForm
   end
   object lblHint: TLabel
     Left = 25
-    Top = 232
+    Top = 240
     Width = 368
     Height = 13
     Alignment = taRightJustify
@@ -66,11 +57,11 @@ object fErrorForm: TfErrorForm
   end
   object grbTechnical: TGroupBox
     Left = 8
-    Top = 128
+    Top = 136
     Width = 385
     Height = 97
     Caption = 'Technical information'
-    TabOrder = 0
+    TabOrder = 1
     object lblExceptionClass_l: TLabel
       Left = 136
       Top = 72
@@ -151,5 +142,14 @@ object fErrorForm: TfErrorForm
       Width = 3
       Height = 13
     end
+  end
+  object meText: TMemo
+    Left = 8
+    Top = 64
+    Width = 385
+    Height = 73
+    ReadOnly = True
+    ScrollBars = ssHorizontal
+    TabOrder = 0
   end
 end

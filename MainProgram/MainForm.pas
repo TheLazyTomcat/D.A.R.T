@@ -69,7 +69,11 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   {$ENDIF}
   protected
-    fSettingsChanged: Boolean;
+    fSettingsChanged:     Boolean;
+    fDefaultAppTitle:     String;
+    fProgressAppTitle:    String;
+    fDefaultFormCaption:  String;
+    fProgressFormCaption: String;
     procedure SettingsChanged(FileIndex: Integer);
   public
     FilesManager: TFilesManager;
@@ -87,8 +91,8 @@ var
 implementation
 
 uses
-  {$IFNDEF FPC}Windows,{$ENDIF} ShellAPI,
-  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo
+  Windows, ShellAPI,
+  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
 {$IFEND};
@@ -185,7 +189,15 @@ If FilesManager[FileIndex].Status = fstProcessing then
       end;
     Temp := Trunc(prbOverallProgress.Max * FilesManager.Progress);
     If Temp <> prbOverallProgress.Position then
-      prbOverallProgress.Position := Temp;
+      begin
+        prbOverallProgress.Position := Temp;
+        If FilesManager.Status in [mstProcessing, mstTerminating] then
+          begin
+            Application.Title := Format(fProgressAppTitle,[FilesManager.Progress * 100]);
+            Caption := Format(fProgressFormCaption,[FilesManager.Progress * 100]);
+            SetTaskbarProgressValue(FilesManager.Progress);
+          end;  
+      end;
   end;
 end;
 
@@ -241,8 +253,16 @@ begin
 mnuFiles.OnPopup(nil);
 SetDropAccept(FilesManager.Status = mstReady);
 case FilesManager.Status of
-  mstReady:       btnProcessing.Caption := 'Start processing';
-  mstProcessing:  btnProcessing.Caption := 'Stop processing';
+  mstReady:       begin
+                    btnProcessing.Caption := 'Start processing';
+                    Application.Title := fDefaultAppTitle;
+                    Caption := fDefaultFormCaption;
+                    SetTaskbarProgressState(tpsNoProgress);
+                  end;
+  mstProcessing:  begin
+                    btnProcessing.Caption := 'Stop processing';
+                    SetTaskbarProgressState(tpsNormal);
+                  end;
   mstTerminating: btnProcessing.Caption := 'Terminating processing, please wait...';
 end;
 end;
@@ -297,6 +317,10 @@ end;
 procedure TfMainForm.FormCreate(Sender: TObject);
 begin
 fSettingsChanged := False;
+fDefaultAppTitle := Application.Title;
+fProgressAppTitle := fDefaultAppTitle + ' - %.0f%%';
+fDefaultFormCaption := Caption;
+fProgressFormCaption := fDefaultFormCaption + ' (%.0f%%)';
 stbStatusBar.DoubleBuffered := True;
 lvFiles.DoubleBuffered := True;
 prbOverallProgress.DoubleBuffered := True;
@@ -341,9 +365,9 @@ var
   i:        Integer;
   NewWidth: Integer;
 begin
-NewWidth := lvFiles.Width + lvFiles.Columns[1].Width - 25;
+NewWidth := lvFiles.Width - (2 * GetSystemMetrics(SM_CXEDGE)) - GetSystemMetrics(SM_CXVSCROLL);
 For i := 0 to Pred(lvFiles.Columns.Count) do
-  Dec(NewWidth,lvFiles.Columns[i].Width);
+  If i <> 1 then Dec(NewWidth,lvFiles.Columns[i].Width);
 lvFiles.Columns[1].Width := NewWidth;
 end;
 
@@ -486,6 +510,7 @@ If FilesManager.Count > 0 then
     mstProcessing:  FilesManager.StopProcessing;
     mstTerminating: begin
                       FilesManager.PauseProcessing;
+                      SetTaskbarProgressState(tpsPaused);
                       If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
                                     'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
                                     'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +

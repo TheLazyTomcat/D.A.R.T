@@ -1,6 +1,6 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 60
-  Top = 59
+  Left = 301
+  Top = 99
   BorderStyle = bsDialog
   Caption = 'Processing settings'
   ClientHeight = 624
@@ -102,6 +102,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Height = 17
       Caption = 'Limit search to one buffer (~1MiB)'
       TabOrder = 5
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
     end
   end
@@ -443,9 +444,9 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     TabOrder = 0
     OnMouseMove = GroupBoxMouseMove
     object bvlGeneralhorSplit: TBevel
-      Left = -176
+      Left = 8
       Top = 126
-      Width = 729
+      Width = 545
       Height = 9
       Shape = bsTopLine
     end
@@ -541,6 +542,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Height = 17
       Caption = 'In memory processing'
       TabOrder = 6
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreProcessingErrors: TCheckBox
@@ -551,6 +553,18 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Height = 17
       Caption = 'Ignore processing errors'
       TabOrder = 7
+      OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
+    end
+    object cbLogIgnoredErrors: TCheckBox
+      Tag = 10
+      Left = 192
+      Top = 160
+      Width = 169
+      Height = 17
+      Caption = 'Log ignored processings errors'
+      TabOrder = 8
+      OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
     end
   end

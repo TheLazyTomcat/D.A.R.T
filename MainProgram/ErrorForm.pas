@@ -18,9 +18,9 @@ uses
 type
   TfErrorForm = class(TForm)
     lblFileName: TLabel;
-    lblFileSize: TLabel;    
+    lblFileSize: TLabel;
     bvlHorSplit: TBevel;
-    lblText: TLabel;
+    meText: TMemo;
     grbTechnical: TGroupBox;
     lblObject_l: TLabel;
     lblObject: TLabel;
@@ -59,7 +59,7 @@ lblFileSize.Caption := IntToStr(FileInfo.Size) + ' bytes';
 lblFileName.ShowHint := Canvas.TextWidth(lblFileName.Caption) > lblFileName.Width;
 If lblFileName.ShowHint then
   lblFileName.Hint := lblFileName.Caption;
-lblText.Caption := FileInfo.ErrorInfo.Text;
+meText.Text := FileInfo.ErrorInfo.Text;
 lblObject.Caption := Format('%s (0x%p)',[FileInfo.ErrorInfo.SourceClass,FileInfo.ErrorInfo.Source]);
 lblMethod.Caption := Format('[%d] %s',[FileInfo.ErrorInfo.MethodIdx,FileInfo.ErrorInfo.MethodName]);
 lblThread.Caption := IntToStr(FileInfo.ErrorInfo.ThreadID);
@@ -76,7 +76,7 @@ If Key = ^C then
     Clipboard.AsText :=
       lblFileName.Caption + sLineBreak +
       lblFileSize.Caption + sLineBreak +
-      lblText.Caption + sLineBreak +
+      meText.Text + sLineBreak +
       lblObject.Caption + sLineBreak +
       lblMethod.Caption + sLineBreak +
       lblThread.Caption + sLineBreak +
