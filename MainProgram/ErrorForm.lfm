@@ -1,16 +1,17 @@
 object fErrorForm: TfErrorForm
   Left = 860
-  Height = 248
+  Height = 256
   Top = 468
   Width = 400
   BorderStyle = bsDialog
   Caption = 'Error information'
-  ClientHeight = 248
+  ClientHeight = 256
   ClientWidth = 400
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
+  KeyPreview = True
   OnKeyPress = FormKeyPress
   Position = poMainFormCenter
   LCLVersion = '1.6.0.4'
@@ -33,7 +34,7 @@ object fErrorForm: TfErrorForm
   object lblHint: TLabel
     Left = 25
     Height = 13
-    Top = 232
+    Top = 240
     Width = 368
     Alignment = taRightJustify
     Caption = 'Press <Ctrl + C> to copy information displayed in this window into clipboard.'
@@ -54,7 +55,7 @@ object fErrorForm: TfErrorForm
   object grbTechnical: TGroupBox
     Left = 8
     Height = 97
-    Top = 128
+    Top = 136
     Width = 385
     Caption = 'Technical information'
     ClientHeight = 79
@@ -147,10 +148,11 @@ object fErrorForm: TfErrorForm
   end
   object meText: TMemo
     Left = 8
-    Height = 57
+    Height = 65
     Top = 64
     Width = 385
     ReadOnly = True
+    ScrollBars = ssHorizontal
     TabOrder = 0
   end
 end
