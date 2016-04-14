@@ -566,6 +566,7 @@ If MessageDlg('Are you sure you want to load default settings?',mtWarning,[mbYes
     finally
       fLoading := False;
     end;
+    cbIgnoreProcessingErrors.OnClick(cbIgnoreProcessingErrors);
     cbIgnoreEndOfCentralDirectory.OnClick(cbIgnoreEndOfCentralDirectory);
     cbCDIgnoreCentralDirectory.OnClick(cbCDIgnoreCentralDirectory);
     cbLHIgnoreLocalHeaders.OnClick(cbLHIgnoreLocalHeaders);
