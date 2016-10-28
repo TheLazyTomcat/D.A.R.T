@@ -21,23 +21,13 @@ uses
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
-(*
-const
-{%H-}VisualListing_IconColumn   = -1;
-     VisualListing_NameColumn   = 0;
-     VisualListing_SizeColumn   = 1;
-     VisualListing_TypeColumn   = 2;
-     VisualListing_MethodColumn = 3;
-     VisualListing_StateColumn  = 4;
-*)
-
 type
   TFileProcessingStatus = (fstUnknown = 0,fstReady,fstSuccess,fstWarning,
                            fstError,fstProcessing);
 
 const
   FileProcessingStatusStrArr: array[TFileProcessingStatus] of String =
-    ('Unknown','Ready','Successfuly completed','Completed with warning',
+    ('Unknown','Ready','Successfuly completed','Completed with warnings',
      'Error','Processing... 0%');
 
 type
@@ -103,8 +93,10 @@ type
     property Pointers[Index: Integer]: PFileListItem read GetFilePtr;
     property Items[Index: Integer]: TFileListItem read GetFile; default;
   published
+    property ManagerStatus: TFileManagerStatus read fManagerStatus; 
     property Count: Integer read GetFileCount;
-    property ProcessedFileIndex: Integer read fProcessedFileIdx; 
+    property ProcessedFileIndex: Integer read fProcessedFileIdx;
+    property GlobalProgress: Single read fGlobalProgress; 
     property OnFileProgress: TFileChangeEvent read fOnFileProgress write fOnFileProgress;
     property OnFileStatus: TFileChangeEvent read fOnFileStatus write fOnFileStatus;
     property OnManagerStatus: TNotifyEvent read fOnManagerStatus write fOnManagerStatus;
@@ -211,7 +203,55 @@ end;
 
 procedure TFileManager.ThreadProgressHandler(Sender: TObject; FileIndex: Integer; Progress: Single);
 begin
-{$message 'implement'}
+If fManagerStatus in [mstProcessing,mstTerminating] then
+  begin
+    If (Progress >= 0.0) and (Progress <= 1.0) then
+      begin
+        fFileList[FileIndex].Progress := Progress;
+        fGlobalProgress := fFileList[FileIndex].GlobalProgressOffset +
+          fFileList[FileIndex].GlobalProgressRange * Progress;
+        DoFileProgress(FileIndex);
+      end
+    else // progress is out of interval <0,1> (processing is done)
+      begin
+        // processing of the file is done at this point, set info and propagate
+        fGlobalProgress := fFileList[FileIndex].GlobalProgressOffset +
+          fFileList[FileIndex].GlobalProgressRange;
+        fFileList[FileIndex].Progress := 1.0;
+        DoFileProgress(FileIndex);
+        fFileList[FileIndex].ResultInfo := fRepairerThread.ResultInfo;
+        case fFileList[FileIndex].ResultInfo.ResultState of
+          rsNormal:   fFileList[FileIndex].ProcessingStatus := fstSuccess;
+          rsWarning:  fFileList[FileIndex].ProcessingStatus := fstWarning;
+          rsError:    fFileList[FileIndex].ProcessingStatus := fstError;
+        else
+          fFileList[FileIndex].ProcessingStatus := fstUnknown;
+        end;
+        DoFileStatus(FileIndex);
+        // thread has completed, get rid of it
+        fRepairerThread.OnFileProgress := nil;
+        DeferThreadDestruction(fRepairerThread);
+        If (fProcessedFileIdx < High(fFileList)) and (fManagerStatus <> mstTerminating) then
+          begin
+            // process next file
+            Inc(fProcessedFileIdx);
+            fFileList[fProcessedFileIdx].ProcessingStatus := fstProcessing;
+            DoFileStatus(fProcessedFileIdx);
+            fRepairerThread := TRepairerThread.Create(fProcessedFileIdx,fFileList[fProcessedFileIdx].ProcessingSettings);
+            fRepairerThread.OnFileProgress := ThreadProgressHandler;
+            fRepairerThread.StartProcessing;
+          end
+        else
+          begin
+            // last file processed or processing terminated, do not continue
+            fRepairerThread := nil;
+            fManagerStatus := mstReady;
+            fProcessedFileIdx := -1;
+          end;
+        // propagate new status
+        DoManagerStatus;
+      end;
+  end;
 end;
 
 {------------------------------------------------------------------------------}
@@ -338,7 +378,7 @@ begin
 If fManagerStatus = mstReady then
   begin
     For i := High(fFileList) downto Low(fFileList) do
-      If fFileList[i].ProcessingStatus = fstSuccess then Delete(i);
+      If fFileList[i].ProcessingStatus in [fstSuccess,fstWarning] then Delete(i);
   end
 else raise Exception.CreateFmt('TFileManager.ClearCompleted: Manager status (%d) prevents deletion.',[Ord(fManagerStatus)]);
 end;
@@ -392,8 +432,10 @@ If (Count > 0) and (fManagerStatus = mstReady) then
         else
           fFileList[i].GlobalProgressRange := 1 / Length(fFileList); 
       end;
-    // create first repairer thread
     fProcessedFileIdx := Low(fFileList);
+    fFileList[fProcessedFileIdx].ProcessingStatus := fstProcessing;
+    DoFileStatus(fProcessedFileIdx);
+    // create first repairer thread
     fRepairerThread := TRepairerTHread.Create(fProcessedFileIdx,fFileList[fProcessedFileIdx].ProcessingSettings);
     fRepairerThread.OnFileProgress := ThreadProgressHandler;
     // set the manager to processing state

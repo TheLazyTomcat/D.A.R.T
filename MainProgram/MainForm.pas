@@ -7,14 +7,14 @@
 -------------------------------------------------------------------------------}
 unit MainForm;
 
-{$IFDEF FPC}{$MODE Delphi}{$ENDIF}
+{$INCLUDE 'Source\DART_defs.inc'}
 
 interface
 
 uses
   SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
   ComCtrls, ExtCtrls, Menus, {$IFNDEF FPC}Messages, ImgList, XPMan,{$ENDIF}
-  FilesManager;
+  DART_FileManager;
 
 type
 {$IFNDEF FPC}
@@ -45,15 +45,15 @@ type
     mfClear: TMenuItem;
     N1: TMenuItem;
     mfSettings: TMenuItem;
-    mfErrorInfo: TMenuItem;
+    mfResultInfo: TMenuItem;
     N2: TMenuItem;
     mfClearCompleted: TMenuItem;
     diaOpenDialog: TOpenDialog;
     tmrAnimTimer: TTimer;
     imlFileIcons: TImageList;
     procedure FormCreate(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
     procedure FormClose(Sender: TObject; var {%H-}Action: TCloseAction);
+    procedure FormDestroy(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure lvFilesDblClick(Sender: TObject);
     procedure mnuFilesPopup(Sender: TObject);
@@ -61,7 +61,7 @@ type
     procedure mfRemoveClick(Sender: TObject);
     procedure mfClearClick(Sender: TObject);
     procedure mfSettingsClick(Sender: TObject);
-    procedure mfErrorInfoClick(Sender: TObject);
+    procedure mfResultInfoClick(Sender: TObject);
     procedure mfClearCompletedClick(Sender: TObject);
     procedure btnProcessingClick(Sender: TObject);
     procedure tmrAnimTimerTimer(Sender: TObject);
@@ -69,20 +69,18 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   {$ENDIF}
   protected
-    fSettingsChanged:     Boolean;
     fDefaultAppTitle:     String;
     fProgressAppTitle:    String;
     fDefaultFormCaption:  String;
     fProgressFormCaption: String;
-    procedure SettingsChanged(FileIndex: Integer);
   public
-    FilesManager: TFilesManager;
+    FileManager:  TFileManager;
     procedure LoadCopyrightInfo;
-    procedure OnProgress(Sender: TObject; FileIndex: Integer);
-    procedure OnFileStatus(Sender: TObject; FileIndex: Integer);
-    procedure OnStatus(Sender: TObject);
     procedure LoadFilesFromParams;
-    procedure SetDropAccept(AcceptDrop: Boolean);
+    procedure SetDropAccept(AcceptDrop: Boolean);    
+    procedure OnFileProgress(Sender: TObject; FileIndex: Integer);
+    procedure OnFileStatus(Sender: TObject; FileIndex: Integer);
+    procedure OnManagerStatus(Sender: TObject);
   end;
 
 var
@@ -104,11 +102,15 @@ uses
 {$ENDIF}
 
 const
+  AnimImgIdx_First = 6;
+  AnimImgIdx_Count = 7;
+
 {%H-}List_IconColumn   = -1;
      List_NameColumn   = 0;
      List_SizeColumn   = 1;
-     List_MethodColumn = 2;
-     List_StateColumn  = 3;
+     List_TypeColumn   = 2;
+     List_MethodColumn = 3;
+     List_StateColumn  = 4;
 
 {$IFNDEF FPC}
 procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
@@ -120,23 +122,15 @@ begin
 inherited;
 try
   FileCount := DragQueryFile(Msg.Drop,$FFFFFFFF,nil,0);
-  If (fMainForm.FilesManager.Status = mstReady) and (FileCount > 0) then
+  If (fMainForm.FileManager.ManagerStatus = mstReady) and (FileCount > 0) then
     begin
       For i := 0 to Pred(FileCount) do
         begin
-          SetLength(FileName,DragQueryFile(Msg.Drop,i,nil,0));
-          DragQueryFile(Msg.Drop,i,PChar(FileName),Length(FileName) + 1);
-          If FileExists(FileName) and (fMainForm.FilesManager.IndexOf(FileName) < 0) then
-            begin
-              with Self.Items.Add do
-                begin
-                  SubItems.Add('');
-                  SubItems.Add('');
-                  SubItems.Add('');
-                  SubItems.Add('');
-                end;
-              fMainForm.FilesManager.Add(FileName)
-            end;
+          SetLength(FileName,DragQueryFile(Msg.Drop,i,nil,0) + 1);
+          DragQueryFile(Msg.Drop,i,PChar(FileName),Length(FileName));
+          SetLength(FileName,Length(FileName) - 1);
+          If FileExists(FileName) then
+            fMainForm.FileManager.Add(FileName);
         end;
     end;
 finally
@@ -144,18 +138,6 @@ finally
 end;
 end;
 {$ENDIF}
-
-//==============================================================================
-
-procedure TfMainForm.SettingsChanged(FileIndex: Integer);
-begin
-fSettingsChanged := True;
-try
-  OnFileStatus(Self,FileIndex);
-finally;
-  fSettingsChanged := False;
-end
-end;
 
 //==============================================================================
 
@@ -175,27 +157,62 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfMainForm.OnProgress(Sender: TObject; FileIndex: Integer);
+procedure TfMainForm.LoadFilesFromParams;
+var
+  i:        Integer;
+  FileName: String;
+begin
+If ParamCount > 0 then
+  For i := 1 to ParamCount do
+    begin
+    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      FileName := SysToUTF8(ParamStr(i));
+      If FileExistsUTF8(FileName) then
+        FileManager.Add(ExpandFileNameUTF8(FileName));
+    {$ELSE}
+      FileName := ParamStr(i);
+      If FileExists(FileName) then
+        FileManager.Add(ExpandFileName(FileName));
+    {$IFEND}
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.SetDropAccept(AcceptDrop: Boolean);
+begin
+DragAcceptFiles(lvFiles.Handle,AcceptDrop);
+{$IFDEF FPC}
+Self.AllowDropFiles := True;
+DragAcceptFiles(Handle,False);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.OnFileProgress(Sender: TObject; FileIndex: Integer);
 var
   Temp: Integer;
 begin
-If FilesManager[FileIndex].Status = fstProcessing then
+If FileManager[FileIndex].ProcessingStatus = fstProcessing then
   begin
-    Temp := Trunc(prbFileProgress.Max * FilesManager[FileIndex].Progress);
+    // entry progress
+    Temp := Trunc(prbFileProgress.Max * FileManager[FileIndex].Progress);
     If Temp <> prbFileProgress.Position then
       begin
-        lvFiles.Items[FileIndex].SubItems[List_StateColumn] := Format('Processing... %.0f%%',[FilesManager[FileIndex].Progress * 100]);
+        lvFiles.Items[FileIndex].SubItems[List_StateColumn] := Format('Processing... %.0f%%',[FileManager[FileIndex].Progress * 100]);
         prbFileProgress.Position := Temp;
       end;
-    Temp := Trunc(prbOverallProgress.Max * FilesManager.Progress);
+    // overall progress
+    Temp := Trunc(prbOverallProgress.Max * FileManager.GlobalProgress);
     If Temp <> prbOverallProgress.Position then
       begin
         prbOverallProgress.Position := Temp;
-        If FilesManager.Status in [mstProcessing, mstTerminating] then
+        If FileManager.ManagerStatus in [mstProcessing, mstTerminating] then
           begin
-            Application.Title := Format(fProgressAppTitle,[FilesManager.Progress * 100]);
-            Caption := Format(fProgressFormCaption,[FilesManager.Progress * 100]);
-            SetTaskbarProgressValue(FilesManager.Progress);
+            Application.Title := Format(fProgressAppTitle,[FileManager.GlobalProgress * 100]);
+            Caption := Format(fProgressFormCaption,[FileManager.GlobalProgress * 100]);
+            SetTaskbarProgressValue(FileManager.GlobalProgress);
           end;  
       end;
   end;
@@ -205,54 +222,20 @@ end;
 
 procedure TfMainForm.OnFileStatus(Sender: TObject; FileIndex: Integer);
 begin
-If (lvFiles.Items[FileIndex].SubItems[List_NameColumn] = '') or fSettingsChanged then
-  begin
-    lvFiles.Items[FileIndex].SubItems[List_NameColumn] := FilesManager[FileIndex].Name;
-    lvFiles.Items[FileIndex].SubItems[List_SizeColumn] := SizeToStr(FilesManager[FileIndex].Size);
-    case FilesManager[FileIndex].ProcessingSettings.RepairMethod of
-      rmRebuild:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Rebuild file';
-      rmExtract:  lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Extract archive';
-    else
-      lvFiles.Items[FileIndex].SubItems[List_MethodColumn] := 'Unknown';
-    end;
-  end;
-case FilesManager[FileIndex].Status of
-  fstReady:
-    begin
-      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Ready';
-      lvFiles.Items[FileIndex].ImageIndex := 1;
-    end;
-  fstDone:
-    begin
-      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Done';
-      lvFiles.Items[FileIndex].ImageIndex := 2;
-    end;
-  fstError:
-    begin
-      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Error';
-      lvFiles.Items[FileIndex].ImageIndex := 3;
-    end;
-  fstProcessing:
-    begin
-      lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Processing... 0%';
-      lvFiles.Items[FileIndex].ImageIndex := 4;
-      tmrAnimTimer.Tag := 0;  
-    end;
-else
- {fstUnknown}
-  lvFiles.Items[FileIndex].SubItems[List_StateColumn] := 'Unknown';
-  lvFiles.Items[FileIndex].ImageIndex := 0;
-end;
-tmrAnimTimer.Enabled := FilesManager[FileIndex].Status = fstProcessing;
+lvFiles.Items[FileIndex].SubItems[List_StateColumn] := FileProcessingStatusStrArr[FileManager[FileIndex].ProcessingStatus];
+lvFiles.Items[FileIndex].ImageIndex := Ord(FileManager[FileIndex].ProcessingStatus);
+If FileManager[FileIndex].ProcessingStatus <> fstProcessing then
+  tmrAnimTimer.Tag := 0;
+tmrAnimTimer.Enabled := FileManager[FileIndex].ProcessingStatus = fstProcessing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TfMainForm.OnStatus(Sender: TObject);
+procedure TfMainForm.OnManagerStatus(Sender: TObject);
 begin
 mnuFiles.OnPopup(nil);
-SetDropAccept(FilesManager.Status = mstReady);
-case FilesManager.Status of
+SetDropAccept(FileManager.ManagerStatus = mstReady);
+case FileManager.ManagerStatus of
   mstReady:       begin
                     btnProcessing.Caption := 'Start processing';
                     Application.Title := fDefaultAppTitle;
@@ -267,80 +250,41 @@ case FilesManager.Status of
 end;
 end;
 
-//------------------------------------------------------------------------------
-
-procedure TfMainForm.LoadFilesFromParams;
-var
-  i:        Integer;
-  FileName: String;
-begin
-If ParamCount > 0 then
-  For i := 1 to ParamCount do
-    begin
-    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-      FileName := SysToUTF8(ParamStr(i));
-      If FileExistsUTF8(FileName) and (FilesManager.IndexOf(FileName) < 0) then
-    {$ELSE}
-      FileName := ParamStr(i);
-      If FileExists(FileName) and (FilesManager.IndexOf(FileName) < 0) then
-    {$IFEND}
-        begin
-          with lvFiles.Items.Add do
-            begin
-              SubItems.Add('');
-              SubItems.Add('');
-              SubItems.Add('');
-              SubItems.Add('');
-            end;
-        {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-          FilesManager.Add(ExpandFileNameUTF8(FileName));
-        {$ELSE}
-          FilesManager.Add(ExpandFileName(FileName));
-        {$IFEND}
-      end;
-    end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TfMainForm.SetDropAccept(AcceptDrop: Boolean);
-begin
-DragAcceptFiles(lvFiles.Handle,AcceptDrop);
-{$IFDEF FPC}
-Self.AllowDropFiles := True;
-DragAcceptFiles(Handle,False);
-{$ENDIF}
-end;
-    
 //==============================================================================
 
 procedure TfMainForm.FormCreate(Sender: TObject);
 begin
-fSettingsChanged := False;
+lvFiles.DoubleBuffered := True;
+prbOverallProgress.DoubleBuffered := True;
+prbFileProgress.DoubleBuffered := True;
+stbStatusBar.DoubleBuffered := True;
 fDefaultAppTitle := Application.Title;
 fProgressAppTitle := fDefaultAppTitle + ' - %.0f%%';
 fDefaultFormCaption := Caption;
 fProgressFormCaption := fDefaultFormCaption + ' (%.0f%%)';
-stbStatusBar.DoubleBuffered := True;
-lvFiles.DoubleBuffered := True;
-prbOverallProgress.DoubleBuffered := True;
-prbFileProgress.DoubleBuffered := True;
 LoadCopyrightInfo;
-FilesManager := TFilesManager.Create;
-FilesManager.OnProgress := OnProgress;
-FilesManager.OnFileStatus := OnFileStatus;
-FilesManager.OnStatus := OnStatus;
-OnStatus(nil);
+FileManager := TFileManager.Create(lvFiles);
+FileManager.OnFileProgress := OnFileProgress;
+FileManager.OnFileStatus := OnFileStatus;
+FileManager.OnManagerStatus := OnManagerStatus;
+OnManagerStatus(nil);
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
 diaOpenDialog.InitialDir := ExtractFileDir(SysToUTF8(ParamStr(0)));
 {$ELSE}
 diaOpenDialog.InitialDir := ExtractFileDir(ParamStr(0));
 {$IFEND}
 mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
-mfErrorInfo.ShortCut := ShortCut(Ord('E'),[ssAlt]);
+mfResultInfo.ShortCut := ShortCut(Ord('R'),[ssAlt]);
 mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
 LoadFilesFromParams;
 SetDropAccept(True);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+FileManager.EndProcessingAndWait;
 end;
    
 //------------------------------------------------------------------------------
@@ -348,14 +292,7 @@ end;
 procedure TfMainForm.FormDestroy(Sender: TObject);
 begin
 SetDropAccept(False);
-FilesManager.Free;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TfMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-FilesManager.EndProcessingAndWait;
+FileManager.Free;
 end;
 
 //------------------------------------------------------------------------------
@@ -375,15 +312,15 @@ end;
 
 procedure TfMainForm.lvFilesDblClick(Sender: TObject);
 begin
-If FilesManager.Status = mstReady then
+If FileManager.ManagerStatus = mstReady then
   begin
     If lvFiles.ItemIndex >= 0 then
       begin
-        case FilesManager[lvFiles.ItemIndex].Status of
-          fstError: fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
+        case FileManager[lvFiles.ItemIndex].ProcessingStatus of
+          fstSuccess,fstWarning,fstError:
+            mfResultInfo.OnClick(nil);
         else
-          fPrcsSettingsForm.ShowProcessingSettings(FilesManager.Pointers[lvFiles.ItemIndex]^);
-          SettingsChanged(lvFiles.ItemIndex);
+          mfSettings.OnClick(nil);
         end;
       end
     else mfAdd.OnClick(nil);
@@ -394,12 +331,14 @@ end;
 
 procedure TfMainForm.mnuFilesPopup(Sender: TObject);
 begin
-mfAdd.Enabled := FilesManager.Status = mstReady;
-mfRemove.Enabled := (FilesManager.Status = mstReady) and (lvFiles.SelCount > 0);
-mfClear.Enabled := (FilesManager.Status = mstReady) and (lvFiles.Items.Count > 0);
-mfSettings.Enabled := (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1);
-mfErrorInfo.Enabled := (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError);
-mfClearCompleted.Enabled := (FilesManager.Status = mstReady) and FilesManager.CompletedItems;
+mfAdd.Enabled := FileManager.ManagerStatus = mstReady;
+mfRemove.Enabled := (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount > 0);
+mfClear.Enabled := (FileManager.ManagerStatus = mstReady) and (lvFiles.Items.Count > 0);
+mfSettings.Enabled := (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount = 1);
+If (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount = 1) then
+  mfResultInfo.Enabled := FileManager[lvFiles.Selected.Index].ProcessingStatus in [fstSuccess,fstWarning,fstError]
+else mfResultInfo.Enabled := False;
+mfClearCompleted.Enabled := (FileManager.ManagerStatus = mstReady) and FileManager.ContainsCompletedItem;
 end;
    
 //------------------------------------------------------------------------------
@@ -408,23 +347,13 @@ procedure TfMainForm.mfAddClick(Sender: TObject);
 var
   i:  Integer;
 begin
-If FilesManager.Status = mstReady then
+If FileManager.ManagerStatus = mstReady then
   If diaOpenDialog.Execute then
     begin
       lvFiles.Items.BeginUpdate;
       try
         For i := 0 to Pred(diaOpenDialog.Files.Count) do
-          If FilesManager.IndexOf(diaOpenDialog.Files[i]) < 0 then
-            begin
-              with lvFiles.Items.Add do
-                begin
-                  SubItems.Add('');
-                  SubItems.Add('');
-                  SubItems.Add('');
-                  SubItems.Add('');
-                end;
-              FilesManager.Add(diaOpenDialog.Files[i])
-            end;
+          FileManager.Add(diaOpenDialog.Files[i]);
       finally
         lvFiles.Items.EndUpdate;
       end;
@@ -438,19 +367,16 @@ var
   i:        Integer;
   MsgText:  String;
 begin
-If (FilesManager.Status = mstReady) and (lvFiles.SelCount > 0) then
+If (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount > 0) then
   begin
     If lvFiles.SelCount > 1 then
       MsgText := 'Are you sure you want to remove selected files (%d)?'
     else
       MsgText := 'Are you sure you want to remove selected file?';
     If MessageDlg(Format(MsgText,[lvFiles.SelCount]),mtConfirmation,[mbYes,mbNo],0) = mrYes then
-      For i := Pred(FilesManager.Count) downto 0 do
+      For i := Pred(lvFiles.Items.Count) downto 0 do
         If lvFiles.Items[i].Selected then
-          begin
-            lvFiles.Items.Delete(i);
-            FilesManager.Delete(i);
-          end;
+          FileManager.Delete(i);
   end;
 end;
    
@@ -458,66 +384,62 @@ end;
 
 procedure TfMainForm.mfClearClick(Sender: TObject);
 begin
-If (FilesManager.Status = mstReady) and (lvFiles.Items.Count > 0) then
+If (FileManager.ManagerStatus = mstReady) and (lvFiles.Items.Count > 0) then
   If MessageDlg('Are you sure you want to clear the entire list?',mtConfirmation,[mbYes,mbNo],0) = mrYes then
-    begin
-      lvFiles.Clear;
-      FilesManager.Clear;
-    end;
+    FileManager.Clear;
 end;
    
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
+{$message 'reimplement'}
+(*
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) then
   begin
     fPrcsSettingsForm.ShowProcessingSettings(FilesManager.Pointers[lvFiles.ItemIndex]^);
     SettingsChanged(lvFiles.ItemIndex);
   end;
+*)
 end;
-     
+
 //------------------------------------------------------------------------------
 
-procedure TfMainForm.mfErrorInfoClick(Sender: TObject);
+procedure TfMainForm.mfResultInfoClick(Sender: TObject);
 begin
+{$message 'reimplement'}
+(*
 If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError) then
   fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
+*)
 end;
     
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.mfClearCompletedClick(Sender: TObject);
-var
-  i:  Integer;
 begin
-If (FilesManager.Status = mstReady) and FilesManager.CompletedItems then
-  For i := Pred(FilesManager.Count) downto 0 do
-    If FilesManager[i].Status = fstDone then
-      begin
-        lvFiles.Items.Delete(i);
-        FilesManager.Delete(i);
-      end;
+If (FileManager.ManagerStatus = mstReady) then
+  FileManager.ClearCompleted;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.btnProcessingClick(Sender: TObject);
 begin
-If FilesManager.Count > 0 then
-  case FilesManager.Status of
-    mstReady:       FilesManager.StartProcessing;
-    mstProcessing:  FilesManager.StopProcessing;
+If FileManager.Count > 0 then
+  case FileManager.ManagerStatus of
+    mstReady:       FileManager.StartProcessing;
+    mstProcessing:  FileManager.StopProcessing;
     mstTerminating: begin
-                      FilesManager.PauseProcessing;
+                      FileManager.PauseProcessing;
                       SetTaskbarProgressState(tpsPaused);
                       If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
                                     'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
                                     'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
                                     'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
-                        FilesManager.StopProcessing
+                        FileManager.StopProcessing
                       else
-                        FilesManager.ResumeProcessing;
+                        FileManager.ResumeProcessing;
                     end;
   end
 else MessageDlg('There are no files selected for processing.',mtInformation,[mbOK],0);
@@ -527,10 +449,10 @@ end;
 
 procedure TfMainForm.tmrAnimTimerTimer(Sender: TObject);
 begin
-If FilesManager.ProcessingFile >= 0 then
+If FileManager.ProcessedFileIndex >= 0 then
   begin
-    lvFiles.Items[FilesManager.ProcessingFile].ImageIndex := 5 + tmrAnimTimer.Tag;
-    If tmrAnimTimer.Tag < 7 then
+    lvFiles.Items[FileManager.ProcessedFileIndex].ImageIndex := AnimImgIdx_First + tmrAnimTimer.Tag;
+    If tmrAnimTimer.Tag < AnimImgIdx_Count then
       tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
     else
       tmrAnimTimer.Tag := 0;
@@ -544,23 +466,14 @@ procedure TfMainForm.FormDropFiles(Sender: TObject; const FileNames: array of St
 var
   i:  Integer;
 begin
-If FilesManager.Status = mstReady then
+If FileManager.ManagerStatus = mstReady then
   For i := Low(FileNames) to High(FileNames) do
   {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-    If FileExistsUTF8(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+    If FileExistsUTF8(FileNames[i]) then
   {$ELSE}
-    If FileExists(FileNames[i]) and (fMainForm.FilesManager.IndexOf(FileNames[i]) < 0) then
+    If FileExists(FileNames[i]) then
   {$IFEND}
-      begin
-        with lvFiles.Items.Add do
-          begin
-            SubItems.Add('');
-            SubItems.Add('');
-            SubItems.Add('');
-            SubItems.Add('');
-          end;
-        fMainForm.FilesManager.Add(FileNames[i])
-      end;
+      FileManager.Add(FileNames[i]);
 end;
 {$ENDIF}
 

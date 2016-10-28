@@ -57,10 +57,16 @@ type
     Range:  Single;
   end;
 
+const
+  PROCSTAGEIDX_Special = -1;
+  PROCSTAGEIDX_Default = 0;
+  PROCSTAGEIDX_Loading = 1;
+  PROCSTAGEIDX_Saving  = 2;  
+
 {==============================================================================}
 {   TRepairer - class declaration                                              }
 {==============================================================================}
-
+type
   TRepairer = class(TObject)
   private
     fFlowControlObject:       TEvent;
@@ -77,8 +83,8 @@ type
     fCED_Buffer:              TMemoryBuffer;
     fUED_BUffer:              TMemoryBuffer;
     // initialization methods
-    procedure RectifyFileProcessingSettings; virtual; abstract;
-    procedure InitializeData; virtual; abstract;
+    //procedure RectifyFileProcessingSettings; virtual; abstract;
+    //procedure InitializeData; virtual; abstract;
     procedure InitializeProgress; virtual;
     // flow control and progress report methods
     procedure DoProgress(ProgressStageIdx: Integer; Data: Single); virtual;
@@ -92,7 +98,7 @@ type
     procedure FreeMemoryBuffers; virtual;
     // main processing methods
     procedure MainProcessing; virtual;
-    procedure ArchiveProcessing; virtual; abstract; // <- all the fun must happen here
+    //procedure ArchiveProcessing; virtual; abstract; // <- all the fun must happen here
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual;
     constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
@@ -126,9 +132,20 @@ const
 
 procedure TRepairer.InitializeProgress;
 begin
-SetLength(fProgressStages,1);
-fProgressStages[0].Offset := 0.0;
-fProgressStages[1].Range := 1.0;
+SetLength(fProgressStages,3);
+// all values that are not explicitly set are equal to 0.0
+fProgressStages[PROCSTAGEIDX_Default].Range := 1.0;
+If fFileProcessingSettings.Common.InMemoryProcessing then
+  begin
+    case fFileProcessingSettings.Common.RepairMethod of
+      rmRebuild: begin
+                   fProgressStages[PROCSTAGEIDX_Loading].Range := 0.3;
+                   fProgressStages[PROCSTAGEIDX_Saving].Range := 0.3;
+                 end;
+      rmExtract: fProgressStages[PROCSTAGEIDX_Loading].Range := 0.4;
+    end;
+    fProgressStages[PROCSTAGEIDX_Saving].Offset := 1.0 - fProgressStages[PROCSTAGEIDX_Saving].Range;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -196,17 +213,30 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.MainProcessing;
+var
+  i:  Integer;
 begin
 fResultInfo.ResultState := rsNormal;
-DoProgress(0,0.0);
+DoProgress(PROCSTAGEIDX_Special,0.0);
 try
   AllocateMemoryBuffers;
   try
-    ArchiveProcessing;
+    //ArchiveProcessing;
+
+    
+
+    {$message 'testing'}
+    For i := 0 to 1000 do
+      begin
+        Sleep(10);
+        DoProgress(PROCSTAGEIDX_Default,i/1000);
+      end;
+    DoWarning('test');
+
   finally
     FreeMemoryBuffers;
   end;
-  DoProgress(0,2.0);
+  DoProgress(PROCSTAGEIDX_Special,2.0);
 except
   on E: Exception do
     begin
@@ -214,7 +244,7 @@ except
       fResultInfo.ErrorInfo.MethodName := GetMethodNameFromIndex(fResultInfo.ErrorInfo.MethodIndex);
       fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
       fResultInfo.ErrorInfo.ExceptionText := E.Message;
-      DoProgress(-1,-1.0);
+      DoProgress(PROCSTAGEIDX_Special,-1.0);
     end;
 end;
 end;
@@ -240,8 +270,8 @@ GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
 fFileProcessingSettings := FileProcessingSettings;
 SetLength(fProgressStages,0);
 // initialization
-RectifyFileProcessingSettings;
-InitializeData;
+//RectifyFileProcessingSettings;
+//InitializeData;
 InitializeProgress;
 end;
 

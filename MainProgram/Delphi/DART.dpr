@@ -12,7 +12,6 @@ uses
   Forms,
   Repairer in '..\Repairer.pas',
   FilesManager in '..\FilesManager.pas',
-  TaskbarProgress in '..\TaskbarProgress.pas',
   MainForm in '..\MainForm.pas' {fMainForm},
   PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
   ErrorForm in '..\ErrorForm.pas' {fErrorForm},

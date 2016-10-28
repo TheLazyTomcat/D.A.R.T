@@ -60,7 +60,8 @@ with TFileStream.Create(UTF8ToSys(FilePath),fmOpenRead or fmShareDenyWrite) do
 with TFileStream.Create(FilePath,fmOpenRead or fmShareDenyWrite) do
 {$IFEND}
 try
-  ReadBuffer(Result,SizeOf(Result));
+  If Read(Result,SizeOf(Result)) < SizeOf(Result) then
+    Result := 0;
 finally
   Free;
 end;
