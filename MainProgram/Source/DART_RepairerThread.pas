@@ -1,0 +1,155 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
+unit DART_RepairerThread;
+
+interface
+
+{$INCLUDE DART_defs.inc}
+
+uses
+  Classes, WinSyncObjs,
+  DART_ProcessingSettings, DART_Repairer;
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                TRepairerThread                               }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+type
+  TFileProgressEvent = procedure(Sender: TObject; FileIndex: Integer; Progress: Single) of object;
+
+{==============================================================================}
+{   TRepairerThread - class declaration                                        }
+{==============================================================================}
+
+  TRepairerThread = class(TThread)
+  private
+    sync_Progress:            Single;
+    fFileIndex:               Integer;
+    fFileProcessingSettings:  TFileProcessingSettings;
+    fFlowControlObject:       TEvent;
+    fRepairer:                TRepairer;
+    fResultInfo:              TResultInfo;
+    fOnFileProgress:          TFileProgressEvent;
+  protected
+    procedure sync_DoProgress; virtual;
+    procedure ProgressHandler(Sender: TObject; Progress: Single); virtual;
+    procedure Execute; override;
+  public
+    constructor Create(FileIndex: Integer; FileProcessingSettings: TFileProcessingSettings);
+    destructor Destroy; override;
+    procedure StartProcessing; virtual;
+    procedure PauseProcessing; virtual;
+    procedure ResumeProcessing; virtual;
+    procedure StopProcessing; virtual;
+  published
+    property FileIndex: Integer read fFileIndex;
+    property FileProcessingSettings: TFileProcessingSettings read fFileProcessingSettings;
+    property ResultInfo: TResultInfo read fResultInfo;
+    property OnFileProgress: TFileProgressEvent read fOnFileProgress write fOnFileProgress;
+  end;
+
+implementation
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                TRepairerThread                               }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+{==============================================================================}
+{   TRepairerThread - class implementation                                     }
+{==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   TRepairerThread - protected methods                                        }
+{------------------------------------------------------------------------------}
+
+procedure TRepairerThread.sync_DoProgress;
+begin
+If Assigned(fOnFileProgress) then fOnFileProgress(Self,fFileIndex,sync_Progress);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.ProgressHandler(Sender: TObject; Progress: Single);
+begin
+sync_Progress := Progress;
+If (Progress < 0.0) or (Progress > 1.0) then
+  fResultInfo := fRepairer.ResultInfo;
+Synchronize(sync_DoProgress);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.Execute;
+begin
+fRepairer.Run;
+end;
+
+{------------------------------------------------------------------------------}
+{   TRepairerThread - public methods                                           }
+{------------------------------------------------------------------------------}
+
+constructor TRepairerThread.Create(FileIndex: Integer; FileProcessingSettings: TFileProcessingSettings);
+begin
+inherited Create(True);
+FreeOnTerminate := False;
+fFileIndex := FileIndex;
+// the settings cannot be changed after this point, so thread safety is not an issue
+fFileProcessingSettings := FileProcessingSettings;
+fFlowControlObject := TEvent.Create;
+{$message 'repairer creation according to file type and required operation'}
+fRepairer := TRepairer.Create(fFlowControlObject,fFileProcessingSettings);
+fRepairer.OnProgress := ProgressHandler;
+end;
+
+//------------------------------------------------------------------------------
+
+destructor TRepairerThread.Destroy;
+begin
+fRepairer.Free;
+fFlowControlObject.Free;
+inherited;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.StartProcessing;
+begin
+{$IF Defined(FPC) or (CompilerVersion >= 21)}
+Start;
+{$ELSE}
+Resume;
+{$IFEND}
+fFlowControlObject.SetEvent;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.PauseProcessing;
+begin
+fFlowControlObject.ResetEvent;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.ResumeProcessing;
+begin
+fFlowControlObject.SetEvent;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairerThread.StopProcessing;
+begin
+fRepairer.Stop;
+end;
+
+end.

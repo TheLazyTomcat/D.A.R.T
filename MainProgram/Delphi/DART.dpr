@@ -15,7 +15,15 @@ uses
   TaskbarProgress in '..\TaskbarProgress.pas',
   MainForm in '..\MainForm.pas' {fMainForm},
   PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
-  ErrorForm in '..\ErrorForm.pas' {fErrorForm};
+  ErrorForm in '..\ErrorForm.pas' {fErrorForm},
+  DART_Auxiliary in '..\Source\DART_Auxiliary.pas',
+  DART_FileManager in '..\Source\DART_FileManager.pas',
+  DART_ProcessingSettings in '..\Source\DART_ProcessingSettings.pas',
+  DART_Repairer_SCS in '..\Source\DART_Repairer_SCS.pas',
+  DART_Repairer_ZIP in '..\Source\DART_Repairer_ZIP.pas',
+  DART_Repairer in '..\Source\DART_Repairer.pas',
+  DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
+  DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas';
 
 {$R *.res}
 

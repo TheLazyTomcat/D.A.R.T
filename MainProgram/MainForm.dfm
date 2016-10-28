@@ -1,10 +1,10 @@
 object fMainForm: TfMainForm
-  Left = 584
-  Top = 112
+  Left = 471
+  Top = 113
   BorderStyle = bsSingle
   Caption = 'D.A.R.T - Damaged Archives Repair Tool'
-  ClientHeight = 477
-  ClientWidth = 688
+  ClientHeight = 485
+  ClientWidth = 800
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -110,8 +110,8 @@ object fMainForm: TfMainForm
   OnDestroy = FormDestroy
   OnResize = FormResize
   DesignSize = (
-    688
-    477)
+    800
+    485)
   PixelsPerInch = 96
   TextHeight = 13
   object lblFiles: TLabel
@@ -123,15 +123,15 @@ object fMainForm: TfMainForm
   end
   object bvlProgressSplit: TBevel
     Left = 8
-    Top = 368
-    Width = 673
+    Top = 376
+    Width = 785
     Height = 9
     Anchors = [akLeft, akRight, akBottom]
     Shape = bsTopLine
   end
   object lblOverallProgress: TLabel
     Left = 8
-    Top = 376
+    Top = 384
     Width = 83
     Height = 13
     Anchors = [akLeft, akBottom]
@@ -139,7 +139,7 @@ object fMainForm: TfMainForm
   end
   object lblFileProgress: TLabel
     Left = 8
-    Top = 416
+    Top = 424
     Width = 65
     Height = 13
     Anchors = [akLeft, akBottom]
@@ -148,8 +148,8 @@ object fMainForm: TfMainForm
   object lvFiles: TListView
     Left = 8
     Top = 24
-    Width = 673
-    Height = 305
+    Width = 785
+    Height = 313
     Anchors = [akLeft, akTop, akRight, akBottom]
     Columns = <
       item
@@ -162,6 +162,10 @@ object fMainForm: TfMainForm
       item
         Caption = 'File size'
         Width = 75
+      end
+      item
+        Caption = 'File type'
+        Width = 110
       end
       item
         Caption = 'Repair method'
@@ -185,8 +189,8 @@ object fMainForm: TfMainForm
   end
   object stbStatusBar: TStatusBar
     Left = 0
-    Top = 458
-    Width = 688
+    Top = 466
+    Width = 800
     Height = 19
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clBtnText
@@ -203,8 +207,8 @@ object fMainForm: TfMainForm
   end
   object btnProcessing: TButton
     Left = 8
-    Top = 336
-    Width = 673
+    Top = 344
+    Width = 785
     Height = 25
     Anchors = [akLeft, akRight, akBottom]
     Caption = 'btnProcessing'
@@ -219,8 +223,8 @@ object fMainForm: TfMainForm
   end
   object prbOverallProgress: TProgressBar
     Left = 8
-    Top = 392
-    Width = 673
+    Top = 400
+    Width = 785
     Height = 17
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
@@ -228,19 +232,19 @@ object fMainForm: TfMainForm
   end
   object prbFileProgress: TProgressBar
     Left = 8
-    Top = 432
-    Width = 673
+    Top = 440
+    Width = 785
     Height = 17
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
     TabOrder = 3
   end
   object oXPManifest: TXPManifest
-    Left = 656
+    Left = 768
   end
   object mnuFiles: TPopupMenu
     OnPopup = mnuFilesPopup
-    Left = 624
+    Left = 736
     object mfAdd: TMenuItem
       Caption = 'Add files...'
       ShortCut = 45
@@ -280,16 +284,16 @@ object fMainForm: TfMainForm
       'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All file' +
       's (*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
-    Left = 592
+    Left = 704
   end
   object tmrAnimTimer: TTimer
     Enabled = False
     Interval = 70
     OnTimer = tmrAnimTimerTimer
-    Left = 560
+    Left = 672
   end
   object imlFileIcons: TImageList
-    Left = 528
+    Left = 640
     Bitmap = {
       494C01010D000E00040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000004000000001002000000000000040
