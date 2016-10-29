@@ -191,7 +191,7 @@ FrameToSettings;
 Result := fProcessingSettings;
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 procedure TfrmProcSettingsZIP.CheckBoxClick(Sender: TObject);
 var

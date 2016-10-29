@@ -211,6 +211,7 @@ cbInMemoryProcessing.Checked := fFileProcessingSettings.Common.InMemoryProcessin
 cbInMemoryProcessing.Enabled := fFileProcessingSettings.Other.InMemoryProcessingAllowed;
 cbIgnoreErroneousEntries.Checked := fFileProcessingSettings.Common.IgnoreErroneousEntries;
 frmProcSettingsZIP.ShowProcessingSettings(fFileProcessingSettings.ZIPSettings);
+frmProcSettingsSCS.ShowProcessingSettings(fFileProcessingSettings.SCSSettings);
 end;
 
 //------------------------------------------------------------------------------
@@ -239,6 +240,7 @@ fFileProcessingSettings.Common.IgnoreFileSignature := cbIgnoreFileSignature.Chec
 fFileProcessingSettings.Common.InMemoryProcessing := cbInMemoryProcessing.Checked;
 fFileProcessingSettings.Common.IgnoreErroneousEntries := cbIgnoreErroneousEntries.Checked;
 fFileProcessingSettings.ZIPSettings := frmProcSettingsZIP.RetrieveProcessingSettings;
+fFileProcessingSettings.SCSSettings := frmProcSettingsSCS.RetrieveProcessingSettings;
 end;
 
 //------------------------------------------------------------------------------
@@ -350,6 +352,7 @@ procedure TfPrcsSettingsForm.FormCreate(Sender: TObject);
 begin
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;
+frmProcSettingsSCS.OnSettingsHint := FrameSettingsHintHandler;
 end;
 
 //------------------------------------------------------------------------------
