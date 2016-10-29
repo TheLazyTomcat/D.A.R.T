@@ -90,7 +90,8 @@ implementation
 
 uses
   Windows, ShellAPI,
-  ResultInfoForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
+  ResultInfoForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress,
+  DART_ProcessingSettings
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
 {$IFEND};
@@ -393,14 +394,14 @@ end;
 
 procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
-{$message 'reimplement'}
-(*
-If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) then
+If (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount = 1) then
   begin
-    fPrcsSettingsForm.ShowProcessingSettings(FilesManager.Pointers[lvFiles.ItemIndex]^);
-    SettingsChanged(lvFiles.ItemIndex);
+    fPrcsSettingsForm.ShowProcessingSettings(FileManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+    lvFiles.Items[lvFiles.ItemIndex].SubItems[List_TypeColumn] :=
+      FileTypeStrArr[FileManager[lvFiles.ItemIndex].ProcessingSettings.Common.FileType];
+    lvFiles.Items[lvFiles.ItemIndex].SubItems[List_MethodColumn] :=
+      RepairerMethodStrArr[FileManager[lvFiles.ItemIndex].ProcessingSettings.Common.RepairMethod];
   end;
-*)
 end;
 
 //------------------------------------------------------------------------------

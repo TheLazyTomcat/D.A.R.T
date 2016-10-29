@@ -57,7 +57,7 @@ type
     fVisualListing:     TListView;
     fManagerStatus:     TFileManagerStatus;
     fFileList:          array of TFileListItem;
-    fAvailableMemory:   UInt64;
+    fMemoryLimit:       UInt64;
     fDeferredThreads:   array of TThread;
     fProcessedFileIdx:  Integer;
     fRepairerThread:    TRepairerThread;
@@ -263,7 +263,7 @@ begin
 inherited Create;
 fVisualListing := VisualListing;
 fManagerStatus := mstReady;
-fAvailableMemory := GetAvailableMemory;
+fMemoryLimit := Trunc(GetAvailableMemory * 0.25);
 fProcessedFileIdx := -1;
 fRepairerThread := nil;
 fGlobalProgress := 0.0;
@@ -318,8 +318,9 @@ If fManagerStatus = mstReady then
             else
               ProcessingSettings.Common.FileType := atZIP_dft;
             end;
+            ProcessingSettings.Common.OriginalFileType := ProcessingSettings.Common.FileType;
             ProcessingSettings.Common.TargetPath := ExtractFilePath(Path) + 'repaired_' + Name;
-            ProcessingSettings.Other.InMemoryProcessingAllowed := Size <= Trunc(fAvailableMemory * 0.25);
+            ProcessingSettings.Other.InMemoryProcessingAllowed := Size <= fMemoryLimit;
             GlobalProgressOffset := 0;
             GlobalProgressRange := 0;
             Progress := 0;

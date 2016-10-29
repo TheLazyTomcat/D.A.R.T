@@ -27,6 +27,7 @@ const
 type
   TCommonSettings = record
     FilePath:               String;
+    OriginalFileType:       TFileType;
     FileType:               TFileType;
     RepairMethod:           TRepairMethod;
     TargetPath:             String;
@@ -95,9 +96,9 @@ type
     PathResolveHelpFiles:       array of String;
     CustomNames:                array of String;
     AssumeCityHash:             Boolean;
-    UsePredefinedPats:          Boolean;
+    UsePredefinedPaths:         Boolean;
     ExtractedUnresolvedEntries: Boolean;
-    BruteForceUnresolved:       Boolean;
+    BruteForceResolve:          Boolean;
     BruteForceLengthLimit:      Word;
     BruteForceLimitedAlphabet:  Boolean;
   end;
@@ -127,6 +128,7 @@ const
   DefaultFileProcessingSettings: TFileProcessingSettings = (
     Common: (
       FilePath:               '';
+      OriginalFileType:       atUnknown;
       FileType:               atUnknown;
       RepairMethod:           rmRebuild;
       TargetPath:             '';
@@ -177,9 +179,9 @@ const
         PathResolveHelpFiles:       nil;
         CustomNames:                nil;
         AssumeCityHash:             False;
-        UsePredefinedPats:          False;
+        UsePredefinedPaths:         False;
         ExtractedUnresolvedEntries: False;
-        BruteForceUnresolved:       False;
+        BruteForceResolve:          False;
         BruteForceLengthLimit:      32;
         BruteForceLimitedAlphabet:  True);
       Entry: (

@@ -22,7 +22,9 @@ uses
   DART_Repairer_ZIP in '..\Source\DART_Repairer_ZIP.pas',
   DART_Repairer in '..\Source\DART_Repairer.pas',
   DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
-  DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas';
+  DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas',
+  ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
+  ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame};
 
 {$R *.res}
 
