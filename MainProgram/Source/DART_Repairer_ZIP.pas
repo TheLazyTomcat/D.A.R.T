@@ -12,10 +12,17 @@ unit DART_Repairer_ZIP;
 interface
 
 uses
-  AuxTypes;
+  AuxTypes,
+  DART_Repairer;
 
 const
   FileSignature_ZIP = UInt32($04034b50);
+
+type
+  TRepairer_ZIP = class(TRepairer);
+
+  TRepairer_ZIP_Rebuild = class(TRepairer_ZIP);
+  TRepairer_ZIP_Extract = class(TRepairer_ZIP);
 
 implementation
 

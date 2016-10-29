@@ -14,7 +14,7 @@ uses
   FilesManager in '..\FilesManager.pas',
   MainForm in '..\MainForm.pas' {fMainForm},
   PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
-  ErrorForm in '..\ErrorForm.pas' {fErrorForm},
+  ResultInfoForm in '..\ResultInfoForm.pas' {fResultInfoForm},
   DART_Auxiliary in '..\Source\DART_Auxiliary.pas',
   DART_FileManager in '..\Source\DART_FileManager.pas',
   DART_ProcessingSettings in '..\Source\DART_ProcessingSettings.pas',
@@ -30,7 +30,7 @@ begin
   Application.Initialize;
   Application.Title := 'D.A.R.T';
   Application.CreateForm(TfMainForm, fMainForm);
-  Application.CreateForm(TfErrorForm, fErrorForm);
+  Application.CreateForm(TfResultInfoForm, fResultInfoForm);
   Application.CreateForm(TfPrcsSettingsForm, fPrcsSettingsForm);
   Application.Run;
 end.

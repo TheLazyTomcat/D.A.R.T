@@ -57,6 +57,10 @@ type
 
 implementation
 
+uses
+  SysUtils,
+  DART_Repairer_SCS, DART_Repairer_ZIP;
+
 {==============================================================================}
 {------------------------------------------------------------------------------}
 {                                TRepairerThread                               }
@@ -105,8 +109,25 @@ fFileIndex := FileIndex;
 // the settings cannot be changed after this point, so thread safety is not an issue
 fFileProcessingSettings := FileProcessingSettings;
 fFlowControlObject := TEvent.Create;
-{$message 'repairer creation according to file type and required operation'}
-fRepairer := TRepairer.Create(fFlowControlObject,fFileProcessingSettings);
+// select proper repairer according to file type and required operation
+case fFileProcessingSettings.Common.FileType of
+  atSCS_sig,atSCS_frc:
+    case fFileProcessingSettings.Common.RepairMethod of
+      rmRebuild:  fRepairer := TRepairer_SCS_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
+      rmExtract:  fRepairer := TRepairer_SCS_Extract.Create(fFlowControlObject,fFileProcessingSettings);
+    else
+      raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
+    end;
+  atZIP_sig,atZIP_frc,atZIP_dft:
+    case fFileProcessingSettings.Common.RepairMethod of
+      rmRebuild:  fRepairer := TRepairer_ZIP_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
+      rmExtract:  fRepairer := TRepairer_ZIP_Extract.Create(fFlowControlObject,fFileProcessingSettings);
+    else
+      raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
+    end;
+else
+  raise Exception.CreateFmt('TRepairerThread.Create: Unknown file type (%d).',[Ord(fFileProcessingSettings.Common.FileType)]);
+end;
 fRepairer.OnProgress := ProgressHandler;
 end;
 
@@ -123,12 +144,12 @@ end;
 
 procedure TRepairerThread.StartProcessing;
 begin
+fFlowControlObject.SetEvent;
 {$IF Defined(FPC) or (CompilerVersion >= 21)}
 Start;
 {$ELSE}
 Resume;
 {$IFEND}
-fFlowControlObject.SetEvent;
 end;
 
 //------------------------------------------------------------------------------

@@ -12,10 +12,17 @@ unit DART_Repairer_SCS;
 interface
 
 uses
-  AuxTypes;
+  AuxTypes,
+  DART_Repairer;
 
 const
   FileSignature_SCS = UInt32($23534353);
+
+type
+  TRepairer_SCS = class(TRepairer);
+
+  TRepairer_SCS_Rebuild = class(TRepairer_SCS);
+  TRepairer_SCS_Extract = class(TRepairer_SCS);
 
 implementation
 

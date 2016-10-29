@@ -90,7 +90,7 @@ implementation
 
 uses
   Windows, ShellAPI,
-  ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
+  ResultInfoForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
 {$IFEND};
@@ -407,11 +407,9 @@ end;
 
 procedure TfMainForm.mfResultInfoClick(Sender: TObject);
 begin
-{$message 'reimplement'}
-(*
-If (FilesManager.Status = mstReady) and (lvFiles.SelCount = 1) and (FilesManager[lvFiles.Selected.Index].Status = fstError) then
-  fErrorForm.ShowErrorInformation(FilesManager[lvFiles.ItemIndex]);
-*)
+If (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount = 1) then
+  If FileManager[lvFiles.Selected.Index].ProcessingStatus in [fstSuccess,fstWarning,fstError] then
+    fResultInfoForm.ShowResultInformation(FileManager[lvFiles.ItemIndex]);
 end;
     
 //------------------------------------------------------------------------------
