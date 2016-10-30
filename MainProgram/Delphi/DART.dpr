@@ -10,8 +10,6 @@ program DART;
 uses
   FastMM4,
   Forms,
-  Repairer in '..\Repairer.pas',
-  FilesManager in '..\FilesManager.pas',
   MainForm in '..\MainForm.pas' {fMainForm},
   PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
   ResultInfoForm in '..\ResultInfoForm.pas' {fResultInfoForm},
@@ -24,7 +22,10 @@ uses
   DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
   DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas',
   ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
-  ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame};
+  ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
+  Repairer in '..\Repairer.pas',
+  DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
+  DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas';
 
 {$R *.res}
 

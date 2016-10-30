@@ -90,11 +90,12 @@ implementation
 
 uses
   Windows, ShellAPI,
-  ResultInfoForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress,
-  DART_ProcessingSettings
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-  , LazFileUtils, LazUTF8
-{$IFEND};
+  LazFileUtils, LazUTF8,
+{$IFEND}
+  WinFileInfo, TaskbarProgress,
+  ResultInfoForm, PrcsSettingsForm,
+  DART_ProcessingSettings, DART_Repairer; 
 
 {$IFDEF FPC}
   {$R *.lfm}

@@ -12,10 +12,8 @@ unit PrcsSettingsForm;
 interface
 
 uses
-  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
-  ExtCtrls,
-  FilesManager, ProcSettingsZIPFrame, DART_ProcessingSettings,
-  ProcSettingsSCSFrame;
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,ExtCtrls,
+  ProcSettingsZIPFrame, ProcSettingsSCSFrame, DART_ProcessingSettings;
 
 type
 
@@ -40,13 +38,13 @@ type
     cbInMemoryProcessing: TCheckBox;
     cbIgnoreErroneousEntries: TCheckBox;
     grbArchiveSettings: TGroupBox;
-    frmProcSettingsZIP: TfrmProcSettingsZIP;    
+    frmProcSettingsZIP: TfrmProcSettingsZIP;
+    frmProcSettingsSCS: TfrmProcSettingsSCS;       
     lblSettingDescription: TLabel;
     meSettingDescription: TMemo;
     btnDefault: TButton;
     btnAccept: TButton;
     btnClose: TButton;
-    frmProcSettingsSCS: TfrmProcSettingsSCS;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure cmbForcedFileTypeChange(Sender: TObject);    

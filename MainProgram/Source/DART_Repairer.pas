@@ -9,12 +9,44 @@ unit DART_Repairer;
 
 {$INCLUDE DART_defs.inc}
 
+{$DEFINE zlib_lib}
+{.$DEFINE zlib_lib_dll}
+
+{$IFDEF FPC}
+  {$IFNDEF zlib_lib}
+    {$UNDEF zlib_lib_dll}
+  {$ENDIF}
+{$ELSE}
+  {$UNDEF zlib_lib}
+  {$UNDEF zlib_lib_dll}
+{$ENDIF}
+
 interface
 
 uses
   SysUtils, Classes,
   AuxTypes, WinSyncObjs,
   DART_ProcessingSettings, DART_MemoryBuffer;
+
+// Text constant identifying what method is used to call zlib ------------------
+const
+{$IFDEF FPC}
+  {$IFDEF zlib_lib}
+    {$IFDEF zlib_lib_dll}
+      zlib_method_str = 'D';  // ZLib is loaded from a DLL
+    {$ELSE}
+      zlib_method_str = 'S';  // ZLib is statically linked
+    {$ENDIF}
+  {$ELSE}
+    zlib_method_str = 'P';    // PasZLib is used
+  {$ENDIF}
+{$ELSE}
+  zlib_method_str = 'E';      // ZLibEx (delphi zlib) is used (statically linked)
+{$ENDIF}
+
+  WINDOWBITS_Raw  = -15;
+  WINDOWBITS_ZLib = 15;
+  WINDOWBITS_GZip = 31;
 
 type
   ERepairerException = class(Exception);
@@ -66,6 +98,7 @@ const
   PROCSTAGEIDX_Custom     = 1;
   PROCSTAGEIDX_Loading    = 2;
   PROCSTAGEIDX_Saving     = 3;
+  PROCSTAGEIDX_Max        = PROCSTAGEIDX_Saving;
 
 {==============================================================================}
 {   TRepairer - class declaration                                              }
@@ -75,10 +108,11 @@ type
   private
     fExpectedSignature:       UInt32;
     fFlowControlObject:       TEvent;
-    fTerminatedFlag:          Integer;
+    fTerminatedFlag:          Integer;  // 0 = continue, +x = internal error, -x = terminated
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
   protected
+    fTerminating:             Boolean;
     fArchiveStream:           TStream;
     fLocalFormatSettings:     TFormatSettings;
     fFileProcessingSettings:  TFileProcessingSettings;
@@ -88,8 +122,8 @@ type
     fCED_Buffer:              TMemoryBuffer;
     fUED_BUffer:              TMemoryBuffer;
     // initialization methods
-    //procedure RectifyFileProcessingSettings; virtual; abstract;
-    //procedure InitializeData; virtual; abstract;
+    procedure RectifyFileProcessingSettings; virtual; abstract;
+    procedure InitializeData; virtual; abstract;
     procedure InitializeProgress; virtual;
     // flow control and progress report methods
     procedure DoProgress(ProgressStageIdx: Integer; Data: Single); virtual;
@@ -98,14 +132,21 @@ type
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
     // common processing functions
     procedure CheckArchiveSignature; virtual;
+    Function FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROCSTAGEIDX_NoProgress): Int64; virtual;
     procedure ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
     procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
+    procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
+    procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
+    procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
+    //procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
     // main processing methods
     procedure MainProcessing; virtual;
-    //procedure ArchiveProcessing; virtual; abstract; // <- all the fun must happen here
+    procedure ArchiveProcessing; virtual; abstract; // <- all the fun must happen here
+    // flow control
+    procedure Resume; virtual;
   public
     // helper methods
     class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
@@ -124,7 +165,11 @@ type
 implementation
 
 uses
-  Windows;
+  Windows, Math, ZLibExAPI;
+
+{$IFDEF zlib_lib}
+  {$I 'libs\lazarus.zlib.128\zlib_lib.pas'}
+{$ENDIF}  
 
 const
   // Size of the buffer used in progress-aware stream reading and writing
@@ -142,7 +187,7 @@ const
 
 procedure TRepairer.InitializeProgress;
 begin
-SetLength(fProgressStages,4);
+SetLength(fProgressStages,Succ(PROCSTAGEIDX_Max));
 // all values that are not explicitly set are equal to 0.0
 fProgressStages[PROCSTAGEIDX_Default].Range := 1.0;
 If fFileProcessingSettings.Common.InMemoryProcessing then
@@ -165,7 +210,8 @@ begin
 fFlowControlObject.WaitFor;
 If Terminated then
   begin
-    InterlockedExchange(fTerminatedFlag,0);  
+    fTerminating := True;
+    Resume;  
     DoError(-1,'Processing terminated. Data can be in inconsistent state.');
   end;
 If (ProgressStageIdx >= Low(fProgressStages)) and (ProgressStageIdx <= High(fProgressStages)) then
@@ -225,6 +271,44 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TRepairer.FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROCSTAGEIDX_NoProgress): Int64;
+const
+  BufferOverlap = SizeOf(Signature) - 1;
+var
+  CurrentOffset:  Int64;
+  BytesRead:      Integer;
+  i:              Integer;
+begin
+Result := -1;
+If SearchFrom >= 0 then
+  begin
+    If SearchBack then
+      CurrentOffset := fArchiveStream.Size - SearchFrom
+    else
+      CurrentOffset := SearchFrom;
+  end
+else CurrentOffset := 0;
+If fArchiveStream.Size > 0 then
+  repeat
+    If SearchBack then
+      fArchiveStream.Seek(-(CurrentOffset + Int64(fIO_Buffer.Size)),soFromEnd)
+    else
+      fArchiveStream.Seek(CurrentOffset,soFromBeginning);
+    BytesRead := fArchiveStream.Read(fIO_Buffer.Memory^,fIO_Buffer.Size);
+    If BytesRead >= SizeOf(Signature) then
+      For i := 0 to (BytesRead - SizeOf(Signature)) do
+        If {%H-}PUInt32({%H-}PtrUInt(fIO_Buffer.Memory) + PtrUInt(i))^ = Signature then
+          begin
+            Result := fArchiveStream.Position - BytesRead + i;
+            Exit;
+          end;
+    Inc(CurrentOffset,fIO_Buffer.Size - BufferOverlap);
+    DoProgress(ProgressStage,CurrentOffset / fArchiveStream.Size);
+  until (CurrentOffset > fArchiveStream.Size) or Limited;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: Integer);
 var
   FileStream: TFileStream;
@@ -233,8 +317,9 @@ begin
 DoProgress(ProgressStage,0.0);
 FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
 try
-  Stream.Seek(0,soFromBeginning);
   Stream.Size := FileStream.Size; // prevents reallocations
+  Stream.Seek(0,soFromBeginning);
+  FileStream.Seek(0,soFromBeginning);
   If FileStream.Size > 0 then
     repeat
       BytesRead := FileStream.Read(fIO_Buffer.Memory^,fIO_Buffer.Size);
@@ -255,10 +340,11 @@ var
   BytesRead:  Integer;
 begin
 DoProgress(ProgressStage,0.0);
-FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
+FileStream := CreateFileStream(FileName,fmCreate or fmShareDenyWrite);
 try
+  FileStream.Size := Stream.Size;
   Stream.Seek(0,soFromBeginning);
-  FileStream.Size := Stream.Size;  
+  FileStream.Seek(0,soFromBeginning);
   If Stream.Size > 0 then
     repeat
       BytesRead := Stream.Read(fIO_Buffer.Memory^,fIO_Buffer.Size);
@@ -268,6 +354,104 @@ try
 finally
   FileStream.Free;
 end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer);
+var
+  i,Max:  Integer;
+begin
+DoProgress(ProgressStage,0.0);
+Max := Ceil(Size / fIO_Buffer.Size);
+For i := 1 to Max do
+  begin
+    Dec(Size,Stream.Read(Buffer^,Min(fIO_Buffer.Size,Size)));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + fIO_Buffer.Size);
+    DoProgress(ProgressStage,i / Max);
+  end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer);
+var
+  i,Max:  Integer;
+begin
+DoProgress(ProgressStage,0.0);
+Max := Ceil(Size / fIO_Buffer.Size);
+For i := 1 to Max do
+  begin
+    Dec(Size,Stream.Write(Buffer^,Min(IO_BufferSize,Size)));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + fIO_Buffer.Size);
+    DoProgress(ProgressStage,i / Max);
+  end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
+{$IFNDEF FPC}
+type
+  TZStream = TZStreamRec;
+{$ENDIF}
+var
+  ZStream:    TZStream;
+  SizeDelta:  Integer;
+  ResultCode: Integer;
+
+  Function RaiseDecompressionError(aResultCode: Integer): Integer;
+  begin
+    If aResultCode < 0 then
+      begin
+      {$IF not defined(FPC) or defined(zlib_lib)}
+        If Assigned(ZStream.msg) then
+          DoError(2,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),EntryName])
+        else
+          DoError(2,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],EntryName]);
+      {$ELSE}
+        If Length(ZStream.msg) > 0 then
+          DoError(2,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,EntryName])
+        else
+          DoError(2,'zlib: %s (entry "%s")',[zError(2 - aResultCode),EntryName]);
+      {$IFEND}
+      end;
+    Result := aResultCode;
+  end;
+  
+begin
+DoProgress(ProgressStage,0.0);
+If InSize >= 0 then
+  begin
+    FillChar({%H-}ZStream,SizeOf(TZStream),0);
+    SizeDelta := InSize + 255 and not 255;
+    OutBuff := nil;
+    OutSize := SizeDelta;
+    RaiseDecompressionError(InflateInit2(ZStream,WindowBits));
+    try
+      ResultCode := Z_OK;
+      ZStream.next_in := InBuff;
+      ZStream.avail_in := InSize;
+      while ResultCode <> Z_STREAM_END do
+        repeat
+          ReallocateMemoryBuffer(fUED_Buffer,OutSize);
+          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fUED_Buffer.Memory) + ZStream.total_out);
+          ZStream.avail_out := fUED_Buffer.Size - ZStream.total_out;
+          ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_NO_FLUSH));
+          DoProgress(ProgressStage,ZStream.total_in / InSize);
+          Inc(OutSize,SizeDelta);
+        until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
+      // copy uncompressed data into output
+      OutSize := ZStream.total_out;
+      GetMem(OutBuff,OutSize);
+      Move(fUED_Buffer.Memory^,OutBuff^,OutSize);
+    finally
+      RaiseDecompressionError(InflateEnd(ZStream));
+    end;
+  end;
 DoProgress(ProgressStage,1.0);
 end;
 
@@ -292,8 +476,6 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.MainProcessing;
-var
-  i:  Integer;
 begin
 fResultInfo.ResultState := rsNormal;
 DoProgress(PROCSTAGEIDX_Direct,0.0);
@@ -311,19 +493,11 @@ try
         DoError(0,'Input file does not contain any data.');
       If not fFileProcessingSettings.Common.IgnoreFileSignature then
         CheckArchiveSignature;
-      //ArchiveProcessing;
+      ArchiveProcessing;  // <- processing happens here
+      DoProgress(PROCSTAGEIDX_Direct,1.0);
     finally
       fArchiveStream.Free;
     end;
-
-    {$message 'testing'}
-    For i := 0 to 100 do
-      begin
-        Sleep(10);
-        DoProgress(PROCSTAGEIDX_Default,i/100);
-      end;
-    DoWarning('test');
-
   finally
     FreeMemoryBuffers;
   end;
@@ -338,6 +512,13 @@ except
       DoProgress(PROCSTAGEIDX_Direct,-1.0);
     end;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.Resume;
+begin
+InterlockedExchange(fTerminatedFlag,0);
 end;
 
 //==============================================================================
@@ -358,6 +539,7 @@ begin
 case MethodIndex of
   0:  Result := 'MainProcessing';
   1:  Result := 'CheckArchiveSignature;';
+  2:  Result := 'ProgressedDecompressBuffer';  
 else
   Result := 'unknown method';
 end;
@@ -373,14 +555,15 @@ fFlowControlObject := FlowControlObject;
 fTerminatedFlag := 0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
+fTerminating := False;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}
 fFileProcessingSettings := FileProcessingSettings;
 SetLength(fProgressStages,0);
 // initialization
-//RectifyFileProcessingSettings;
-//InitializeData;
+RectifyFileProcessingSettings;
+InitializeData;
 InitializeProgress;
 end;
 
@@ -395,7 +578,7 @@ end;
 
 procedure TRepairer.Run;
 begin
-InterlockedExchange(fTerminatedFlag,0);
+Resume;
 MainProcessing;
 end;
 
