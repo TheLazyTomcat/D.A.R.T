@@ -23,7 +23,6 @@ uses
   DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas',
   ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
   ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
-  Repairer in '..\Repairer.pas',
   DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
   DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas';
 
