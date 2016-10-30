@@ -16,6 +16,7 @@ const
   zlib_version = '1.2.8';
 
   Z_OK         = 0;
+  Z_BUF_ERROR  = -5;
   Z_SYNC_FLUSH = 2;
   Z_STREAM_END = 1;
 

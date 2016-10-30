@@ -100,7 +100,7 @@ Conditionals=Windows;x86;Delphi
 DebugSourceDirs=
 UsePackages=0
 [Parameters]
-RunParams=.\test.scs
+RunParams=
 HostApplication=
 Launcher=
 UseLauncher=0

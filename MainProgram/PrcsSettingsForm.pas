@@ -204,6 +204,7 @@ case fFileProcessingSettings.Common.RepairMethod of
   rmRebuild:  rbRebuild.Checked := True;
   rmExtract:  rbExtract.Checked := True;
 end;
+lbleTarget.Text := fFileProcessingSettings.Common.TargetPath;
 cbIgnoreFileSignature.Checked := fFileProcessingSettings.Common.IgnoreFileSignature;
 cbInMemoryProcessing.Checked := fFileProcessingSettings.Common.InMemoryProcessing;
 cbInMemoryProcessing.Enabled := fFileProcessingSettings.Other.InMemoryProcessingAllowed;

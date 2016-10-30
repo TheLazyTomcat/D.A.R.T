@@ -405,7 +405,7 @@ var
 
   Function RaiseDecompressionError(aResultCode: Integer): Integer;
   begin
-    If aResultCode < 0 then
+    If (aResultCode < 0) and (aREsultCode <> Z_BUF_ERROR) then
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
@@ -427,7 +427,7 @@ DoProgress(ProgressStage,0.0);
 If InSize >= 0 then
   begin
     FillChar({%H-}ZStream,SizeOf(TZStream),0);
-    SizeDelta := InSize + 255 and not 255;
+    SizeDelta := (InSize + 255) and not 255;
     OutBuff := nil;
     OutSize := SizeDelta;
     RaiseDecompressionError(InflateInit2(ZStream,WindowBits));
@@ -438,13 +438,13 @@ If InSize >= 0 then
       while ResultCode <> Z_STREAM_END do
         repeat
           ReallocateMemoryBuffer(fUED_Buffer,OutSize);
-          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fUED_Buffer.Memory) + ZStream.total_out);
+          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fUED_Buffer.Memory) + PtrUInt(ZStream.total_out));
           ZStream.avail_out := fUED_Buffer.Size - ZStream.total_out;
           ResultCode := RaiseDecompressionError(Inflate(ZStream,Z_NO_FLUSH));
           DoProgress(ProgressStage,ZStream.total_in / InSize);
           Inc(OutSize,SizeDelta);
         until (ResultCode = Z_STREAM_END) or (ZStream.avail_out > 0);
-      // copy uncompressed data into output
+      // copy decompressed data into output
       OutSize := ZStream.total_out;
       GetMem(OutBuff,OutSize);
       Move(fUED_Buffer.Memory^,OutBuff^,OutSize);
