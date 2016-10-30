@@ -35,11 +35,10 @@ var
   RebuildArchiveStream:     TStream;
   i:                        Integer;
   TempOffset:               Int64;
-  DecompressForProcessing:  Boolean;
   DecompressedBuff:         Pointer;
   DecompressedSize:         Integer;
 begin
-  DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,0.0);
+DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
@@ -101,14 +100,14 @@ try
           end;
         // calculating progress info for processing of current entry
         ZIP_PrepareEntryProgressInfo(i);
+        DoProgress(PROCSTAGEIDX_ZIP_EntryProcessing,0.0);
         // prepare buffer that will hold compressed data
         ReallocateMemoryBuffer(fCED_Buffer,LocalHeader.BinPart.CompressedSize);
         // load compressed data
         fArchiveStream.Seek(UtilityData.DataOffset,soFromBeginning);
         ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_ZIP_EntryLoading);
         // deciding whether entry data needs to be decompressed for further processing
-        DecompressForProcessing := (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0);
-        If DecompressForProcessing then
+        If (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0) then
           begin
             // data needs to be decompressed for further processing
             ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
