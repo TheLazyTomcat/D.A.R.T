@@ -16,6 +16,13 @@ uses
   ProcSettingsZIPFrame, ProcSettingsSCSFrame, DART_ProcessingSettings;
 
 type
+{$IFNDEF FPC}
+  // combobox in delphi does not have public OnMouseMove event
+  TComboBox = class(StdCtrls.TComboBox)
+  published
+    property OnMouseMove;
+  end;
+{$ENDIF}
 
   { TfPrcsSettingsForm }
 
@@ -27,7 +34,7 @@ type
     lblFileTypeCpt: TLabel;
     lblFileType: TLabel;
     cbForceFileType: TCheckBox;
-    cmbForcedFileType: TComboBox;    
+    cmbForcedFileType: TComboBox;
     vblGeneralHorSplit_File: TBevel;
     rbRebuild: TRadioButton;
     rbExtract: TRadioButton;
@@ -340,7 +347,7 @@ begin
 If Sender is TGroupBox then
   begin
     Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
-    If Assigned(Control) and (Control is TCheckBox) then
+    If Assigned(Control) and ((Control is TCheckBox) or (Control is TComboBox)) then
       SettingsMouseMove(Control,Shift,X,Y);
   end;
 end;
@@ -352,6 +359,7 @@ begin
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;
 frmProcSettingsSCS.OnSettingsHint := FrameSettingsHintHandler;
+cmbForcedFileType.OnMouseMove := SettingsMouseMove;
 end;
 
 //------------------------------------------------------------------------------

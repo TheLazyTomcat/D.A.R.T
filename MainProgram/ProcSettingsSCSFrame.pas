@@ -177,7 +177,7 @@ begin
 If Sender is TGroupBox then
   begin
     Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
-    If Assigned(Control) and (Control is TCheckBox) then
+    If Assigned(Control) and ((Control is TCheckBox) or (Control is TSpinEdit)) then
       SettingsMouseMove(Control,Shift,X,Y);
   end;
 end;

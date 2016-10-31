@@ -111,6 +111,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Width = 50
       Height = 13
       Caption = 'lblFileType'
+      OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
       Tag = 9
@@ -199,6 +200,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Caption = 'Force file type:'
       TabOrder = 0
       OnClick = CheckBoxClick
+      OnMouseMove = SettingsMouseMove
     end
     object cmbForcedFileType: TComboBox
       Tag = 4
