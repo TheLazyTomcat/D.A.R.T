@@ -62,14 +62,14 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
       OnMouseMove = GroupBoxMouseMove
       object lblHelpFiles: TLabel
         Left = 8
-        Top = 48
+        Top = 208
         Width = 226
         Height = 13
         Caption = 'Help files (one file per line, full absolute paths):'
       end
       object lblCustomPaths: TLabel
         Left = 8
-        Top = 208
+        Top = 48
         Width = 162
         Height = 13
         Caption = 'Custom paths (one path per line):'
@@ -125,22 +125,22 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
       object meHelpFiles: TMemo
         Tag = 144
         Left = 8
-        Top = 64
+        Top = 224
         Width = 545
         Height = 137
         ScrollBars = ssBoth
-        TabOrder = 3
+        TabOrder = 4
         WordWrap = False
         OnMouseMove = SettingsMouseMove
       end
       object meCustomPaths: TMemo
         Tag = 145
         Left = 8
-        Top = 224
+        Top = 64
         Width = 545
         Height = 137
         ScrollBars = ssBoth
-        TabOrder = 4
+        TabOrder = 3
         WordWrap = False
         OnMouseMove = SettingsMouseMove
       end

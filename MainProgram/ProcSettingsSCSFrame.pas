@@ -29,10 +29,10 @@ type
     cbAssumeCityHash: TCheckBox;
     cbUsePredefinedPaths: TCheckBox;
     cbExtractUnresolvedEntries: TCheckBox;
-    lblHelpFiles: TLabel;
-    meHelpFiles: TMemo;
     lblCustomPaths: TLabel;
     meCustomPaths: TMemo;
+    lblHelpFiles: TLabel;
+    meHelpFiles: TMemo;
     bvlHorSplit: TBevel;
     cbBruteForceResolve: TCheckBox;
     cbLimitedAlphabet: TCheckBox;
