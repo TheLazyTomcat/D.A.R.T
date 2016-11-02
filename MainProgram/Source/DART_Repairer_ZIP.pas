@@ -12,7 +12,7 @@ unit DART_Repairer_ZIP;
 interface
 
 uses
-  AuxTypes,
+  AuxTypes, WinSyncObjs,
   DART_ProcessingSettings, DART_Repairer;
 
 {==============================================================================}
@@ -177,6 +177,7 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
   published
     property ArchiveStructure: TZIP_FileStructure read fArchiveStructure;
   end;
@@ -829,6 +830,14 @@ case MethodIndex of
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+begin
+inherited Create(FlowControlObject,FileProcessingSettings);
+fExpectedSignature := FileSignature_ZIP;
 end;
 
 end.

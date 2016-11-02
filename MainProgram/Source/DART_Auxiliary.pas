@@ -15,6 +15,11 @@ interface
 uses
   AuxTypes;
 
+type
+  TAoStr = array of String; // for assignment compatible dynamic arrays
+
+//------------------------------------------------------------------------------     
+
 Function GetFileSize(const FilePath: String): Int64;
 
 Function GetFileSignature(const FilePath: String): UInt32;

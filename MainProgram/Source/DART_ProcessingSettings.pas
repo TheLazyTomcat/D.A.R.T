@@ -11,6 +11,9 @@ unit DART_ProcessingSettings;
 
 interface
 
+uses
+  DART_Auxiliary;
+
 type
   TFileType = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft);
   TRepairMethod = (rmUnknown,rmRebuild,rmExtract);
@@ -92,20 +95,20 @@ type
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
+  TSCS_EntrySettings = record
+    IgnoreCRC32:            Boolean;
+    IgnoreCompressionFlag:  Boolean;
+  end;
+
   TSCS_PathResolveSettings = record
     AssumeCityHash:             Boolean;
     UsePredefinedPaths:         Boolean;    
     ExtractedUnresolvedEntries: Boolean;
-    HelpFiles:                  array of String;
-    CustomPaths:                array of String;
+    CustomPaths:                TAoStr;
+    HelpFiles:                  TAoStr;
     BruteForceResolve:          Boolean;
     BruteForceLimitedAlphabet:  Boolean;    
     BruteForceLengthLimit:      Word;
-  end;
-
-  TSCS_EntrySettings = record
-    IgnoreCRC32:            Boolean;
-    IgnoreCompressionFlag:  Boolean;
   end;
 
   TSCS_Settings = record
@@ -182,8 +185,8 @@ const
         AssumeCityHash:             False;
         UsePredefinedPaths:         False;
         ExtractedUnresolvedEntries: False;
+        CustomPaths:                nil;        
         HelpFiles:                  nil;
-        CustomPaths:                nil;
         BruteForceResolve:          False;
         BruteForceLimitedAlphabet:  True;
         BruteForceLengthLimit:      32)));

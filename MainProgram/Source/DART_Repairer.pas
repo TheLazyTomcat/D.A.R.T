@@ -106,12 +106,12 @@ const
 type
   TRepairer = class(TObject)
   private
-    fExpectedSignature:       UInt32;
-    fFlowControlObject:       TEvent;
     fTerminatedFlag:          Integer;  // 0 = continue, +x = internal error, -x = terminated
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
   protected
+    fFlowControlObject:       TEvent;
+    fExpectedSignature:       UInt32;
     fTerminating:             Boolean;
     fArchiveStream:           TStream;
     fLocalFormatSettings:     TFormatSettings;
@@ -157,7 +157,7 @@ type
     procedure Stop; virtual;
     Function Terminated: Boolean; virtual;
   published
-    property ExpectedSignature: UInt32 read fExpectedSignature write fExpectedSignature;
+    property ExpectedSignature: UInt32 read fExpectedSignature;
     property ResultInfo: TResultInfo read fResultInfo;
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
@@ -551,10 +551,10 @@ constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: 
 begin
 inherited Create;
 fExpectedSignature := 0;
-fFlowControlObject := FlowControlObject;
 fTerminatedFlag := 0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
+fFlowControlObject := FlowControlObject;
 fTerminating := False;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
