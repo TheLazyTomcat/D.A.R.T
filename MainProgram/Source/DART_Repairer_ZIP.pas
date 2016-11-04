@@ -779,7 +779,7 @@ If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory the
 fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset := fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Offset +
                                                              fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Range;
 If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range := 0.01 * AvailableRange;
+  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range := 0.1 * AvailableRange;
 // ... loading of local headers
 fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Offset := fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset +
                                                                 fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range;
