@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
@@ -14,7 +14,7 @@
    id="svg2"
    inkscape:label="Pozadí"
    version="1.1"
-   inkscape:version="0.47 r22583"
+   inkscape:version="0.91 r13725"
    sodipodi:docname="small_icons.svg">
   <defs
      id="defs3">
@@ -68,14 +68,14 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.44376357"
-     inkscape:cx="372.04724"
-     inkscape:cy="526.18109"
+     inkscape:zoom="1.4333804"
+     inkscape:cx="415.75445"
+     inkscape:cy="658.70075"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1024"
-     inkscape:window-height="712"
+     inkscape:window-width="1280"
+     inkscape:window-height="744"
      inkscape:window-x="-4"
      inkscape:window-y="-4"
      inkscape:window-maximized="1" />
@@ -87,7 +87,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -174,11 +174,11 @@
       </g>
     </g>
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
        id="rect3698"
        width="226.2128"
        height="226.2128"
-       x="49.085701"
+       x="18.097521"
        y="303.58759"
        inkscape:export-filename="done.png"
        inkscape:export-xdpi="6.3656878"
@@ -186,7 +186,7 @@
     <g
        id="g3702"
        style="fill:#00ff00"
-       transform="translate(-5.4583649,0.62385904)">
+       transform="translate(-36.446545,0.62385904)">
       <rect
          transform="matrix(0.5,0.8660254,-0.8660254,0.5,0,0)"
          ry="19.588718"
@@ -207,12 +207,12 @@
          ry="19.588718" />
     </g>
     <rect
-       y="303.58759"
-       x="337.28857"
+       y="310.81815"
+       x="513.9212"
        height="226.2128"
        width="226.2128"
        id="rect3706"
-       style="fill:#ececec;fill-opacity:1;fill-rule:nonzero;stroke:none;opacity:1"
+       style="opacity:1;fill:#ececec;fill-opacity:1;fill-rule:nonzero;stroke:none"
        inkscape:export-filename="unknown.png"
        inkscape:export-xdpi="6.3656874"
        inkscape:export-ydpi="6.3656874" />
@@ -416,5 +416,33 @@
        sodipodi:ry="38.052757"
        d="m 393.0039,653.74396 a 38.052757,38.052757 0 1 1 -76.10552,0 38.052757,38.052757 0 1 1 76.10552,0 z"
        transform="matrix(0.85245901,0,0,0.85245901,375.5064,106.43508)" />
+    <circle
+       style="opacity:1;fill:#eaea00;fill-opacity:1;stroke:none;stroke-width:5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path4179"
+       cx="374.44049"
+       cy="417.62094"
+       r="112.07392"
+       inkscape:export-xdpi="6.4243298"
+       inkscape:export-ydpi="6.4243298" />
+    <g
+       id="g4191"
+       transform="translate(-3.0899963,1.0771713)"
+       style="fill:#000000;fill-opacity:1">
+      <rect
+         style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+         id="rect4183"
+         width="139.50011"
+         height="41.171837"
+         x="-457.53622"
+         y="356.94458"
+         ry="19.588718"
+         transform="matrix(0,-1,1,0,0,0)" />
+      <circle
+         r="22.472382"
+         cy="492.57904"
+         cx="377.53049"
+         id="path4189"
+         style="opacity:1;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
   </g>
 </svg>
