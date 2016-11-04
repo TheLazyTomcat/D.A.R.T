@@ -424,11 +424,12 @@ var
   
 begin
 DoProgress(ProgressStage,0.0);
-If InSize >= 0 then
+OutBuff := nil;
+OutSize := 0;
+If InSize > 0 then
   begin
     FillChar({%H-}ZStream,SizeOf(TZStream),0);
     SizeDelta := (InSize + 255) and not 255;
-    OutBuff := nil;
     OutSize := SizeDelta;
     RaiseDecompressionError(InflateInit2(ZStream,WindowBits));
     try

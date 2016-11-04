@@ -24,7 +24,8 @@ uses
   ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
   ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
   DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
-  DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas';
+  DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas',
+  DART_AnsiStringList in '..\Source\DART_AnsiStringList.pas';
 
 {$R *.res}
 

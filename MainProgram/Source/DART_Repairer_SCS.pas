@@ -56,16 +56,22 @@ type
     Resolved: Boolean;
   end;
 
+  TSCS_KnownPathItem = record
+    Path: AnsiString;
+    Hash: TCRC32;
+  end;
+
   TSCS_FileStructure = record
-    ArchiveHeader:  TSCS_ArchiveHeader;
-    Entries:        array of TSCS_Entry;
-    KnownPaths:     TAoStr;
+    ArchiveHeader:    TSCS_ArchiveHeader;
+    Entries:          array of TSCS_Entry;
+    KnownPaths:       array of TSCS_KnownPathItem;
+    UnresolvedCount:  Integer;
   end;
 
 const
   SCS_RootPath = '';
 
-  SCS_PredefinedPaths: array[0..0] of String = ('');
+  SCS_PredefinedPaths: array[0..0] of String = ('manifest.sii');
 
 type
   TRepairer_SCS = class(TRepairer)
@@ -79,7 +85,10 @@ type
     procedure SCS_LoadArchiveHeader; virtual;
     procedure SCS_LoadEntries; virtual;
     procedure SCS_SortEntries; virtual;
-    procedure SCS_ResolvePaths; virtual;
+    procedure SCS_LoadPaths; virtual;
+    procedure SCS_AssignPaths; virtual;
+  //procedure SCS_ParseContent; virtual;
+    procedure SCS_BruteForceResolve; virtual;
     procedure RectifyFileProcessingSettings; override;
     procedure InitializeData; override;
     procedure InitializeProgress; override;
@@ -98,7 +107,9 @@ implementation
 
 uses
   SysUtils, Classes,
-  BitOps, CITY;
+  BitOps, CITY,
+  DART_MemoryBuffer, DART_AnsiStringList;
+
 
 Function TRepairer_SCS.SCS_HashCompare(A,B: UInt64): Integer;
 begin
@@ -207,26 +218,27 @@ end;
 
 procedure TRepairer_SCS.SCS_SortEntries;
 
-  procedure ExchangeEntries(Idx1,Idx2: Integer);
-  var
-    TempEntry:  TSCS_Entry;
-  begin
-    If (Idx1 <> Idx2) then
-      begin
-        If (Idx1 < Low(fArchiveStructure.Entries)) or (Idx1 > High(fArchiveStructure.Entries)) then
-          DoError(203,'Index 1 (%d) out of bounds.'[Idx1]);
-        If (Idx2 < Low(fArchiveStructure.Entries)) or (Idx2 > High(fArchiveStructure.Entries)) then
-          DoError(203,'Index 2 (%d) out of bounds.'[Idx1]);
-        TempEntry := fArchiveStructure.Entries[Idx1];
-        fArchiveStructure.Entries[Idx1] := fArchiveStructure.Entries[Idx2];
-        fArchiveStructure.Entries[Idx2] := TempEntry;
-      end;
-  end;
-
   procedure QuickSort(LeftIdx,RightIdx: Integer);
   var
     Pivot:  UInt64;
     Idx,i:  Integer;
+
+    procedure ExchangeEntries(Idx1,Idx2: Integer);
+    var
+      TempEntry:  TSCS_Entry;
+    begin
+      If (Idx1 <> Idx2) then
+        begin
+          If (Idx1 < Low(fArchiveStructure.Entries)) or (Idx1 > High(fArchiveStructure.Entries)) then
+            DoError(203,'Index 1 (%d) out of bounds.'[Idx1]);
+          If (Idx2 < Low(fArchiveStructure.Entries)) or (Idx2 > High(fArchiveStructure.Entries)) then
+            DoError(203,'Index 2 (%d) out of bounds.'[Idx1]);
+          TempEntry := fArchiveStructure.Entries[Idx1];
+          fArchiveStructure.Entries[Idx1] := fArchiveStructure.Entries[Idx2];
+          fArchiveStructure.Entries[Idx2] := TempEntry;
+        end;
+    end;
+    
   begin
     If LeftIdx < RightIdx then
       begin
@@ -253,9 +265,45 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer_SCS.SCS_ResolvePaths;
+procedure TRepairer_SCS.SCS_LoadPaths;
 var
-  i,Idx:  Integer;
+  i, KnownPathsCount: Integer;
+  DirectoryList:      TAnsiStringList;
+  CurrentLevel:       TAnsiStringList;
+  EntryLines:         TAnsiStringList;  // used inside of nested function LoadPath
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---    
+
+  procedure AddKnownPath(const Path: AnsiString);
+
+    Function ContainsKnownPath: Boolean;
+    var
+      ii:       Integer;
+      PathHash: TCRC32;
+    begin
+      Result := False;
+      PathHash := AnsiStringCRC32(AnsiLowerCase(Path));
+      For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
+        If SameCRC32(PathHash,fArchiveStructure.KnownPaths[ii].Hash) then
+          If AnsiSameText(Path,fArchiveStructure.KnownPaths[ii].Path) then
+            begin
+              Result := True;
+              Break{For ii};
+            end;
+    end;
+
+  begin
+    If not ContainsKnownPath then
+      begin
+        If Length(fArchiveStructure.KnownPaths) <= KnownPathsCount then
+          SetLength(fArchiveStructure.KnownPaths,Length(fArchiveStructure.KnownPaths) + 1024);
+        fArchiveStructure.KnownPaths[KnownPathsCount].Path := Path;
+        fArchiveStructure.KnownPaths[KnownPathsCount].Hash := AnsiStringCRC32(AnsiLowerCase(Path));
+        Inc(KnownPathsCount);        
+      end;
+  end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---    
 
   procedure LoadHelpFile(const FileName: String);
   var
@@ -263,44 +311,155 @@ var
     HelpFileRepairer:     TRepairer_SCS;
     ii:                   Integer;
   begin
+  {
+    Creates local SCS# basic repairer that will load all possible paths from
+    a help file without extracting or rebuilding it. Also, all paths found to
+    this moment are passed as custom paths to the repairer.
+  }
     HelpFileProcSettings := DefaultFileProcessingSettings;
     HelpFileProcSettings.Common.FilePath := FileName;
-    HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths := fArchiveStructure.KnownPaths;
+    // file signature must be checked because we assume it is in SCS# format
+    HelpFileProcSettings.Common.IgnoreFileSignature := False;
+    SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
+    For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
+      HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
     HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings);
     try
+      {$message 'assign on progress'}
       HelpFileRepairer.Run;
-      If Length(HelpFileRepairer.ArchiveStructure.KnownPaths) > 0 then
-        begin
-          Idx := Length(fArchiveStructure.KnownPaths);
-          SetLength(fArchiveStructure.KnownPaths,Idx + Length(HelpFileRepairer.ArchiveStructure.KnownPaths));
-          For ii := Low(HelpFileRepairer.ArchiveStructure.KnownPaths) to High(HelpFileRepairer.ArchiveStructure.KnownPaths) do
-            fArchiveStructure.KnownPaths[Idx + ii] := HelpFileRepairer.ArchiveStructure.KnownPaths[ii];
-        end;
+      For ii := Low(HelpFileRepairer.ArchiveStructure.KnownPaths) to High(HelpFileRepairer.ArchiveStructure.KnownPaths) do
+        AddKnownPath(HelpFileRepairer.ArchiveStructure.KnownPaths[ii].Path);
     finally
       HelpFileRepairer.Free;
     end;
   end;
 
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+  procedure LoadPath(const Path: AnsiString; Directories: TAnsiStringList);
+  var
+    Idx:          Integer;
+    EntryString:  AnsiString;
+    OutBuff:      Pointer;
+    OutSize:      Integer;
+    ii:           Integer;
+  begin
+    Idx := SCS_IndexOfEntry(SCS_EntryFileNameHash(Path));
+    If Idx >= 0 then
+      with fArchiveStructure.Entries[Idx] do
+        If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
+          begin
+            // directory entry, load it...
+            ReallocateMemoryBuffer(fCED_BUffer,Bin.CompressedSize);
+            fArchiveStream.Seek(Bin.DataOffset,soFromBeginning);
+            fArchiveStream.ReadBuffer(fCED_Buffer.Memory^,Bin.CompressedSize);
+            SetLength(EntryString,Bin.UncompressedSize);
+            If GetFlagState(Bin.Flags,SCS_FLAG_Compressed) then
+              begin
+                // data needs to be decompressed first
+                ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,OutBuff,OutSize,PROCSTAGEIDX_NoProgress,Path,WINDOWBITS_ZLib);
+                try
+                  If UInt32(OutSize) <> Bin.UncompressedSize then
+                    DoError(204,'Decompressed size does not match for entry #%d ("%s").',[Idx,Path]);
+                  Move(OutBuff^,PAnsiChar(EntryString)^,OutSize);
+                finally
+                  FreeMem(OutBuff,OutSize);
+                end;
+              end
+            else Move(fCED_Buffer.Memory^,PAnsiChar(EntryString)^,Bin.CompressedSize);
+            // ...and parse its content (new level of directories and files)
+            EntryLines.Clear;
+            EntryLines.Text := EntryString;
+            For ii := 0 to Pred(EntryLines.Count) do
+              If Length(EntryLines[ii]) > 0 then
+                begin
+                  If EntryLines[ii][1] = '*' then
+                    begin
+                      // directory
+                      If Path <> '' then
+                        Directories.Add(Path + '/' + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
+                      else
+                        Directories.Add(Path + Copy(EntryLines[ii],2,Length(EntryLines[ii])));
+                      AddKnownPath(Directories[Pred(Directories.Count)]);
+                    end
+                  else AddKnownPath(Path + '/' + EntryLines[ii]); // file
+                end;
+          end;
+  end;
+
 begin
-// load predefined paths
+KnownPathsCount := 0;
+// add root
+AddKnownPath(SCS_RootPath);
+// add predefined paths
 If fProcessingSettings.PathResolve.UsePredefinedPaths then
-  begin
-    SetLength(fArchiveStructure.KnownPaths,Length(SCS_PredefinedPaths));
-    For i := Low(SCS_PredefinedPaths) to High(SCS_PredefinedPaths) do
-      fArchiveStructure.KnownPaths[i] := SCS_PredefinedPaths[i];
-  end;
-// load user paths
-If Length(fProcessingSettings.PathResolve.CustomPaths) > 0 then
-  begin
-    Idx := Length(fArchiveStructure.KnownPaths);
-    SetLength(fArchiveStructure.KnownPaths,Idx + Length(fProcessingSettings.PathResolve.CustomPaths));
-    For i := Low(fProcessingSettings.PathResolve.CustomPaths) to High(fProcessingSettings.PathResolve.CustomPaths) do
-      fArchiveStructure.KnownPaths[Idx + i] := fProcessingSettings.PathResolve.CustomPaths[i];
-  end;
+  For i := Low(SCS_PredefinedPaths) to High(SCS_PredefinedPaths) do
+    AddKnownPath(SCS_PredefinedPaths[i]);
+// add user paths
+with fProcessingSettings.PathResolve do
+  For i := Low(CustomPaths) to High(CustomPaths) do
+    AddKnownPath(CustomPaths[i]);
 // load paths from help files
 For i := Low(fProcessingSettings.PathResolve.HelpFiles) to High(fProcessingSettings.PathResolve.HelpFiles) do
   LoadHelpFile(fProcessingSettings.PathResolve.HelpFiles[i]);
-{$message 'implement'}
+// load all paths stored in the archive
+DirectoryList := TAnsiStringList.Create;
+try
+  CurrentLevel := TAnsiStringList.Create;
+  try
+    DirectoryList.Capacity := KnownPathsCount;
+    For i := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
+      DirectoryList.Add(fArchiveStructure.KnownPaths[i].Path);
+    EntryLines := TAnsiStringList.Create;
+    try
+      repeat
+        CurrentLevel.Assign(DirectoryList);
+        DirectoryList.Clear;
+        For i := 0 to Pred(CurrentLevel.Count) do
+          LoadPath(CurrentLevel[i],DirectoryList);
+      until DirectoryList.Count <= 0;
+    finally
+      EntryLines.Free;
+    end;
+  finally
+    CurrentLevel.Free;
+  end;
+finally
+  DirectoryList.Free;
+end;
+SetLength(fArchiveStructure.KnownPaths,KnownPathsCount);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer_SCS.SCS_AssignPaths;
+var
+  i:    Integer;
+  Idx:  Integer;
+begin
+For i := Low(fArchiveStructure.KnownPaths) to High(fArchiveStructure.KnownPaths) do
+  begin
+    Idx := SCS_IndexOfEntry(SCS_EntryFileNameHash(fArchiveStructure.KnownPaths[i].Path));
+    If Idx >= 0 then
+      begin
+        fArchiveStructure.Entries[Idx].FileName := fArchiveStructure.KnownPaths[i].Path;
+        fArchiveStructure.Entries[Idx].Resolved := True;
+      end;
+  end;
+// count entries with unresolved file names (hash does not correspond to any known path)
+fArchiveStructure.UnresolvedCount := 0;
+For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+  If not fArchiveStructure.Entries[i].Resolved then Inc(fArchiveStructure.UnresolvedCount);
+
+{$message 'test'}
+DoWarning(IntToStr(fArchiveStructure.UnresolvedCount));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer_SCS.SCS_BruteForceResolve;
+begin
+DoError(-1,'Brute-force resolve is not implemented in this build.');
 end;
 
 //------------------------------------------------------------------------------
@@ -309,6 +468,7 @@ procedure TRepairer_SCS.RectifyFileProcessingSettings;
 begin
 inherited;
 fProcessingSettings := fFileProcessingSettings.SCSSettings;
+fProcessingSettings.PathResolve.BruteForceResolve := False; 
 end;
 
 //------------------------------------------------------------------------------
@@ -319,6 +479,7 @@ inherited;
 FillChar(fArchiveStructure.ArchiveHeader,SizeOf(TSCS_ArchiveHeader),0);
 SetLength(fArchiveStructure.Entries,0);
 SetLength(fArchiveStructure.KnownPaths,0);
+fArchiveStructure.UnresolvedCount := 0;
 end;
 
 //------------------------------------------------------------------------------
@@ -326,6 +487,7 @@ end;
 procedure TRepairer_SCS.InitializeProgress;
 begin
 inherited;
+{$message 'implement'}
 end;
 
 //------------------------------------------------------------------------------
@@ -335,8 +497,11 @@ begin
 inherited;
 SCS_LoadArchiveHeader;
 SCS_LoadEntries;
-SCS_SortEntries;
-SCS_ResolvePaths;
+SCS_SortEntries;  // <- this step is optional at this point
+SCS_LoadPaths;
+SCS_AssignPaths;
+If fProcessingSettings.PathResolve.BruteForceResolve then
+  SCS_BruteForceResolve;
 If Length(fArchiveStructure.Entries) <= 0 then
   DoError(202,'Input file does not contain any valid entries.');
 end;
@@ -349,7 +514,8 @@ case MethodIndex of
   200:  Result := 'SCS_EntryPathHash';
   201:  Result := 'SCS_LoadArchiveHeader';
   202:  Result := 'ArchiveProcessing';
-  203:  Result := 'SCS_SortEntries.ExchangeEntries';
+  203:  Result := 'SCS_SortEntries.QuickSort.ExchangeEntries';
+  204:  Result := 'SCS_LoadPaths.LoadPath';
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;

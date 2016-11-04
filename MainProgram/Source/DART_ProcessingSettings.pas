@@ -102,12 +102,12 @@ type
 
   TSCS_PathResolveSettings = record
     AssumeCityHash:             Boolean;
-    UsePredefinedPaths:         Boolean;    
+    UsePredefinedPaths:         Boolean;
     ExtractedUnresolvedEntries: Boolean;
-    CustomPaths:                TAoStr;
-    HelpFiles:                  TAoStr;
+    CustomPaths:                array of AnsiString;
+    HelpFiles:                  array of String;
     BruteForceResolve:          Boolean;
-    BruteForceLimitedAlphabet:  Boolean;    
+    BruteForceLimitedAlphabet:  Boolean;
     BruteForceLengthLimit:      Word;
   end;
 
