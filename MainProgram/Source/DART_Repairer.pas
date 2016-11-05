@@ -106,6 +106,7 @@ const
 type
   TRepairer = class(TObject)
   private
+    fCatchExceptions:         Boolean;
     fTerminatedFlag:          Integer;  // 0 = continue, +x = internal error, -x = terminated
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
@@ -151,7 +152,7 @@ type
     // helper methods
     class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
@@ -505,13 +506,15 @@ try
   DoProgress(PROCSTAGEIDX_Direct,2.0);
 except
   on E: Exception do
-    begin
-      fResultInfo.ResultState := rsError;
-      fResultInfo.ErrorInfo.MethodName := GetMethodNameFromIndex(fResultInfo.ErrorInfo.MethodIndex);
-      fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
-      fResultInfo.ErrorInfo.ExceptionText := E.Message;
-      DoProgress(PROCSTAGEIDX_Direct,-1.0);
-    end;
+    If fCatchExceptions then
+      begin
+        fResultInfo.ResultState := rsError;
+        fResultInfo.ErrorInfo.MethodName := GetMethodNameFromIndex(fResultInfo.ErrorInfo.MethodIndex);
+        fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
+        fResultInfo.ErrorInfo.ExceptionText := E.Message;
+        DoProgress(PROCSTAGEIDX_Direct,-1.0);
+      end
+    else raise;
 end;
 end;
 
@@ -548,14 +551,15 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
 begin
 inherited Create;
-fExpectedSignature := 0;
+fCatchExceptions := CatchExceptions;
 fTerminatedFlag := 0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
 fFlowControlObject := FlowControlObject;
+fExpectedSignature := 0;
 fTerminating := False;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);

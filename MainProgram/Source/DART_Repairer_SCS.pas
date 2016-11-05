@@ -51,9 +51,10 @@ type
   end;
 
   TSCS_Entry = record
-    Bin:      TSCS_EntryRecord;
-    FileName: AnsiString;
-    Resolved: Boolean;
+    Bin:        TSCS_EntryRecord;
+    FileName:   AnsiString;
+    Resolved:   Boolean;
+    Erroneous:  Boolean;
   end;
 
   TSCS_KnownPathItem = record
@@ -71,7 +72,9 @@ type
 const
   SCS_RootPath = '';
 
-  SCS_PredefinedPaths: array[0..0] of String = ('manifest.sii');
+  SCS_PredefinedPaths: array[0..3] of String = (
+    'manifest.sii','mod_description.txt',
+    'version.txt','autoexec.cfg');
 
 //==============================================================================
 
@@ -98,14 +101,15 @@ type
     fEntriesSorted:       Boolean;
     Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
     Function SCS_HashCompare(A,B: UInt64): Integer; virtual;
-    Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;    
+    Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;
+    procedure SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ArchiveDataBytes,ProcessedBytes: UInt64); virtual;
     procedure SCS_LoadArchiveHeader; virtual;
     procedure SCS_LoadEntries; virtual;
     procedure SCS_SortEntries; virtual;
     procedure SCS_ForwardedProgressHandler(Sender: TObject; Progress: Single); virtual;
     procedure SCS_LoadPaths; virtual;
     procedure SCS_AssignPaths; virtual;
-  //procedure SCS_ParseContent; virtual;
+  //procedure SCS_ParseContent; virtual; // will implement later, maybe
     procedure SCS_BruteForceResolve; virtual;
     procedure RectifyFileProcessingSettings; override;
     procedure InitializeData; override;
@@ -113,13 +117,10 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
   published
     property ArchiveStructure: TSCS_FileStructure read fArchiveStructure;
   end;
-
-  TRepairer_SCS_Rebuild = class(TRepairer_SCS);
-  TRepairer_SCS_Extract = class(TRepairer_SCS);
 
 implementation
 
@@ -188,8 +189,26 @@ Result := 0;
 case fArchiveStructure.ArchiveHeader.Hash of
   SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
 else
-  DoError(200,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
+  DoError(100,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer_SCS.SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ArchiveDataBytes,ProcessedBytes: UInt64);
+begin
+fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset +
+  (ProcessedBytes / ArchiveDataBytes) * fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range := (fArchiveStructure.Entries[EntryIndex].Bin.CompressedSize / ArchiveDataBytes) *
+  fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset;
+fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
+fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset +
+                                                               fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.2;
+fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset +
+                                                        fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
 end;
 
 //------------------------------------------------------------------------------
@@ -207,9 +226,9 @@ If fArchiveStream.Size >= SizeOf(TSCS_ArchiveHeader) then
       fArchiveStructure.ArchiveHeader.Hash := SCS_HASH_City
     else
       If fArchiveStructure.ArchiveHeader.Hash <> SCS_HASH_City then
-        DoError(201,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
+        DoError(101,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
   end
-else DoError(201,'File is too small (%d bytes) to contain a valid archive header.',[fArchiveStream.Size]);
+else DoError(101,'File is too small (%d bytes) to contain a valid archive header.',[fArchiveStream.Size]);
 DoProgress(PROCSTAGEIDX_SCS_ArchiveHeaderLoading,1.0);
 end;
 
@@ -253,9 +272,9 @@ procedure TRepairer_SCS.SCS_SortEntries;
       If (Idx1 <> Idx2) then
         begin
           If (Idx1 < Low(fArchiveStructure.Entries)) or (Idx1 > High(fArchiveStructure.Entries)) then
-            DoError(203,'Index 1 (%d) out of bounds.'[Idx1]);
+            DoError(103,'Index 1 (%d) out of bounds.'[Idx1]);
           If (Idx2 < Low(fArchiveStructure.Entries)) or (Idx2 > High(fArchiveStructure.Entries)) then
-            DoError(203,'Index 2 (%d) out of bounds.'[Idx1]);
+            DoError(103,'Index 2 (%d) out of bounds.'[Idx1]);
           TempEntry := fArchiveStructure.Entries[Idx1];
           fArchiveStructure.Entries[Idx1] := fArchiveStructure.Entries[Idx2];
           fArchiveStructure.Entries[Idx2] := TempEntry;
@@ -355,7 +374,7 @@ var
     SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
     For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
       HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
-    HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings);
+    HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings,False);
     try
       HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
       HelpFileRepairer.Run;
@@ -392,7 +411,11 @@ var
                 ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,OutBuff,OutSize,PROCSTAGEIDX_NoProgress,Path,WINDOWBITS_ZLib);
                 try
                   If UInt32(OutSize) <> Bin.UncompressedSize then
-                    DoError(204,'Decompressed size does not match for entry #%d ("%s").',[Idx,Path]);
+                  {$IFDEF FPC}
+                    DoError(104,'Decompressed size does not match for entry #%d ("%s").',[Idx,Path]);
+                  {$ELSE}
+                    DoError(104,'Decompressed size does not match for entry #%d ("%s").',[Idx,UTF8ToAnsi(Path)]);
+                  {$ENDIF}
                   Move(OutBuff^,PAnsiChar(EntryString)^,OutSize);
                 finally
                   FreeMem(OutBuff,OutSize);
@@ -551,7 +574,7 @@ fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range := 0.04 * AvailableRange;
 // loading of paths
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset +
                                                          fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range;
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range := 0.35 * AvailableRange;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range := 0.05 * AvailableRange;
 // entries processing
 fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset +
                                                               fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
@@ -598,7 +621,7 @@ If fProcessingSettings.PathResolve.BruteForceResolve then
   SCS_BruteForceResolve;
 DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 If Length(fArchiveStructure.Entries) <= 0 then
-  DoError(202,'Input file does not contain any valid entries.');
+  DoError(102,'Input file does not contain any valid entries.');
 end;
 
 //==============================================================================
@@ -606,11 +629,11 @@ end;
 class Function TRepairer_SCS.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
 case MethodIndex of
-  200:  Result := 'SCS_EntryPathHash';
-  201:  Result := 'SCS_LoadArchiveHeader';
-  202:  Result := 'ArchiveProcessing';
-  203:  Result := 'SCS_SortEntries.QuickSort.ExchangeEntries';
-  204:  Result := 'SCS_LoadPaths.LoadPath';
+  100:  Result := 'SCS_EntryPathHash';
+  101:  Result := 'SCS_LoadArchiveHeader';
+  102:  Result := 'ArchiveProcessing';
+  103:  Result := 'SCS_SortEntries.QuickSort.ExchangeEntries';
+  104:  Result := 'SCS_LoadPaths.LoadPath';
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;
@@ -618,9 +641,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer_SCS.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+constructor TRepairer_SCS.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
-inherited Create(FlowControlObject,FileProcessingSettings);
+inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
 fExpectedSignature := FileSignature_SCS;
 fEntriesSorted := False;
 end;

@@ -17,7 +17,7 @@ uses
 type
   TRepairer_ZIP_Extract = class(TRepairer_ZIP)
   protected
-    procedure ZIP_ExtractInputFile; virtual;
+    procedure ZIP_ExtractArchive; virtual;
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
@@ -37,7 +37,7 @@ const
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer_ZIP_Extract.ZIP_ExtractInputFile;
+procedure TRepairer_ZIP_Extract.ZIP_ExtractArchive;
 var
   i:                  Integer;
   FullEntryFileName:  String;
@@ -194,7 +194,7 @@ end;
 procedure TRepairer_ZIP_Extract.ArchiveProcessing;
 begin
 inherited;
-ZIP_ExtractInputFile;
+ZIP_ExtractArchive;
 end;
 
 //==============================================================================

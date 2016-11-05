@@ -25,7 +25,9 @@ uses
   ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
   DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
   DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas',
-  DART_AnsiStringList in '..\Source\DART_AnsiStringList.pas';
+  DART_AnsiStringList in '..\Source\DART_AnsiStringList.pas',
+  DART_Repairer_SCS_Extract in '..\Source\DART_Repairer_SCS_Extract.pas',
+  DART_Repairer_SCS_Rebuild in '..\Source\DART_Repairer_SCS_Rebuild.pas';
 
 {$R *.res}
 

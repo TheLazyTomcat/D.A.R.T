@@ -17,7 +17,7 @@ uses
 type
   TRepairer_ZIP_Rebuild = class(TRepairer_ZIP)
   protected
-    procedure ZIP_RebuildInputFile; virtual;
+    procedure ZIP_RebuildArchive; virtual;
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
@@ -30,7 +30,7 @@ uses
   AuxTypes, CRC32, 
   DART_MemoryBuffer, DART_Repairer;
 
-procedure TRepairer_ZIP_Rebuild.ZIP_RebuildInputFile;
+procedure TRepairer_ZIP_Rebuild.ZIP_RebuildArchive;
 var
   RebuildArchiveStream:     TStream;
   i:                        Integer;
@@ -222,7 +222,7 @@ begin
 If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.Common.TargetPath) then
   DoError(200,'Output is directed into an input file, cannot proceed.');
 inherited;
-ZIP_RebuildInputFile;
+ZIP_RebuildArchive;
 end;
 
 //==============================================================================

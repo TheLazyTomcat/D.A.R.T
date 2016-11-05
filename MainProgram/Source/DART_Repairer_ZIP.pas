@@ -177,7 +177,7 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
   published
     property ArchiveStructure: TZIP_FileStructure read fArchiveStructure;
   end;
@@ -834,9 +834,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
-inherited Create(FlowControlObject,FileProcessingSettings);
+inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
 fExpectedSignature := FileSignature_ZIP;
 end;
 
