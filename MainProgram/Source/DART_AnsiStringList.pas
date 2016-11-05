@@ -16,8 +16,11 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Clear; virtual;
-    Function Add(Str: AnsiString): Integer; virtual;
+    Function IndexOf(const Str: AnsiString): Integer; virtual;
+    Function Add(const Str: AnsiString): Integer; virtual;
+    procedure Exchange(Index1,Index2: Integer); virtual;
     procedure Assign(List: TAnsiStringList); virtual;
+    procedure Sort; virtual;
     property Strings[Index: Integer]: AnsiString read GetString write SetString; default;
   published
     property Capacity: Integer read GetCapacity write SetCapacity;
@@ -132,13 +135,46 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TAnsiStringList.Add(Str: AnsiString): Integer;
+Function TAnsiStringList.IndexOf(const Str: AnsiString): Integer;
+var
+  i:  Integer;
+begin
+Result := -1;
+For i := Low(fStringArray) to Pred(fCount) do
+  If AnsiSameText(fStringArray[i],Str) then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TAnsiStringList.Add(const Str: AnsiString): Integer;
 begin
 If Length(fStringArray) <= fCount then
   SetLength(fStringArray,Length(fStringArray) + 128);
 fStringArray[fCount] := Str;
 Result := fCount;
 Inc(fCount);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAnsiStringList.Exchange(Index1,Index2: Integer);
+var
+  Temp: AnsiString;
+begin
+If Index1 <> Index2 then
+  begin
+    If (Index1 < Low(fStringArray)) or (Index1 >= fCount) then
+      raise Exception.CreateFmt('TAnsiStringList.Exchange: Index1 (%d) out of bounds.',[Index1]);
+    If (Index2 < Low(fStringArray)) or (Index2 >= fCount) then
+      raise Exception.CreateFmt('TAnsiStringList.Exchange: Index2 (%d) out of bounds.',[Index2]);
+    Temp := fStringArray[Index1];
+    fStringArray[Index1] := fStringArray[Index2];
+    fStringArray[Index2] := Temp;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -153,6 +189,37 @@ If Length(fStringArray) < List.Count then
 For i := 0 to Pred(List.Count) do
   fStringArray[i] := List[i];
 fCount := List.Count;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAnsiStringList.Sort;
+
+  procedure QuickSort(LeftIdx,RightIdx: Integer);
+  var
+    Pivot:  AnsiString;
+    Idx,i:  Integer;
+  begin
+    If LeftIdx < RightIdx then
+      begin
+        Exchange((LeftIdx + RightIdx) shr 1,RightIdx);
+        Pivot := fStringArray[RightIdx];
+        Idx := LeftIdx;
+        For i := LeftIdx to Pred(RightIdx) do
+          If AnsiCompareStr(Pivot,fStringArray[i]) > 0 then
+            begin
+              Exchange(i,idx);
+              Inc(Idx);
+            end;
+        Exchange(Idx,RightIdx);
+        QuickSort(LeftIdx,Idx - 1);
+        QuickSort(Idx + 1,RightIdx);
+      end;
+  end;
+  
+begin
+If fCount > 1 then
+  QuickSort(Low(fStringArray),Pred(fCount));
 end;
 
 end.

@@ -30,7 +30,7 @@ implementation
 uses
   SysUtils, Classes,
   BitOps,
-  DART_MemoryBuffer, DART_Repairer;
+  DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer;
 
 procedure TRepairer_SCS_Rebuild.SCS_DiscardDirectories;
 var
@@ -56,7 +56,42 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer_SCS_Rebuild.SCS_ReconstructDirectories;
+var
+  PathDeconstructor:  TPathDeconstructor;
+  i,j:                Integer;
 begin
+PathDeconstructor := TPathDeconstructor.Create;
+try
+  // deconstruct path of all resolved entries
+  For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+    begin
+      If fArchiveStructure.Entries[i].UtilityData.Resolved then
+        PathDeconstructor.DeconstructFilePath(fArchiveStructure.Entries[i].FileName);
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    end;
+  PathDeconstructor.Sort;
+  // store deconstructed paths into entries
+  SetLength(fArchiveStructure.Entries,Length(fArchiveStructure.Entries) + PathDeconstructor.Count);
+  For i := 0 to Pred(PathDeconstructor.Count) do
+    with fArchiveStructure.Entries[High(fArchiveStructure.Entries) - i] do
+      begin
+        FileName := PathDeconstructor[i].FullPath;
+        Bin.Hash := SCS_EntryFileNameHash(FileName);
+        Bin.Flags := SCS_FLAG_Unknown or SCS_FLAG_Directory;
+        // other bin fileds will be filled when the item will be written
+        UtilityData.Resolved := True;
+        UtilityData.Erroneous := False;
+        SetLength(UtilityData.SubEntries,PathDeconstructor[i].SubNodeCount +
+                                         PathDeconstructor[i].FileCount);
+        For j := 0 to Pred(PathDeconstructor[i].SubNodeCount) do
+          UtilityData.SubEntries[j] := '*' + PathDeconstructor[i].SubNodes[j].Name;
+        For j := 0 to Pred(PathDeconstructor[i].FileCount) do
+          UtilityData.SubEntries[PathDeconstructor[i].SubNodeCount + j] := PathDeconstructor[i].Files[j];
+        DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      end;
+finally
+  PathDeconstructor.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
