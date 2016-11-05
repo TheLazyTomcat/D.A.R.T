@@ -178,26 +178,29 @@ try
   fArchiveStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset := UInt32(RebuildArchiveStream.Position);
   // write central directory
   For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
-    If fArchiveStructure.Entries[i].UtilityData.Erroneous then
-      // entry is erroneous (there was error in processing that was ignored), do not write this entry
-      with fArchiveStructure.EndOfCentralDirectory.BinPart,fArchiveStructure.Entries[i].CentralDirectoryHeader.BinPart do
-        begin
-          Dec(EntriesOnDisk);
-          Dec(Entries);
-          Dec(CentralDirectorySize,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
-          Dec(CentralDirectorySize,FileNameLength);
-          Dec(CentralDirectorySize,ExtraFieldLength);
-          Dec(CentralDirectorySize,FileCommentLength);
-      end
-    else
-      // writing entry data
-      with fArchiveStructure.Entries[i].CentralDirectoryHeader do
-        begin
-          RebuildArchiveStream.WriteBuffer(BinPart,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
-        end;
+    begin
+      If fArchiveStructure.Entries[i].UtilityData.Erroneous then
+        // entry is erroneous (there was error in processing that was ignored), do not write this entry
+        with fArchiveStructure.EndOfCentralDirectory.BinPart,fArchiveStructure.Entries[i].CentralDirectoryHeader.BinPart do
+          begin
+            Dec(EntriesOnDisk);
+            Dec(Entries);
+            Dec(CentralDirectorySize,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
+            Dec(CentralDirectorySize,FileNameLength);
+            Dec(CentralDirectorySize,ExtraFieldLength);
+            Dec(CentralDirectorySize,FileCommentLength);
+        end
+      else
+        // writing entry data
+        with fArchiveStructure.Entries[i].CentralDirectoryHeader do
+          begin
+            RebuildArchiveStream.WriteBuffer(BinPart,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
+          end;
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    end;
   // write end of central directory
   with fArchiveStructure.EndOfCentralDirectory do
     begin

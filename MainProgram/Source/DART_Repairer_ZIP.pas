@@ -638,6 +638,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
     end;
 end;
 
@@ -691,6 +692,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       fArchiveStructure.Entries[i].UtilityData.NeedsSizes :=
         (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);  
     end;
 end;
 

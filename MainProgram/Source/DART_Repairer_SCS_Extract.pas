@@ -19,8 +19,6 @@ type
   protected
     procedure SCS_ExtractArchive; virtual;
     procedure ArchiveProcessing; override;
-  public
-    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
 implementation
@@ -32,7 +30,7 @@ uses
 
 procedure TRepairer_SCS_Extract.SCS_ExtractArchive;
 var
-  ArchiveDataBytes:   UInt64;
+
   ProcessedBytes:     UInt64;
   i:                  Integer;
   HashName:           String;
@@ -43,20 +41,17 @@ var
   DecompressedSize:   Integer;
 begin
 DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
-// get amount of data in the archive (used for progress)
-ArchiveDataBytes := UInt64(fArchiveStream.Size) - (fArchiveStructure.ArchiveHeader.EntriesOffset +
-                    fArchiveStructure.ArchiveHeader.Entries * SizeOf(TSCS_EntryRecord));
-ProcessedBytes := 0;                    
+ProcessedBytes := 0;
 // traverse all entries and extract them                    
 For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
   with fArchiveStructure.Entries[i] do
     try
       // calculate entry processing progress info
-      SCS_PrepareEntryProgressInfo(i,ArchiveDataBytes,ProcessedBytes);
+      SCS_PrepareEntryProgressInfo(i,ProcessedBytes);
       Inc(ProcessedBytes,Bin.CompressedSize);
       DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,0.0);
       ForceExtract := False;
-      If Resolved then
+      If UtilityData.Resolved then
         begin
           // file name of the entry was fully resolved, construct full path for entry output file
           FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
@@ -137,7 +132,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
     except
       on E: Exception do
         begin
-          Erroneous := True;
+          UtilityData.Erroneous := True;
           If fFileProcessingSettings.Common.IgnoreErroneousEntries and not fTerminating then
             begin
               Resume;
@@ -155,17 +150,6 @@ procedure TRepairer_SCS_Extract.ArchiveProcessing;
 begin
 inherited;
 SCS_ExtractArchive;
-end;
-
-//==============================================================================
-
-class Function TRepairer_SCS_Extract.GetMethodNameFromIndex(MethodIndex: Integer): String;
-begin
-case MethodIndex of
-  300:  Result := 'SCS_ExtractArchive';
-else
-  Result := inherited GetMethodNameFromIndex(MethodIndex);
-end;
 end;
 
 end.

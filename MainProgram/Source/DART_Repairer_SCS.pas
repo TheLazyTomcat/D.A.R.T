@@ -31,6 +31,8 @@ const
   SCS_FLAG_Compressed = $00000002;
   SCS_FLAG_Unknown    = $00000004;  // seems to be always set
 
+  SCS_DefaultEntryTableOffset = UInt64($0000000000001000);
+
 type
   TSCS_ArchiveHeader = packed record
     Signature:      UInt32;
@@ -50,11 +52,16 @@ type
     CompressedSize:   UInt32;
   end;
 
-  TSCS_Entry = record
-    Bin:        TSCS_EntryRecord;
-    FileName:   AnsiString;
+  TSCS_UtilityData = record
     Resolved:   Boolean;
     Erroneous:  Boolean;
+    SubEntries: array of AnsiString;
+  end;
+
+  TSCS_Entry = record
+    Bin:          TSCS_EntryRecord;
+    FileName:     AnsiString;
+    UtilityData:  TSCS_UtilityData;
   end;
 
   TSCS_KnownPathItem = record
@@ -63,17 +70,19 @@ type
   end;
 
   TSCS_FileStructure = record
-    ArchiveHeader:    TSCS_ArchiveHeader;
-    Entries:          array of TSCS_Entry;
-    KnownPaths:       array of TSCS_KnownPathItem;
-    UnresolvedCount:  Integer;
+    ArchiveHeader:  TSCS_ArchiveHeader;
+    Entries:        array of TSCS_Entry;
+    KnownPaths:     array of TSCS_KnownPathItem;
+    DataBytes:      UInt64;
   end;
 
 const
   SCS_RootPath = '';
 
   SCS_PredefinedPaths: array[0..3] of String = (
+    // modifications stuff
     'manifest.sii','mod_description.txt',
+    // untracked files from ETS2 base.scs
     'version.txt','autoexec.cfg');
 
 //==============================================================================
@@ -102,7 +111,7 @@ type
     Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
     Function SCS_HashCompare(A,B: UInt64): Integer; virtual;
     Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;
-    procedure SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ArchiveDataBytes,ProcessedBytes: UInt64); virtual;
+    procedure SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ProcessedBytes: UInt64); virtual;
     procedure SCS_LoadArchiveHeader; virtual;
     procedure SCS_LoadEntries; virtual;
     procedure SCS_SortEntries; virtual;
@@ -195,11 +204,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer_SCS.SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ArchiveDataBytes,ProcessedBytes: UInt64);
+procedure TRepairer_SCS.SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ProcessedBytes: UInt64);
 begin
 fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset +
-  (ProcessedBytes / ArchiveDataBytes) * fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
-fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range := (fArchiveStructure.Entries[EntryIndex].Bin.CompressedSize / ArchiveDataBytes) *
+  (ProcessedBytes / fArchiveStructure.DataBytes) * fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range := (fArchiveStructure.Entries[EntryIndex].Bin.CompressedSize / fArchiveStructure.DataBytes) *
   fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
 fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset;
 fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
@@ -246,7 +255,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
     begin
       fArchiveStream.ReadBuffer(Bin,SizeOf(TSCS_EntryRecord));
       FileName := '';
-      Resolved := False;
+      UtilityData.Resolved := False;
       If fProcessingSettings.Entry.IgnoreCRC32 then
         Bin.CRC32 := 0;
       If fProcessingSettings.Entry.IgnoreCompressionFlag then
@@ -282,6 +291,7 @@ procedure TRepairer_SCS.SCS_SortEntries;
     end;
     
   begin
+    DoProgress(PROCSTAGEIDX_NoProgress,0.0); // must be called at the start of this routine
     If LeftIdx < RightIdx then
       begin
         ExchangeEntries((LeftIdx + RightIdx) shr 1,RightIdx);
@@ -316,7 +326,8 @@ end;
 
 procedure TRepairer_SCS.SCS_LoadPaths;
 var
-  i, KnownPathsCount: Integer;
+  i:                  Integer;
+  KnownPathsCount:    Integer;
   DirectoryList:      TAnsiStringList;
   CurrentLevel:       TAnsiStringList;
   EntryLines:         TAnsiStringList;  // used inside of nested function LoadPath
@@ -513,17 +524,10 @@ For i := Low(fArchiveStructure.KnownPaths) to High(fArchiveStructure.KnownPaths)
     If Idx >= 0 then
       begin
         fArchiveStructure.Entries[Idx].FileName := fArchiveStructure.KnownPaths[i].Path;
-        fArchiveStructure.Entries[Idx].Resolved := True;
+        fArchiveStructure.Entries[Idx].UtilityData.Resolved := True;
       end;
+    DoProgress(PROCSTAGEIDX_NoProgress,0.0);  
   end;
-// count entries with unresolved file names (hash does not correspond to any known path)
-fArchiveStructure.UnresolvedCount := 0;
-For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
-  If not fArchiveStructure.Entries[i].Resolved then Inc(fArchiveStructure.UnresolvedCount);
-
-{$message 'test'}
-If fArchiveStructure.UnresolvedCount > 0 then
-  DoWarning(IntToStr(fArchiveStructure.UnresolvedCount));
 end;
 
 //------------------------------------------------------------------------------
@@ -552,7 +556,6 @@ inherited;
 FillChar(fArchiveStructure.ArchiveHeader,SizeOf(TSCS_ArchiveHeader),0);
 SetLength(fArchiveStructure.Entries,0);
 SetLength(fArchiveStructure.KnownPaths,0);
-fArchiveStructure.UnresolvedCount := 0;
 end;
 
 //------------------------------------------------------------------------------
@@ -608,6 +611,8 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer_SCS.ArchiveProcessing;
+var
+  i:  Integer;
 begin
 inherited;
 SCS_LoadArchiveHeader;
@@ -622,6 +627,11 @@ If fProcessingSettings.PathResolve.BruteForceResolve then
 DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 If Length(fArchiveStructure.Entries) <= 0 then
   DoError(102,'Input file does not contain any valid entries.');
+// get amount of data in the archive (without directory entries) - used for progress
+fArchiveStructure.DataBytes := 0;
+For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+  If not GetFlagState(fArchiveStructure.Entries[i].Bin.Flags,SCS_FLAG_Directory) then
+    Inc(fArchiveStructure.DataBytes,fArchiveStructure.Entries[i].Bin.CompressedSize);
 end;
 
 //==============================================================================
