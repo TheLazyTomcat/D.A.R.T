@@ -54,6 +54,7 @@ try
   // prepare output stream
   If fFileProcessingSettings.Common.InMemoryProcessing then
     RebuildArchiveStream.Size := Trunc(fArchiveStream.Size * 1.1);
+  RebuildArchiveStream.Seek(0,soFromBeginning);  
   For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
     with fArchiveStructure.Entries[i] do
       try

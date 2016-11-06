@@ -29,27 +29,27 @@ implementation
 
 uses
   SysUtils, Classes,
-  BitOps,
+  BitOps, CRC32,
   DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer;
 
 procedure TRepairer_SCS_Rebuild.SCS_DiscardDirectories;
 var
-  i,j:        Integer;
   EntryCount: Integer;
+  i:          Integer;
 begin
 // removes all resolved directory entries - they will be reconstructed from file names
-EntryCount := Length(fArchiveStructure.Entries);
-For i := High(fArchiveStructure.Entries) downto Low(fArchiveStructure.Entries) do
+EntryCount := Low(fArchiveStructure.Entries);
+For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
   with fArchiveStructure.Entries[i] do
-    begin
-      If GetFlagState(Bin.Flags,SCS_FLAG_Directory) and UtilityData.Resolved then
-        begin
-          For j := i to (EntryCount - 2) do
-            fArchiveStructure.Entries[j] := fArchiveStructure.Entries[j + 1];
-          Dec(EntryCount);
-        end;
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);   
-    end;
+  begin
+    If not(GetFlagState(Bin.Flags,SCS_FLAG_Directory) and UtilityData.Resolved) then
+      begin
+        If EntryCount <> i then
+          fArchiveStructure.Entries[EntryCount] := fArchiveStructure.Entries[i];
+        Inc(EntryCount);
+      end;
+    DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+  end;
 SetLength(fArchiveStructure.Entries,EntryCount);
 end;
 
@@ -67,7 +67,8 @@ try
     begin
       If fArchiveStructure.Entries[i].UtilityData.Resolved then
         PathDeconstructor.DeconstructFilePath(fArchiveStructure.Entries[i].FileName);
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      // this is the slowest part of path reconstruction, so progress is done here
+      DoProgress(PROCSTAGEIDX_SCS_PathsLoading_DirsRect,(i + 1) / Length(fArchiveStructure.Entries));
     end;
   PathDeconstructor.Sort;
   // store deconstructed paths into entries
@@ -78,7 +79,7 @@ try
         FileName := PathDeconstructor[i].FullPath;
         Bin.Hash := SCS_EntryFileNameHash(FileName);
         Bin.Flags := SCS_FLAG_Unknown or SCS_FLAG_Directory;
-        // other bin fileds will be filled when the item will be written
+        // other bin fields will be filled when the item is written
         UtilityData.Resolved := True;
         UtilityData.Erroneous := False;
         SetLength(UtilityData.SubEntries,PathDeconstructor[i].SubNodeCount +
@@ -101,13 +102,55 @@ var
   ProcessedBytes:       UInt64;
   DataOffset:           Int64;
   RebuildArchiveStream: TStream;
-  i:                    Integer;
+  i,j:                  Integer;
+  DecompressedBuff:     Pointer;
+  DecompressedSize:     Integer;
+  DirEntryStr:          AnsiString;
+
+  // manages unresolved entries extraction
+  procedure ExtractUnresolvedEntry(EntryIdx: Integer; Data: Pointer; DataSize: Integer);
+  var
+    EntryExtractFile: TFileStream;
+    HashName:         String;
+    EntryFileName:    String;
+  begin
+    with fArchiveStructure.Entries[EntryIdx] do
+      If not UtilityData.Resolved then
+        begin
+          If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
+            begin
+              // raw data will be saved to a file
+              DoWarning(Format('File name of entry #%d (0x%.16x) was not resolved, extracting entry data.',[i,Bin.Hash,Bin.UncompressedSize]));
+              case fArchiveStructure.ArchiveHeader.Hash of
+                SCS_HASH_City:  HashName := 'CITY';
+              else
+                HashName := 'UNKN';
+              end;
+              EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fFileProcessingSettings.Common.TargetPath) + 'unresolved_' +
+                               ChangeFileExt(ExtractFileName(fFileProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[HashName,Bin.Hash]);
+              If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
+                EntryFileName := EntryFileName + 'D'
+              else
+                EntryFileName := EntryFileName + 'F';
+            {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+              ForceDirectoriesUTF8(ExtractFileDir(EntryFileName));
+            {$ELSE}
+              ForceDirectories(ExtractFileDir(EntryFileName));
+            {$IFEND}
+              EntryExtractFile := CreateFileStream(EntryFileName,fmCreate or fmShareDenyWrite);
+              try
+                EntryExtractFile.WriteBuffer(Data^,DataSize);
+              finally
+                EntryExtractFile.Free;
+              end;
+            end
+          // data will not be extracted...
+          else DoWarning(Format('File name of entry #%d (0x%.16x) was not resolved.',[i,Bin.Hash]));
+        end;
+  end;
+
 begin
 DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
-// reconstruct all directory entries from file names
-SCS_DiscardDirectories;
-SCS_ReconstructDirectories;
-SCS_SortEntries;
 // create directory for the rebuild file
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
@@ -123,6 +166,7 @@ try
   // prepare output stream
   If fFileProcessingSettings.Common.InMemoryProcessing then
     RebuildArchiveStream.Size := Trunc(fArchiveStream.Size * 1.1);
+  RebuildArchiveStream.Seek(0,soFromBeginning);   
   ProcessedBytes := 0;
   // set stream position at the start of data, header and entries table will be
   // written later (for now fill the area with zeroes)
@@ -138,7 +182,67 @@ try
         // calculate entry processing progress info
         SCS_PrepareEntryProgressInfo(i,ProcessedBytes);
         DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,0.0);
-        {$message 'implement'}
+        If GetFlagState(Bin.Flags,SCS_FLAG_Directory) and UtilityData.Resolved then
+          begin
+            // entry is a resolved directory
+            // build the entry data
+            DirEntryStr := '';
+            For j := Low(UtilityData.SubEntries) to High(UtilityData.SubEntries) do
+              If j < High(UtilityData.SubEntries) then
+                DirEntryStr := DirEntryStr + UtilityData.SubEntries[j] + #10{LF}
+              else
+                DirEntryStr := DirEntryStr + UtilityData.SubEntries[j];
+            // fill missing info
+            Bin.DataOffset := UInt64(RebuildArchiveStream.Position);
+            Bin.CRC32 := AnsiStringCRC32(DirEntryStr);
+            Bin.UncompressedSize := Length(DirEntryStr);
+            Bin.CompressedSize := Length(DirEntryStr);
+            {$message 'implement compression of directory entry'}
+            // save data (no progress)
+            RebuildArchiveStream.WriteBuffer(PChar(DirEntryStr)^,Length(DirEntryStr));
+            DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+          end
+        else
+          begin
+            // entry is a file or unresolved directory
+            // store original data offset
+            UtilityData.OriginalDataOffset := Bin.DataOffset;
+            // prepare buffer that will hold compressed data
+            ReallocateMemoryBuffer(fCED_Buffer,Bin.CompressedSize);
+            // load compressed data from input file
+            fArchiveStream.Seek(Bin.DataOffset,soFromBeginning);
+            ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntryLoading);
+            If ((Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0)) or not UtilityData.Resolved then
+              begin
+                // a new CRC32 checksum is required or the entry is not resolved (might need extraction)
+                If GetFlagState(Bin.Flags,SCS_FLAG_Compressed) then
+                  begin
+                    // data needs to be decompressed for CRC32 calculation
+                    ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
+                      DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
+                      {$IFDEF FPC}FileName,{$ELSE}UTF8ToAnsi(FileName),{$ENDIF}WINDOWBITS_ZLib);
+                    try
+                      ExtractUnresolvedEntry(i,DecompressedBuff,DecompressedSize);
+                      If (Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0) then
+                        Bin.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
+                    finally
+                      FreeMem(DecompressedBuff,DecompressedSize);
+                    end;
+                  end
+                else
+                  begin
+                    ExtractUnresolvedEntry(i,fCED_Buffer.Memory,Bin.CompressedSize);
+                    If (Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0) then
+                      Bin.CRC32 := BufferCRC32(fCED_Buffer.Memory^,Bin.CompressedSize);
+                  end;
+              end;
+            // data offset is set to current position in output stream
+            Bin.DataOffset := UInt64(RebuildArchiveStream.Position);
+            // bin part does not need any more changes, save the data to output
+            ProgressedStreamWrite(RebuildArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntrySaving);
+            Inc(ProcessedBytes,Bin.CompressedSize);
+          end;
+        DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
       except
         on E: Exception do
           begin
@@ -151,9 +255,31 @@ try
             else raise;
           end;
       end;
-  {$message 'implement'}
-  // finalize
   RebuildArchiveStream.Size := RebuildArchiveStream.Position;
+  // fill archive header and write it
+  with fArchiveStructure.ArchiveHeader do
+    begin
+      Signature := FileSignature_SCS;
+      Unknown := 1;
+      Hash := SCS_HASH_City;
+      Entries := 0;
+      For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+        If not fArchiveStructure.Entries[i].UtilityData.Erroneous then Inc(Entries);
+      EntriesOffset := SCS_DefaultEntryTableOffset;
+      UnknownOffset := 0;
+    end;
+  RebuildArchiveStream.Seek(0,soFromBeginning);
+  RebuildArchiveStream.WriteBuffer(fArchiveStructure.ArchiveHeader,SizeOf(TSCS_ArchiveHeader));
+  // write entry table (erroneous entries are discarded)
+  RebuildArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntriesOffset,soFromBeginning);
+  For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+    with fArchiveStructure.Entries[i] do
+      begin
+        If not UtilityData.Erroneous then
+          RebuildArchiveStream.WriteBuffer(Bin,SizeOf(TSCS_EntryRecord));
+        DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      end;
+  // finalize
   DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,1.0);
   If fFileProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,RebuildArchiveStream,PROCSTAGEIDX_Saving);
@@ -170,6 +296,11 @@ begin
 If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.Common.TargetPath) then
   DoError(200,'Output is directed into an input file, cannot proceed.');
 inherited;
+// reconstruct all directory entries from file names
+SCS_DiscardDirectories;
+SCS_ReconstructDirectories;
+SCS_SortEntries;
+DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 SCS_RebuildArchive;
 end;
 

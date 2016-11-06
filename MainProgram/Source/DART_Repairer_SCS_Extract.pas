@@ -55,7 +55,8 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
         begin
           // file name of the entry was fully resolved, construct full path for entry output file
           FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
-                               {$IFDEF FPC}AnsiReplaceStr(FileName,'/','\');{$ELSE}AnsiReplaceStr(UTF8ToAnsi(FileName),'/','\');{$ENDIF}
+                              {$IFDEF FPC}AnsiReplaceStr(FileName,SCS_PathDelim,'\');
+                              {$ELSE}AnsiReplaceStr(UTF8ToAnsi(FileName),SCS_PathDelim,'\');{$ENDIF}
         end
       else
         begin
@@ -74,7 +75,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
                 FullEntryFileName := FullEntryFileName + 'D'
               else
                 FullEntryFileName := FullEntryFileName + 'F';
-              DoWarning(Format('File name of entry #%d (0x%.16x) was not resolved, extracting entry data.',[i,Bin.Hash,Bin.UncompressedSize]));
+              DoWarning(Format('File name of entry #%d (0x%.16x) was not resolved, extracting entry data.',[i,Bin.Hash]));
               ForceExtract := True;
             end
           else
@@ -149,6 +150,7 @@ end;
 procedure TRepairer_SCS_Extract.ArchiveProcessing;
 begin
 inherited;
+DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 SCS_ExtractArchive;
 end;
 

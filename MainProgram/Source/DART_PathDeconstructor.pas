@@ -71,10 +71,7 @@ type
 implementation
 
 uses
-  SysUtils;
-
-const
-  PD_PathDelimiter = '/';
+  SysUtils, DART_Repairer_SCS;
 
 Function TPathNode.GetSubNodeCount: Integer;
 begin
@@ -166,7 +163,7 @@ fName := Name;
 If Assigned(Owner) then
   begin
     If Owner.FullPath <> '' then
-      fFullPath := Owner.FullPath + PD_PathDelimiter + fName
+      fFullPath := Owner.FullPath + SCS_PathDelim + fName
     else
       fFullPath := fName;
   end
@@ -203,7 +200,7 @@ begin
 If Length(FilePath) > 0 then
   begin
     // find position of path delimiter
-    DelimPos := CharPos(PD_PathDelimiter,FilePath);
+    DelimPos := CharPos(SCS_PathDelim,FilePath);
     If DelimPos > 0 then
       begin
         // path delimiter found, path contains at least one directory

@@ -53,9 +53,10 @@ type
   end;
 
   TSCS_UtilityData = record
-    Resolved:   Boolean;
-    Erroneous:  Boolean;
-    SubEntries: array of AnsiString;
+    Resolved:           Boolean;
+    Erroneous:          Boolean;
+    SubEntries:         array of AnsiString;
+    OriginalDataOffset: UInt64;
   end;
 
   TSCS_Entry = record
@@ -69,7 +70,7 @@ type
     Hash: TCRC32;
   end;
 
-  TSCS_FileStructure = record
+  TSCS_ArchiveStructure = record
     ArchiveHeader:  TSCS_ArchiveHeader;
     Entries:        array of TSCS_Entry;
     KnownPaths:     array of TSCS_KnownPathItem;
@@ -78,6 +79,8 @@ type
 
 const
   SCS_RootPath = '';
+
+  SCS_PathDelim = '/';
 
   SCS_PredefinedPaths: array[0..3] of String = (
     // modifications stuff
@@ -95,18 +98,19 @@ const
   PROCSTAGEIDX_SCS_PathsLoading_ParseContent = PROCSTAGEIDX_Max + 5;
   PROCSTAGEIDX_SCS_PathsLoading_BruteForce   = PROCSTAGEIDX_Max + 6;
   PROCSTAGEIDX_SCS_PathsLoading_Local        = PROCSTAGEIDX_Max + 7;
-  PROCSTAGEIDX_SCS_EntriesProcessing         = PROCSTAGEIDX_Max + 8;
-  PROCSTAGEIDX_SCS_EntryProcessing           = PROCSTAGEIDX_Max + 9;
-  PROCSTAGEIDX_SCS_EntryLoading              = PROCSTAGEIDX_Max + 10;
-  PROCSTAGEIDX_SCS_EntryDecompressing        = PROCSTAGEIDX_Max + 11;
-  PROCSTAGEIDX_SCS_EntrySaving               = PROCSTAGEIDX_Max + 12;
+  PROCSTAGEIDX_SCS_PathsLoading_DirsRect     = PROCSTAGEIDX_Max + 8;
+  PROCSTAGEIDX_SCS_EntriesProcessing         = PROCSTAGEIDX_Max + 9;
+  PROCSTAGEIDX_SCS_EntryProcessing           = PROCSTAGEIDX_Max + 10;
+  PROCSTAGEIDX_SCS_EntryLoading              = PROCSTAGEIDX_Max + 11;
+  PROCSTAGEIDX_SCS_EntryDecompressing        = PROCSTAGEIDX_Max + 12;
+  PROCSTAGEIDX_SCS_EntrySaving               = PROCSTAGEIDX_Max + 13;
   PROCSTAGEIDX_SCS_Max                       = PROCSTAGEIDX_SCS_EntrySaving;
 
 type
   TRepairer_SCS = class(TRepairer)
   protected
     fProcessingSettings:  TSCS_Settings;
-    fArchiveStructure:    TSCS_FileStructure;
+    fArchiveStructure:    TSCS_ArchiveStructure;
     fEntriesSorted:       Boolean;
     Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
     Function SCS_HashCompare(A,B: UInt64): Integer; virtual;
@@ -128,7 +132,7 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
   published
-    property ArchiveStructure: TSCS_FileStructure read fArchiveStructure;
+    property ArchiveStructure: TSCS_ArchiveStructure read fArchiveStructure;
   end;
 
 implementation
@@ -443,12 +447,12 @@ var
                     begin
                       // directory
                       If Path <> '' then
-                        Directories.Add(Path + '/' + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
+                        Directories.Add(Path + SCS_PathDelim + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
                       else
                         Directories.Add(Path + Copy(EntryLines[ii],2,Length(EntryLines[ii])));
                       AddKnownPath(Directories[Pred(Directories.Count)]);
                     end
-                  else AddKnownPath(Path + '/' + EntryLines[ii]); // file
+                  else AddKnownPath(Path + SCS_PathDelim + EntryLines[ii]); // file
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
@@ -563,6 +567,7 @@ end;
 procedure TRepairer_SCS.InitializeProgress;
 var
   AvailableRange: Single;
+  DirsRectRange:  Single;
 begin
 inherited;
 SetLength(fProgressStages,Succ(PROCSTAGEIDX_SCS_Max));
@@ -578,6 +583,10 @@ fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range := 0.04 * AvailableRange;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset +
                                                          fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range := 0.05 * AvailableRange;
+If fFileProcessingSettings.Common.RepairMethod = rmRebuild then
+  DirsRectRange := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range
+else
+  DirsRectRange := 0.0;  
 // entries processing
 fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset +
                                                               fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
@@ -589,7 +598,7 @@ fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range := AvailableRange -
 // help files loading
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset;
 If Length(fProcessingSettings.PathResolve.HelpFiles) > 0 then
-  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range := 0.3 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 // content parsing
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset +
                                                                       fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range;
@@ -598,14 +607,18 @@ fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range := 0.0 {0.2} *
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset +
                                                                     fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range;
 If fProcessingSettings.PathResolve.BruteForceResolve then
-  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range := 0.3 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 // actual loading from processed file
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset +
                                                                fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range -
                                                               (fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range +
                                                               fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range);
+                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range + DirsRectRange);
+// directories reconstruction
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_DirsRect].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset +
+                                                                  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_DirsRect].Range := DirsRectRange;
 end;
 
 //------------------------------------------------------------------------------
@@ -624,7 +637,6 @@ SCS_AssignPaths;
 //SCS_ParseContent;
 If fProcessingSettings.PathResolve.BruteForceResolve then
   SCS_BruteForceResolve;
-DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 If Length(fArchiveStructure.Entries) <= 0 then
   DoError(102,'Input file does not contain any valid entries.');
 // get amount of data in the archive (without directory entries) - used for progress

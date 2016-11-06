@@ -140,7 +140,7 @@ type
     UtilityData:            TZIP_UtilityData;
   end;
 
-  TZIP_FileStructure = record
+  TZIP_ArchiveStructure = record
     Entries:                array of TZIP_Entry;
     EndOfCentralDirectory:  TZIP_EndOfCentralDirectory;
   end;
@@ -163,7 +163,7 @@ type
   TRepairer_ZIP = class(TRepairer)
   protected
     fProcessingSettings:  TZIP_Settings;
-    fArchiveStructure:    TZIP_FileStructure;
+    fArchiveStructure:    TZIP_ArchiveStructure;
     procedure ZIP_PrepareEntryProgressInfo(EntryIndex: Integer); virtual;
     procedure ZIP_LoadEndOfCentralDirectory; virtual;
     procedure ZIP_LoadCentralDirectory; virtual;
@@ -179,7 +179,7 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
   published
-    property ArchiveStructure: TZIP_FileStructure read fArchiveStructure;
+    property ArchiveStructure: TZIP_ArchiveStructure read fArchiveStructure;
   end;
 
 implementation
