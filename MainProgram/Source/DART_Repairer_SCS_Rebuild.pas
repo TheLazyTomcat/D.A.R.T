@@ -103,6 +103,8 @@ var
   DataOffset:           Int64;
   RebuildArchiveStream: TStream;
   i,j:                  Integer;
+  CompressedBuff:       Pointer;
+  CompressedSize:       Integer;
   DecompressedBuff:     Pointer;
   DecompressedSize:     Integer;
   DirEntryStr:          AnsiString;
@@ -196,10 +198,25 @@ try
             Bin.DataOffset := UInt64(RebuildArchiveStream.Position);
             Bin.CRC32 := AnsiStringCRC32(DirEntryStr);
             Bin.UncompressedSize := Length(DirEntryStr);
-            Bin.CompressedSize := Length(DirEntryStr);
-            {$message 'implement compression of directory entry'}
-            // save data (no progress)
-            RebuildArchiveStream.WriteBuffer(PChar(DirEntryStr)^,Length(DirEntryStr));
+            If Bin.UncompressedSize > 32 then
+              begin
+                ProgressedCompressBuffer(PChar(DirEntryStr),Length(DirEntryStr),
+                  CompressedBuff,CompressedSize,PROCSTAGEIDX_NoProgress,
+                  {$IFDEF FPC}FileName,{$ELSE}UTF8ToAnsi(FileName),{$ENDIF}WINDOWBITS_ZLib);
+                try
+                  Bin.CompressedSize := CompressedSize;
+                  SetFlagValue(Bin.Flags,SCS_FLAG_Compressed);
+                  RebuildArchiveStream.WriteBuffer(CompressedBuff^,CompressedSize);
+                finally
+                  FreeMem(CompressedBuff,CompressedSize);
+                end;
+              end
+            else
+              begin
+                Bin.CompressedSize := Length(DirEntryStr);
+                ResetFlagValue(Bin.Flags,SCS_FLAG_Compressed);
+                RebuildArchiveStream.WriteBuffer(PChar(DirEntryStr)^,Length(DirEntryStr));
+              end;
             DoProgress(PROCSTAGEIDX_NoProgress,0.0);
           end
         else

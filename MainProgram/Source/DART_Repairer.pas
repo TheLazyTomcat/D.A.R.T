@@ -139,7 +139,7 @@ type
     procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
-    //procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
+    procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
@@ -404,23 +404,23 @@ var
   SizeDelta:  Integer;
   ResultCode: Integer;
 
-  Function RaiseDecompressionError(aResultCode: Integer): Integer;
+  Function RaiseDecompressionError(ResCode: Integer): Integer;
   begin
-    If (aResultCode < 0) and (aREsultCode <> Z_BUF_ERROR) then
+    If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(2,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),EntryName])
+          DoError(2,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
         else
-          DoError(2,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],EntryName]);
+          DoError(2,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
       {$ELSE}
         If Length(ZStream.msg) > 0 then
-          DoError(2,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,EntryName])
+          DoError(2,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
         else
-          DoError(2,'zlib: %s (entry "%s")',[zError(2 - aResultCode),EntryName]);
+          DoError(2,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
       {$IFEND}
       end;
-    Result := aResultCode;
+    Result := ResCode;
   end;
   
 begin
@@ -452,6 +452,79 @@ If InSize > 0 then
       Move(fUED_Buffer.Memory^,OutBuff^,OutSize);
     finally
       RaiseDecompressionError(InflateEnd(ZStream));
+    end;
+  end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
+{$IFNDEF FPC}
+type
+  TZStream = TZStreamRec;
+{$ENDIF}
+var
+  ZStream:    TZStream;
+  SizeDelta:  Integer;
+  ResultCode: Integer;
+
+  Function RaiseDecompressionError(ResCode: Integer): Integer;
+  begin
+    If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
+      begin
+      {$IF not defined(FPC) or defined(zlib_lib)}
+        If Assigned(ZStream.msg) then
+          DoError(3,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
+        else
+          DoError(3,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
+      {$ELSE}
+        If Length(ZStream.msg) > 0 then
+          DoError(3,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
+        else
+          DoError(3,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
+      {$IFEND}
+      end;
+    Result := ResCode;
+  end;
+
+begin
+DoProgress(ProgressStage,0.0);
+OutBuff := nil;
+OutSize := 0;
+If InSize > 0 then
+  begin
+    FillChar({%H-}ZStream,SizeOf(TZStream),0);
+    SizeDelta := ((InSize div 4) + 255) and not 255;
+    OutSize := SizeDelta;
+    RaiseDecompressionError(DeflateInit2(ZStream,Z_DEFAULT_COMPRESSION,Z_DEFLATED,WindowBits,8,Z_DEFAULT_STRATEGY));
+    try
+      ZStream.next_in := InBuff;
+      ZStream.avail_in := InSize;
+      repeat
+        ReallocateMemoryBuffer(fCED_Buffer,OutSize);
+        ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
+        ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
+        ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_NO_FLUSH));
+        DoProgress(ProgressStage,ZStream.total_in / InSize);
+        Inc(OutSize, SizeDelta);
+      until (ResultCode = Z_STREAM_END) or (ZStream.avail_in = 0);
+      // flush what is left in zlib internal buffer
+      while ResultCode <> Z_STREAM_END do
+        begin
+          ReallocateMemoryBuffer(fCED_Buffer,OutSize);
+          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
+          ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
+          ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_FINISH));
+          DoProgress(ProgressStage,ZStream.total_in / InSize);
+          Inc(OutSize, SizeDelta);
+        end;
+      // copy compressed data into output
+      OutSize := ZStream.total_out;
+      GetMem(OutBuff,OutSize);
+      Move(fCED_Buffer.Memory^,OutBuff^,OutSize);
+    finally
+      RaiseDecompressionError(DeflateEnd(ZStream));
     end;
   end;
 DoProgress(ProgressStage,1.0);
@@ -543,7 +616,8 @@ begin
 case MethodIndex of
   0:  Result := 'MainProcessing';
   1:  Result := 'CheckArchiveSignature;';
-  2:  Result := 'ProgressedDecompressBuffer';  
+  2:  Result := 'ProgressedDecompressBuffer';
+  3:  Result := 'ProgressedCompressBuffer';
 else
   Result := 'unknown method';
 end;
