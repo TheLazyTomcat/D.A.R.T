@@ -402,6 +402,8 @@ var
     HelpFileProcSettings.Common.FilePath := FileName;
     // file signature must be checked because we assume it is in SCS# format
     HelpFileProcSettings.Common.IgnoreFileSignature := False;
+    // turn off in-memory processing, as we do not know size of the file
+    HelpFileProcSettings.Common.InMemoryProcessing := False;
     SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
     For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
       HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
