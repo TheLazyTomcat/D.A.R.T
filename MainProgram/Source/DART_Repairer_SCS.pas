@@ -82,11 +82,16 @@ const
 
   SCS_PathDelim = '/';
 
-  SCS_PredefinedPaths: array[0..3] of String = (
+  SCS_PredefinedPaths: array[0..17] of String = (
     // modifications stuff
     'manifest.sii','mod_description.txt',
+
     // untracked files from ETS2 base.scs
-    'version.txt','autoexec.cfg');
+    'version.txt','autoexec.cfg',
+    
+    // some folders from ETS2
+    'automat','def','effect','map','material','model','model2',
+    'prefab','prefab2','sound','system','ui','unit','vehicle');
 
 //==============================================================================
 
@@ -113,6 +118,7 @@ type
     fArchiveStructure:    TSCS_ArchiveStructure;
     fEntriesSorted:       Boolean;
     Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
+    Function SCS_HashName: String; virtual;
     Function SCS_HashCompare(A,B: UInt64): Integer; virtual;
     Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;
     procedure SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ProcessedBytes: UInt64); virtual;
@@ -142,6 +148,28 @@ uses
   BitOps, CITY,
   DART_MemoryBuffer, DART_AnsiStringList;
 
+Function TRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
+begin
+Result := 0;
+case fArchiveStructure.ArchiveHeader.Hash of
+  SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
+else
+  DoError(100,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TRepairer_SCS.SCS_HashName: String;
+begin
+case fArchiveStructure.ArchiveHeader.Hash of
+  SCS_HASH_City:  Result := 'CITY';
+else
+  Result := 'UNKN';
+end;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TRepairer_SCS.SCS_HashCompare(A,B: UInt64): Integer;
 begin
@@ -192,18 +220,6 @@ else
           Break{For i};
         end;
   end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
-begin
-Result := 0;
-case fArchiveStructure.ArchiveHeader.Hash of
-  SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
-else
-  DoError(100,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
-end;
 end;
 
 //------------------------------------------------------------------------------

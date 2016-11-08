@@ -33,7 +33,6 @@ var
 
   ProcessedBytes:     UInt64;
   i:                  Integer;
-  HashName:           String;
   FullEntryFileName:  String;
   ForceExtract:       Boolean;
   EntryFileStream:    TFileStream;
@@ -64,13 +63,8 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
             begin
               // data will be saved to a special file, its name consits only of the hash
-              case fArchiveStructure.ArchiveHeader.Hash of
-                SCS_HASH_City:  HashName := 'CITY';
-              else
-                HashName := 'UNKN';
-              end;
               FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
-                                   Format('_unresolved_\%s(%.16x)',[HashName,Bin.Hash]);
+                                   Format('_unresolved_\%s(%.16x)',[SCS_HashName,Bin.Hash]);
               If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
                 FullEntryFileName := FullEntryFileName + 'D'
               else

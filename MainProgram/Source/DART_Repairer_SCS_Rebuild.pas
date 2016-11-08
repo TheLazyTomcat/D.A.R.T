@@ -113,7 +113,6 @@ var
   procedure ExtractUnresolvedEntry(EntryIdx: Integer; Data: Pointer; DataSize: Integer);
   var
     EntryExtractFile: TFileStream;
-    HashName:         String;
     EntryFileName:    String;
   begin
     with fArchiveStructure.Entries[EntryIdx] do
@@ -123,13 +122,8 @@ var
             begin
               // raw data will be saved to a file
               DoWarning(Format('File name of entry #%d (0x%.16x) was not resolved, extracting entry data.',[i,Bin.Hash,Bin.UncompressedSize]));
-              case fArchiveStructure.ArchiveHeader.Hash of
-                SCS_HASH_City:  HashName := 'CITY';
-              else
-                HashName := 'UNKN';
-              end;
               EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fFileProcessingSettings.Common.TargetPath) + 'unresolved_' +
-                               ChangeFileExt(ExtractFileName(fFileProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[HashName,Bin.Hash]);
+                               ChangeFileExt(ExtractFileName(fFileProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,Bin.Hash]);
               If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
                 EntryFileName := EntryFileName + 'D'
               else

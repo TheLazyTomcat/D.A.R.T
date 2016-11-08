@@ -183,7 +183,7 @@ const
         IgnoreCompressionFlag:      False);    
       PathResolve:(
         AssumeCityHash:             False;
-        UsePredefinedPaths:         False;
+        UsePredefinedPaths:         True;
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;        
         HelpFiles:                  nil;
