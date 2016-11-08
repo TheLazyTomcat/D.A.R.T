@@ -62,7 +62,7 @@ type
     procedure btnAcceptClick(Sender: TObject);
   private
     fFileProcessingSettings:  TFileProcessingSettings;
-    fSettingsDescriptions:    array[0..79] of String;
+    fSettingsDescriptions:    array[0..148] of String;
     fLoading:                 Boolean;
     fAccepted:                Boolean;    
   protected

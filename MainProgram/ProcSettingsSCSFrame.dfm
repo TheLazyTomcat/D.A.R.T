@@ -123,7 +123,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         OnMouseMove = SettingsMouseMove
       end
       object meHelpFiles: TMemo
-        Tag = 144
+        Tag = 145
         Left = 8
         Top = 224
         Width = 545
@@ -134,7 +134,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         OnMouseMove = SettingsMouseMove
       end
       object meCustomPaths: TMemo
-        Tag = 145
+        Tag = 144
         Left = 8
         Top = 64
         Width = 545
