@@ -17,7 +17,7 @@ uses
 type
   TRepairer_ZIP_Rebuild = class(TRepairer_ZIP)
   protected
-    procedure ZIP_RebuildInputFile; virtual;
+    procedure ZIP_RebuildArchive; virtual;
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
@@ -30,7 +30,7 @@ uses
   AuxTypes, CRC32, 
   DART_MemoryBuffer, DART_Repairer;
 
-procedure TRepairer_ZIP_Rebuild.ZIP_RebuildInputFile;
+procedure TRepairer_ZIP_Rebuild.ZIP_RebuildArchive;
 var
   RebuildArchiveStream:     TStream;
   i:                        Integer;
@@ -54,6 +54,7 @@ try
   // prepare output stream
   If fFileProcessingSettings.Common.InMemoryProcessing then
     RebuildArchiveStream.Size := Trunc(fArchiveStream.Size * 1.1);
+  RebuildArchiveStream.Seek(0,soFromBeginning);  
   For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
     with fArchiveStructure.Entries[i] do
       try
@@ -178,26 +179,29 @@ try
   fArchiveStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset := UInt32(RebuildArchiveStream.Position);
   // write central directory
   For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
-    If fArchiveStructure.Entries[i].UtilityData.Erroneous then
-      // entry is erroneous (there was error in processing that was ignored), do not write this entry
-      with fArchiveStructure.EndOfCentralDirectory.BinPart,fArchiveStructure.Entries[i].CentralDirectoryHeader.BinPart do
-        begin
-          Dec(EntriesOnDisk);
-          Dec(Entries);
-          Dec(CentralDirectorySize,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
-          Dec(CentralDirectorySize,FileNameLength);
-          Dec(CentralDirectorySize,ExtraFieldLength);
-          Dec(CentralDirectorySize,FileCommentLength);
-      end
-    else
-      // writing entry data
-      with fArchiveStructure.Entries[i].CentralDirectoryHeader do
-        begin
-          RebuildArchiveStream.WriteBuffer(BinPart,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
-          RebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
-        end;
+    begin
+      If fArchiveStructure.Entries[i].UtilityData.Erroneous then
+        // entry is erroneous (there was error in processing that was ignored), do not write this entry
+        with fArchiveStructure.EndOfCentralDirectory.BinPart,fArchiveStructure.Entries[i].CentralDirectoryHeader.BinPart do
+          begin
+            Dec(EntriesOnDisk);
+            Dec(Entries);
+            Dec(CentralDirectorySize,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
+            Dec(CentralDirectorySize,FileNameLength);
+            Dec(CentralDirectorySize,ExtraFieldLength);
+            Dec(CentralDirectorySize,FileCommentLength);
+        end
+      else
+        // writing entry data
+        with fArchiveStructure.Entries[i].CentralDirectoryHeader do
+          begin
+            RebuildArchiveStream.WriteBuffer(BinPart,SizeOf(TZIP_CentralDirectoryFileHeaderRecord));
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
+            RebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
+          end;
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    end;
   // write end of central directory
   with fArchiveStructure.EndOfCentralDirectory do
     begin
@@ -222,7 +226,7 @@ begin
 If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.Common.TargetPath) then
   DoError(200,'Output is directed into an input file, cannot proceed.');
 inherited;
-ZIP_RebuildInputFile;
+ZIP_RebuildArchive;
 end;
 
 //==============================================================================

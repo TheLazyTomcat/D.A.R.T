@@ -65,7 +65,11 @@ case FileInfo.ResultInfo.ResultState of
                 begin
                   lblResultCaption.Caption := 'An error occured during the processing';
                   meResultInfoText.Lines.Add(sLineBreak + StringOfChar('-',60) + sLineBreak);
-                  meResultInfoText.Lines.Add(Format('         Method: %s (%d)',[MethodName,MethodIndex]));
+                  If (ErrorSourceObjectClass <> '') and Assigned(ErrorSourceObject) then
+                    meResultInfoText.Lines.Add(Format('       Function: %s(0x%p).%s [%d]',[ErrorSourceObjectClass,Pointer(ErrorSourceObject),
+                                                                                           ErrorSourceFunctionName,ErrorSourceFunctionIndex]))
+                  else
+                    meResultInfoText.Lines.Add(Format('       Function: %s [%d]',[ErrorSourceFunctionName,ErrorSourceFunctionIndex]));
                   meResultInfoText.Lines.Add('Exception class: ' + ExceptionClass);
                   meResultInfoText.Lines.Add(sLineBreak + 'Exception text: ');
                   meResultInfoText.Lines.Add(sLineBreak + '  ' + ExceptionText);

@@ -1,10 +1,10 @@
 object fResultInfoForm: TfResultInfoForm
-  Left = 761
-  Top = 398
+  Left = 474
+  Top = 198
   BorderStyle = bsDialog
   Caption = 'Result information'
-  ClientHeight = 272
-  ClientWidth = 496
+  ClientHeight = 336
+  ClientWidth = 712
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -31,8 +31,8 @@ object fResultInfoForm: TfResultInfoForm
     ParentFont = False
   end
   object lblHint: TLabel
-    Left = 191
-    Top = 254
+    Left = 407
+    Top = 318
     Width = 298
     Height = 13
     Alignment = taRightJustify
@@ -47,8 +47,8 @@ object fResultInfoForm: TfResultInfoForm
   object meResultInfoText: TMemo
     Left = 8
     Top = 32
-    Width = 481
-    Height = 217
+    Width = 697
+    Height = 281
     TabStop = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText

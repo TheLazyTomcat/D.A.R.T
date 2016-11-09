@@ -49,15 +49,30 @@ const
   WINDOWBITS_GZip = 31;
 
 type
-  ERepairerException = class(Exception);
+  ERepairerException = class(Exception)
+  private
+    fSourceObject:        TObject;
+    fSourceObjectClass:   String;
+    fSourceFunctionIdx:   Integer;
+    fSourceFunctionName:  String;
+  public
+    constructor Create(const Text: String; SrcObject: TObject; SrcFunctionIdx: Integer; const SrcFunctionName: String);
+  published
+    property SourceObject: TObject read fSourceObject;
+    property SourceObjectClass: String read fSourceObjectClass;
+    property SourceFunctionIdx: Integer read fSourceFunctionIdx;
+    property SourceFunctionName: String read fSourceFunctionName;
+  end;
 
   TResultState = (rsUndefined,rsNormal,rsWarning,rsError);
 
   TResultInfoError = record
-    MethodIndex:    Integer;
-    MethodName:     String;
-    ExceptionClass: String;
-    ExceptionText:  String;
+    ErrorSourceObject:        TObject;
+    ErrorSourceObjectClass:   String;
+    ErrorSourceFunctionIndex: Integer;
+    ErrorSourceFunctionName:  String;
+    ExceptionClass:           String;
+    ExceptionText:            String;
   end;
 
   TResultInfoWarning = record
@@ -78,10 +93,12 @@ const
     WarningInfo: (
       Warnings: nil);
     ErrorInfo: (
-      MethodIndex:    -1;
-      MethodName:     '';
-      ExceptionClass: '';
-      ExceptionText:  ''));
+      ErrorSourceObject:        nil;
+      ErrorSourceObjectClass:   '';
+      ErrorSourceFunctionIndex: -1;
+      ErrorSourceFunctionName:  'unknown function';
+      ExceptionClass:           '';
+      ExceptionText:            ''));
 
 type
   TProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
@@ -106,12 +123,13 @@ const
 type
   TRepairer = class(TObject)
   private
-    fExpectedSignature:       UInt32;
-    fFlowControlObject:       TEvent;
+    fCatchExceptions:         Boolean;
     fTerminatedFlag:          Integer;  // 0 = continue, +x = internal error, -x = terminated
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
   protected
+    fFlowControlObject:       TEvent;
+    fExpectedSignature:       UInt32;
     fTerminating:             Boolean;
     fArchiveStream:           TStream;
     fLocalFormatSettings:     TFormatSettings;
@@ -138,10 +156,12 @@ type
     procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
-    //procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
+    procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
+    // helper for managing exceptions
+    procedure ManageException(E: Exception); virtual;
     // main processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- all the fun must happen here
@@ -151,13 +171,13 @@ type
     // helper methods
     class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
     Function Terminated: Boolean; virtual;
   published
-    property ExpectedSignature: UInt32 read fExpectedSignature write fExpectedSignature;
+    property ExpectedSignature: UInt32 read fExpectedSignature;
     property ResultInfo: TResultInfo read fResultInfo;
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
@@ -180,6 +200,15 @@ const
 
   // Initial size of buffer used to hold uncompressed entry data
   UED_BufferSize = $100000 * 16; {16MiB}
+
+constructor ERepairerException.Create(const Text: String; SrcObject: TObject; SrcFunctionIdx: Integer; const SrcFunctionName: String);
+begin
+inherited Create(Text);
+fSourceObject := SrcObject;
+fSourceObjectClass := SrcObject.ClassName;
+fSourceFunctionIdx := SrcFunctionIdx;
+fSourceFunctionName := SrcFunctionName;
+end;  
 
 {==============================================================================}
 {   TRepairer - class implementation                                           }
@@ -212,7 +241,7 @@ If Terminated then
   begin
     fTerminating := True;
     Resume;  
-    DoError(-1,'Processing terminated. Data can be in inconsistent state.');
+    DoError(0,'Processing terminated. Data can be in inconsistent state.');
   end;
 If (ProgressStageIdx >= Low(fProgressStages)) and (ProgressStageIdx <= High(fProgressStages)) then
   begin
@@ -243,8 +272,8 @@ end;
 
 procedure TRepairer.DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const);
 begin
-fResultInfo.ErrorInfo.MethodIndex := MethodIndex;
-raise ERepairerException.Create(Format(ErrorText,Values,fLocalFormatSettings));
+raise ERepairerException.Create(Format(ErrorText,Values,fLocalFormatSettings),
+                                Self,MethodIndex,GetMethodNameFromIndex(MethodIndex));
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
@@ -264,9 +293,9 @@ fArchiveStream.Seek(0,soBeginning);
 If fArchiveStream.Read({%H-}Signature,SizeOf(Signature)) >= SizeOf(Signature) then
   begin
     If Signature <> fExpectedSignature then
-      DoError(1,'Bad file signature (0x%.8x).',[Signature]);
+      DoError(2,'Bad file signature (0x%.8x).',[Signature]);
   end
-else DoError(1,'File is too small to contain valid signature (%d bytes).',[fArchiveStream.Size]);
+else DoError(2,'File is too small to contain valid signature (%d bytes).',[fArchiveStream.Size]);
 end;
 
 //------------------------------------------------------------------------------
@@ -403,32 +432,33 @@ var
   SizeDelta:  Integer;
   ResultCode: Integer;
 
-  Function RaiseDecompressionError(aResultCode: Integer): Integer;
+  Function RaiseDecompressionError(ResCode: Integer): Integer;
   begin
-    If (aResultCode < 0) and (aREsultCode <> Z_BUF_ERROR) then
+    If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
       begin
       {$IF not defined(FPC) or defined(zlib_lib)}
         If Assigned(ZStream.msg) then
-          DoError(2,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - aResultCode],PAnsiChar(ZStream.msg),EntryName])
+          DoError(3,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
         else
-          DoError(2,'zlib: %s (entry "%s")',[z_errmsg[2 - aResultCode],EntryName]);
+          DoError(3,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
       {$ELSE}
         If Length(ZStream.msg) > 0 then
-          DoError(2,'zlib: %s - %s (entry "%s")',[zError(2 - aResultCode),ZStream.msg,EntryName])
+          DoError(3,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
         else
-          DoError(2,'zlib: %s (entry "%s")',[zError(2 - aResultCode),EntryName]);
+          DoError(3,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
       {$IFEND}
       end;
-    Result := aResultCode;
+    Result := ResCode;
   end;
   
 begin
 DoProgress(ProgressStage,0.0);
-If InSize >= 0 then
+OutBuff := nil;
+OutSize := 0;
+If InSize > 0 then
   begin
     FillChar({%H-}ZStream,SizeOf(TZStream),0);
     SizeDelta := (InSize + 255) and not 255;
-    OutBuff := nil;
     OutSize := SizeDelta;
     RaiseDecompressionError(InflateInit2(ZStream,WindowBits));
     try
@@ -457,6 +487,79 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
+{$IFNDEF FPC}
+type
+  TZStream = TZStreamRec;
+{$ENDIF}
+var
+  ZStream:    TZStream;
+  SizeDelta:  Integer;
+  ResultCode: Integer;
+
+  Function RaiseDecompressionError(ResCode: Integer): Integer;
+  begin
+    If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
+      begin
+      {$IF not defined(FPC) or defined(zlib_lib)}
+        If Assigned(ZStream.msg) then
+          DoError(4,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
+        else
+          DoError(4,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
+      {$ELSE}
+        If Length(ZStream.msg) > 0 then
+          DoError(4,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
+        else
+          DoError(4,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
+      {$IFEND}
+      end;
+    Result := ResCode;
+  end;
+
+begin
+DoProgress(ProgressStage,0.0);
+OutBuff := nil;
+OutSize := 0;
+If InSize > 0 then
+  begin
+    FillChar({%H-}ZStream,SizeOf(TZStream),0);
+    SizeDelta := ((InSize div 4) + 255) and not 255;
+    OutSize := SizeDelta;
+    RaiseDecompressionError(DeflateInit2(ZStream,Z_DEFAULT_COMPRESSION,Z_DEFLATED,WindowBits,8,Z_DEFAULT_STRATEGY));
+    try
+      ZStream.next_in := InBuff;
+      ZStream.avail_in := InSize;
+      repeat
+        ReallocateMemoryBuffer(fCED_Buffer,OutSize);
+        ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
+        ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
+        ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_NO_FLUSH));
+        DoProgress(ProgressStage,ZStream.total_in / InSize);
+        Inc(OutSize, SizeDelta);
+      until (ResultCode = Z_STREAM_END) or (ZStream.avail_in = 0);
+      // flush what is left in zlib internal buffer
+      while ResultCode <> Z_STREAM_END do
+        begin
+          ReallocateMemoryBuffer(fCED_Buffer,OutSize);
+          ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
+          ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
+          ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_FINISH));
+          DoProgress(ProgressStage,ZStream.total_in / InSize);
+          Inc(OutSize, SizeDelta);
+        end;
+      // copy compressed data into output
+      OutSize := ZStream.total_out;
+      GetMem(OutBuff,OutSize);
+      Move(fCED_Buffer.Memory^,OutBuff^,OutSize);
+    finally
+      RaiseDecompressionError(DeflateEnd(ZStream));
+    end;
+  end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.AllocateMemoryBuffers;
 begin
 AllocateMemoryBuffer(fIO_Buffer,IO_BufferSize);
@@ -475,11 +578,21 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer.ManageException(E: Exception);
+begin
+fResultInfo.ResultState := rsError;
+fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
+fResultInfo.ErrorInfo.ExceptionText := E.Message;
+DoProgress(PROCSTAGEIDX_Direct,-1.0);
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer.MainProcessing;
 begin
 fResultInfo.ResultState := rsNormal;
-DoProgress(PROCSTAGEIDX_Direct,0.0);
 try
+  DoProgress(PROCSTAGEIDX_Direct,0.0);
   AllocateMemoryBuffers;
   try
     If fFileProcessingSettings.Common.InMemoryProcessing then
@@ -490,7 +603,7 @@ try
       If fFileProcessingSettings.Common.InMemoryProcessing then
         ProgressedLoadFile(fFileProcessingSettings.Common.FilePath,fArchiveStream,PROCSTAGEIDX_Loading);
       If fArchiveStream.Size <= 0 then
-        DoError(0,'Input file does not contain any data.');
+        DoError(1,'Input file does not contain any data.');
       If not fFileProcessingSettings.Common.IgnoreFileSignature then
         CheckArchiveSignature;
       ArchiveProcessing;  // <- processing happens here
@@ -503,14 +616,19 @@ try
   end;
   DoProgress(PROCSTAGEIDX_Direct,2.0);
 except
+  on E: ERepairerException do
+    If fCatchExceptions then
+      begin
+        fResultInfo.ErrorInfo.ErrorSourceObject := E.SourceObject;
+        fResultInfo.ErrorInfo.ErrorSourceObjectClass := E.SourceObjectClass;
+        fResultInfo.ErrorInfo.ErrorSourceFunctionIndex := E.SourceFunctionIdx;
+        fResultInfo.ErrorInfo.ErrorSourceFunctionName := E.SourceFunctionName;
+        ManageException(E)
+      end
+    else raise;
   on E: Exception do
-    begin
-      fResultInfo.ResultState := rsError;
-      fResultInfo.ErrorInfo.MethodName := GetMethodNameFromIndex(fResultInfo.ErrorInfo.MethodIndex);
-      fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
-      fResultInfo.ErrorInfo.ExceptionText := E.Message;
-      DoProgress(PROCSTAGEIDX_Direct,-1.0);
-    end;
+    If fCatchExceptions then ManageException(E)
+      else raise;
 end;
 end;
 
@@ -537,9 +655,11 @@ end;
 class Function TRepairer.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
 case MethodIndex of
-  0:  Result := 'MainProcessing';
-  1:  Result := 'CheckArchiveSignature;';
-  2:  Result := 'ProgressedDecompressBuffer';  
+  0:  Result := 'Stop*';
+  1:  Result := 'MainProcessing';
+  2:  Result := 'CheckArchiveSignature;';
+  3:  Result := 'ProgressedDecompressBuffer';
+  4:  Result := 'ProgressedCompressBuffer';
 else
   Result := 'unknown method';
 end;
@@ -547,14 +667,15 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings);
+constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
 begin
 inherited Create;
-fExpectedSignature := 0;
-fFlowControlObject := FlowControlObject;
+fCatchExceptions := CatchExceptions;
 fTerminatedFlag := 0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
+fFlowControlObject := FlowControlObject;
+fExpectedSignature := 0;
 fTerminating := False;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);

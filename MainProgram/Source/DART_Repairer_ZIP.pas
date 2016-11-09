@@ -12,7 +12,7 @@ unit DART_Repairer_ZIP;
 interface
 
 uses
-  AuxTypes,
+  AuxTypes, WinSyncObjs,
   DART_ProcessingSettings, DART_Repairer;
 
 {==============================================================================}
@@ -140,7 +140,7 @@ type
     UtilityData:            TZIP_UtilityData;
   end;
 
-  TZIP_FileStructure = record
+  TZIP_ArchiveStructure = record
     Entries:                array of TZIP_Entry;
     EndOfCentralDirectory:  TZIP_EndOfCentralDirectory;
   end;
@@ -163,7 +163,7 @@ type
   TRepairer_ZIP = class(TRepairer)
   protected
     fProcessingSettings:  TZIP_Settings;
-    fArchiveStructure:    TZIP_FileStructure;
+    fArchiveStructure:    TZIP_ArchiveStructure;
     procedure ZIP_PrepareEntryProgressInfo(EntryIndex: Integer); virtual;
     procedure ZIP_LoadEndOfCentralDirectory; virtual;
     procedure ZIP_LoadCentralDirectory; virtual;
@@ -177,8 +177,9 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
+    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
   published
-    property ArchiveStructure: TZIP_FileStructure read fArchiveStructure;
+    property ArchiveStructure: TZIP_ArchiveStructure read fArchiveStructure;
   end;
 
 implementation
@@ -637,6 +638,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
     end;
 end;
 
@@ -690,6 +692,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       fArchiveStructure.Entries[i].UtilityData.NeedsSizes :=
         (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
+      DoProgress(PROCSTAGEIDX_NoProgress,0.0);  
     end;
 end;
 
@@ -778,7 +781,7 @@ If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory the
 fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset := fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Offset +
                                                              fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Range;
 If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range := 0.01 * AvailableRange;
+  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range := 0.1 * AvailableRange;
 // ... loading of local headers
 fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Offset := fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset +
                                                                 fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range;
@@ -829,6 +832,14 @@ case MethodIndex of
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
+begin
+inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
+fExpectedSignature := FileSignature_ZIP;
 end;
 
 end.

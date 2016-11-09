@@ -59,7 +59,8 @@ implementation
 
 uses
   SysUtils,
-  DART_Repairer_SCS, DART_Repairer_ZIP_Rebuild, DART_Repairer_ZIP_Extract;
+  DART_Repairer_ZIP_Rebuild, DART_Repairer_ZIP_Extract,
+  DART_Repairer_SCS_Rebuild, DART_Repairer_SCS_Extract;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}

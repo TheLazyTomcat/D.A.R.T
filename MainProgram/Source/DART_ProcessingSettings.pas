@@ -92,20 +92,20 @@ type
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-  TSCS_PathResolveSettings = record
-    AssumeCityHash:             Boolean;
-    UsePredefinedPaths:         Boolean;    
-    ExtractedUnresolvedEntries: Boolean;
-    HelpFiles:                  array of String;
-    CustomPaths:                array of String;
-    BruteForceResolve:          Boolean;
-    BruteForceLimitedAlphabet:  Boolean;    
-    BruteForceLengthLimit:      Word;
-  end;
-
   TSCS_EntrySettings = record
     IgnoreCRC32:            Boolean;
     IgnoreCompressionFlag:  Boolean;
+  end;
+
+  TSCS_PathResolveSettings = record
+    AssumeCityHash:             Boolean;
+    UsePredefinedPaths:         Boolean;
+    ExtractedUnresolvedEntries: Boolean;
+    CustomPaths:                array of AnsiString;
+    HelpFiles:                  array of String;
+    BruteForceResolve:          Boolean;
+    BruteForceLimitedAlphabet:  Boolean;
+    BruteForceLengthLimit:      Word;
   end;
 
   TSCS_Settings = record
@@ -177,13 +177,13 @@ const
     SCSSettings: (
       Entry: (
         IgnoreCRC32:                False;
-        IgnoreCompressionFlag:      False);    
+        IgnoreCompressionFlag:      False);
       PathResolve:(
         AssumeCityHash:             False;
-        UsePredefinedPaths:         False;
+        UsePredefinedPaths:         True;
         ExtractedUnresolvedEntries: False;
-        HelpFiles:                  nil;
         CustomPaths:                nil;
+        HelpFiles:                  nil;
         BruteForceResolve:          False;
         BruteForceLimitedAlphabet:  True;
         BruteForceLengthLimit:      32)));
