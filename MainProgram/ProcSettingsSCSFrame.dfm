@@ -129,7 +129,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Width = 545
         Height = 137
         ScrollBars = ssBoth
-        TabOrder = 4
+        TabOrder = 5
         WordWrap = False
         OnMouseMove = SettingsMouseMove
       end
@@ -151,7 +151,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Width = 121
         Height = 17
         Caption = 'Brute-force resolve'
-        TabOrder = 5
+        TabOrder = 6
         OnClick = CheckBoxClick
         OnMouseMove = SettingsMouseMove
       end
@@ -162,7 +162,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Width = 105
         Height = 17
         Caption = 'Limited alphabet'
-        TabOrder = 6
+        TabOrder = 7
         OnClick = CheckBoxClick
         OnMouseMove = SettingsMouseMove
       end
@@ -174,10 +174,53 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Height = 22
         MaxValue = 0
         MinValue = 0
-        TabOrder = 7
+        TabOrder = 8
         Value = 0
         OnMouseMove = SettingsMouseMove
       end
+      object btnBrowseHelpFiles: TButton
+        Left = 530
+        Top = 203
+        Width = 24
+        Height = 20
+        Caption = '6'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -16
+        Font.Name = 'Webdings'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 4
+        OnClick = btnBrowseHelpFilesClick
+      end
     end
+  end
+  object pmHelpFiles: TPopupMenu
+    Left = 464
+    Top = 256
+    object miHelpFiles_Browse: TMenuItem
+      Caption = 'Browse for help files...'
+      OnClick = miHelpFiles_BrowseClick
+    end
+    object miHelpFiles_N1: TMenuItem
+      Caption = '-'
+      Visible = False
+    end
+    object miHelpFiles_ETS2: TMenuItem
+      Caption = 'Euro Truck Simulator 2 files'
+      Visible = False
+      OnClick = LoadGameFiles
+    end
+    object miHelpFiles_ATS: TMenuItem
+      Caption = 'American Truck Simulator files'
+      Visible = False
+      OnClick = LoadGameFiles
+    end
+  end
+  object diaHelpFilesOpen: TOpenDialog
+    Filter = 'SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
+    Left = 496
+    Top = 256
   end
 end

@@ -17,7 +17,7 @@ uses
   DART_ProcessingSettings;
 
 type
-  TSettingsHintEvet = procedure(Sender: TObject; HintTag: Integer) of object;
+  TSettingsHintEvent = procedure(Sender: TObject; HintTag: Integer) of object;
 
   TfrmProcSettingsZIP = class(TFrame)
     pnlBackground: TPanel;
@@ -61,24 +61,33 @@ type
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
   private
-    fProcessingSettings: TZIP_Settings;
-    fLoading:            Boolean; 
-    fOnSettingsHint:     TSettingsHintEvet;
+    fFileProcessingSettings:  TFileProcessingSettings;
+    fProcessingSettings:      TZIP_Settings;
+    fLoading:                 Boolean;
+    fOnSettingsHint:          TSettingsHintEvent;
   public
+    procedure Initialize;
     procedure SettingsToFrame;
     procedure FrameToSettings;
-    procedure ShowProcessingSettings(ProcessingSettings: TZIP_Settings);
+    procedure ShowProcessingSettings(FileProcessingSettings: TFileProcessingSettings);
     Function RetrieveProcessingSettings: TZIP_Settings;
   published
     procedure CheckBoxClick(Sender: TObject);
     procedure SettingsMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
     procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-    property OnSettingsHint: TSettingsHintEvet read fOnSettingsHint write fOnSettingsHint;
+    property OnSettingsHint: TSettingsHintEvent read fOnSettingsHint write fOnSettingsHint;
   end;
 
 implementation
 
 {$R *.dfm}
+
+procedure TfrmProcSettingsZIP.Initialize;
+begin
+// nothing to do here
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TfrmProcSettingsZIP.SettingsToFrame;
 begin
@@ -168,9 +177,10 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfrmProcSettingsZIP.ShowProcessingSettings(ProcessingSettings: TZIP_Settings);
+procedure TfrmProcSettingsZIP.ShowProcessingSettings(FileProcessingSettings: TFileProcessingSettings);
 begin
-fProcessingSettings := ProcessingSettings;
+fFileProcessingSettings := FileProcessingSettings;
+fProcessingSettings := FileProcessingSettings.ZIPSettings;
 fLoading := True;
 try
   SettingsToFrame;

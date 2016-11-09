@@ -13,11 +13,11 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, 
-  Dialogs, ExtCtrls, StdCtrls, Spin,
+  Dialogs, ExtCtrls, StdCtrls, Spin, Menus,
   DART_ProcessingSettings;
 
 type
-  TSettingsHintEvet = procedure(Sender: TObject; HintTag: Integer) of object;  
+  TSettingsHintEvent = procedure(Sender: TObject; HintTag: Integer) of object;
 
 type
   TfrmProcSettingsSCS = class(TFrame)
@@ -32,31 +32,129 @@ type
     lblCustomPaths: TLabel;
     meCustomPaths: TMemo;
     lblHelpFiles: TLabel;
+    pmHelpFiles: TPopupMenu;
+    miHelpFiles_Browse: TMenuItem;
+    diaHelpFilesOpen: TOpenDialog;
+    btnBrowseHelpFiles: TButton;    
     meHelpFiles: TMemo;
     bvlHorSplit: TBevel;
     cbBruteForceResolve: TCheckBox;
     cbLimitedAlphabet: TCheckBox;
     lblLengthLimit: TLabel;
     seLengthLimit: TSpinEdit;
+    miHelpFiles_N1: TMenuItem;
+    miHelpFiles_ETS2: TMenuItem;
+    miHelpFiles_ATS: TMenuItem;
+    procedure btnBrowseHelpFilesClick(Sender: TObject);
+    procedure miHelpFiles_BrowseClick(Sender: TObject);
   private
-    fProcessingSettings: TSCS_Settings;
-    fLoading:            Boolean; 
-    fOnSettingsHint:     TSettingsHintEvet;
+    fFileProcessingSettings:  TFileProcessingSettings;
+    fProcessingSettings:      TSCS_Settings;
+    fLoading:                 Boolean;
+    fGameInstallDirs:         array of String;
+    fOnSettingsHint:          TSettingsHintEvent;
+  protected
+    procedure GetInstalledGames;
   public
+    procedure Initialize;
     procedure SettingsToFrame;
     procedure FrameToSettings;
-    procedure ShowProcessingSettings(ProcessingSettings: TSCS_Settings);
+    procedure ShowProcessingSettings(FileProcessingSettings: TFileProcessingSettings);
     Function RetrieveProcessingSettings: TSCS_Settings;
   published
     procedure CheckBoxClick(Sender: TObject);
     procedure SettingsMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
     procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-    property OnSettingsHint: TSettingsHintEvet read fOnSettingsHint write fOnSettingsHint;
+    procedure LoadGameFiles(Sender: TObject);
+    property OnSettingsHint: TSettingsHintEvent read fOnSettingsHint write fOnSettingsHint;
   end;
 
 implementation
 
 {$R *.dfm}
+
+uses
+  Registry;
+
+procedure TfrmProcSettingsSCS.GetInstalledGames;
+type
+  TKnownGameItem = record
+    RegistryRoot: HKEY;
+    RegistryKey:  String;
+    ValueName:    String;
+  end;
+const
+{
+   Note steam installations are not included.
+   If anyone knows a reliable way of how to obtain where individual games are
+   installed by steam, please let me know.
+}
+  KnownGamesInfoArray: array[0..1] of TKnownGameItem = (
+    (RegistryRoot: HKEY_LOCAL_MACHINE;
+     RegistryKey:  '\SOFTWARE\SCS Software\Euro Truck Simulator 2';
+     ValueName:    'InstallDir'),
+    (RegistryRoot: HKEY_LOCAL_MACHINE;
+     RegistryKey:  '\SOFTWARE\SCS Software\American Truck Simulator';
+     ValueName:    'InstallDir'));
+var
+  Reg:  TRegistry;
+  i:    Integer;
+begin
+SetLength(fGameInstallDirs,Length(KnownGamesInfoArray));
+Reg := TRegistry.Create;
+try
+  For i := Low(KnownGamesInfoArray) to High(KnownGamesInfoArray) do
+    begin
+      Reg.RootKey := KnownGamesInfoArray[i].RegistryRoot;
+      If Reg.KeyExists(KnownGamesInfoArray[i].RegistryKey) then
+        If Reg.OpenKeyReadOnly(KnownGamesInfoArray[i].RegistryKey) then
+          begin
+            If Reg.ValueExists(KnownGamesInfoArray[i].ValueName) then
+              fGameInstallDirs[i] := Reg.ReadString(KnownGamesInfoArray[i].ValueName);
+            Reg.CloseKey;
+          end;
+    end;
+finally
+  Reg.Free;
+end;
+end;
+
+//==============================================================================
+
+procedure TfrmProcSettingsSCS.Initialize;
+var
+  i:  Integer;
+
+  Function GetGameFilesMenuItem(IDX: Integer): TMenuItem;
+  begin
+    case IDX of
+      0:  Result := miHelpFiles_ETS2;
+      1:  Result := miHelpFiles_ATS;
+    else
+      Result := nil;
+    end;
+  end;
+
+begin
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+diaHelpFilesOpen.InitialDir := ExtractFileDir(SysToUTF8(ParamStr(0)));
+{$ELSE}
+diaHelpFilesOpen.InitialDir := ExtractFileDir(ParamStr(0));
+{$IFEND}
+GetInstalledGames;
+For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
+  If fGameInstallDirs[i] <> '' then
+    begin
+      with GetGameFilesMenuItem(i) do
+        begin
+          Visible := True;
+          Tag := i;
+        end;
+      miHelpFiles_N1.Visible := True;
+    end;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TfrmProcSettingsSCS.SettingsToFrame;
 var
@@ -116,9 +214,10 @@ end;
  
 //------------------------------------------------------------------------------
 
-procedure TfrmProcSettingsSCS.ShowProcessingSettings(ProcessingSettings: TSCS_Settings);
+procedure TfrmProcSettingsSCS.ShowProcessingSettings(FileProcessingSettings: TFileProcessingSettings);
 begin
-fProcessingSettings := ProcessingSettings;
+fFileProcessingSettings := FileProcessingSettings;
+fProcessingSettings := FileProcessingSettings.SCSSettings;
 fLoading := True;
 try
   SettingsToFrame;
@@ -179,6 +278,77 @@ If Sender is TGroupBox then
     Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
     If Assigned(Control) and ((Control is TCheckBox) or (Control is TSpinEdit)) then
       SettingsMouseMove(Control,Shift,X,Y);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfrmProcSettingsSCS.btnBrowseHelpFilesClick(Sender: TObject);
+var
+  PopupPoint: TPoint;
+begin
+PopupPoint := gbPathResolve.ClientToScreen(Point(btnBrowseHelpFiles.Left,btnBrowseHelpFiles.BoundsRect.Bottom));
+pmHelpFiles.Popup(PopupPoint.X,PopupPoint.Y);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfrmProcSettingsSCS.miHelpFiles_BrowseClick(Sender: TObject);
+var
+  i:  Integer;
+begin
+If diaHelpFilesOpen.Execute then
+  begin
+    meHelpFiles.Lines.BeginUpdate;
+    try
+      For i := 0 to Pred(diaHelpFilesOpen.Files.Count) do
+        If not AnsiSameText(diaHelpFilesOpen.Files[i],fFileProcessingSettings.Common.FilePath) and
+          (meHelpFiles.Lines.IndexOf(diaHelpFilesOpen.Files[i]) < 0) then
+          meHelpFiles.Lines.Add(diaHelpFilesOpen.Files[i]);
+    finally
+      meHelpFiles.Lines.EndUpdate;
+    end
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfrmProcSettingsSCS.LoadGameFiles(Sender: TObject);
+var
+  FileList: TStringList;
+  i:        Integer;
+
+  procedure GetListing(const Path: String; Files: TStringList);
+  var
+    SearchRec: TSearchRec;
+  begin
+    {$message 'FPC - UTF8 variant'}
+    If FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
+      begin
+        repeat
+          Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
+        until FindNext(SearchRec) <> 0;
+        FindClose(SearchRec);
+      end;
+  end;
+
+begin
+If Sender is TMenuItem then
+  begin
+    FileList := TStringList.Create;
+    try
+      GetListing(fGameInstallDirs[TMenuItem(Sender).Tag],FileList);
+      meHelpFiles.Lines.BeginUpdate;
+      try
+        For i := 0 to Pred(FileList.Count) do
+          If meHelpFiles.Lines.IndexOf(FileList[i]) < 0 then
+            meHelpFiles.Lines.Add(FileList[i]);
+      finally
+        meHelpFiles.Lines.EndUpdate;
+      end;
+    finally
+      FileList.Free;
+    end;
   end;
 end;
 

@@ -201,6 +201,8 @@ Names of individual files to which the entries are extracted are constructed fro
 
 The files are stored in the same folder as the output file, into subfolder "unresolved_filename", where filename is the name of output file without the extension.
 
+Note - unresolved entries are copied into output file.
+
 - Extracting -
 
 Files are stored into the output folder, subfolder "_unresolved_".

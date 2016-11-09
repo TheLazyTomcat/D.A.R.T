@@ -216,8 +216,8 @@ cbIgnoreFileSignature.Checked := fFileProcessingSettings.Common.IgnoreFileSignat
 cbInMemoryProcessing.Checked := fFileProcessingSettings.Common.InMemoryProcessing;
 cbInMemoryProcessing.Enabled := fFileProcessingSettings.Other.InMemoryProcessingAllowed;
 cbIgnoreErroneousEntries.Checked := fFileProcessingSettings.Common.IgnoreErroneousEntries;
-frmProcSettingsZIP.ShowProcessingSettings(fFileProcessingSettings.ZIPSettings);
-frmProcSettingsSCS.ShowProcessingSettings(fFileProcessingSettings.SCSSettings);
+frmProcSettingsZIP.ShowProcessingSettings(fFileProcessingSettings);
+frmProcSettingsSCS.ShowProcessingSettings(fFileProcessingSettings);
 end;
 
 //------------------------------------------------------------------------------
@@ -358,7 +358,9 @@ procedure TfPrcsSettingsForm.FormCreate(Sender: TObject);
 begin
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;
+frmProcSettingsZIP.Initialize;
 frmProcSettingsSCS.OnSettingsHint := FrameSettingsHintHandler;
+frmProcSettingsSCS.Initialize;
 cmbForcedFileType.OnMouseMove := SettingsMouseMove;
 end;
 
