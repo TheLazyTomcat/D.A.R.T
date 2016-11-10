@@ -110,11 +110,11 @@ uses
   DART_Auxiliary, DART_Repairer_ZIP, DART_Repairer_SCS;
 
 {==============================================================================}
-{   TFilesManager - class implementation                                       }
+{   TFileManager - class implementation                                        }
 {==============================================================================}
 
 {------------------------------------------------------------------------------}
-{   TFilesManager - private methods                                            }
+{   TFileManager - private methods                                             }
 {------------------------------------------------------------------------------}
 
 Function TFileManager.GetFileCount: Integer;
@@ -140,7 +140,7 @@ Result := GetFilePtr(Index)^;
 end;
 
 {------------------------------------------------------------------------------}
-{   TFilesManager - protected methods                                          }
+{   TFileManager - protected methods                                           }
 {------------------------------------------------------------------------------}
 
 procedure TFileManager.DoFileProgress(Index: Integer);
@@ -255,7 +255,7 @@ If fManagerStatus in [mstProcessing,mstTerminating] then
 end;
 
 {------------------------------------------------------------------------------}
-{   TFilesManager - public methods                                             }
+{   TFileManager - public methods                                              }
 {------------------------------------------------------------------------------}
 
 constructor TFileManager.Create(VisualListing: TListView);

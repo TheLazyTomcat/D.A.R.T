@@ -44,10 +44,15 @@ const
   zlib_method_str = 'E';      // ZLibEx (delphi zlib) is used (statically linked)
 {$ENDIF}
 
-  WINDOWBITS_Raw  = -15;
-  WINDOWBITS_ZLib = 15;
-  WINDOWBITS_GZip = 31;
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                              ERepairerException                              }
+{------------------------------------------------------------------------------}
+{==============================================================================}
 
+{==============================================================================}
+{   ERepairerException - class declaration                                     }
+{==============================================================================}
 type
   ERepairerException = class(Exception)
   private
@@ -64,6 +69,18 @@ type
     property SourceFunctionName: String read fSourceFunctionName;
   end;
 
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                   TRepairer                                  }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+const
+  WINDOWBITS_Raw  = -15;
+  WINDOWBITS_ZLib = 15;
+  WINDOWBITS_GZip = 31;
+
+type
   TResultState = (rsUndefined,rsNormal,rsWarning,rsError);
 
   TResultInfoError = record
@@ -194,6 +211,36 @@ uses
 //{$INCLUDE 'libs\lazarus.zlib.128\zlib_lib.pas'}
 {$ENDIF}
 
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                              ERepairerException                              }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+{==============================================================================}
+{   ERepairerException - class implementation                                  }
+{==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   ERepairerException - public methods                                        }
+{------------------------------------------------------------------------------}
+
+constructor ERepairerException.Create(const Text: String; SrcObject: TObject; SrcFunctionIdx: Integer; const SrcFunctionName: String);
+begin
+inherited Create(Text);
+fSourceObject := SrcObject;
+fSourceObjectClass := SrcObject.ClassName;
+fSourceFunctionIdx := SrcFunctionIdx;
+fSourceFunctionName := SrcFunctionName;
+end;
+
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                   TRepairer                                  }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
 const
   // Size of the buffer used in progress-aware stream reading and writing
   IO_BufferSize  = $100000; {1MiB}
@@ -204,18 +251,13 @@ const
   // Initial size of buffer used to hold uncompressed entry data
   UED_BufferSize = $100000 * 16; {16MiB}
 
-constructor ERepairerException.Create(const Text: String; SrcObject: TObject; SrcFunctionIdx: Integer; const SrcFunctionName: String);
-begin
-inherited Create(Text);
-fSourceObject := SrcObject;
-fSourceObjectClass := SrcObject.ClassName;
-fSourceFunctionIdx := SrcFunctionIdx;
-fSourceFunctionName := SrcFunctionName;
-end;  
-
 {==============================================================================}
 {   TRepairer - class implementation                                           }
 {==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   TRepairer - protected methods                                              }
+{------------------------------------------------------------------------------}
 
 procedure TRepairer.InitializeProgress;
 begin
@@ -654,7 +696,9 @@ begin
 InterlockedExchange(fTerminatedFlag,0);
 end;
 
-//==============================================================================
+{------------------------------------------------------------------------------}
+{   TRepairer - public methods                                                 }
+{------------------------------------------------------------------------------}
 
 class Function TRepairer.CreateFileStream(const FileName: String; Mode: Word): TFileStream;
 begin

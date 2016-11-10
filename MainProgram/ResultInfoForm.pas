@@ -42,6 +42,8 @@ uses
   ClipBrd,
   DART_Repairer;
 
+//==============================================================================
+
 procedure TfResultInfoForm.ShowResultInformation(const FileInfo: TFileListItem);
 var
   i:  Integer;

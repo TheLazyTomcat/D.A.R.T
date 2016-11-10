@@ -86,6 +86,8 @@ implementation
   {$R *.dfm}
 {$ENDIF}  
 
+//==============================================================================
+
 procedure TfrmProcSettingsZIP.Initialize;
 begin
 // nothing to do here

@@ -22,7 +22,7 @@ const
   RepairerMethodStrArr: array[TRepairMethod] of String =
     ('Unknown','Rebuild archive','Extract archive');  
 
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+//--- Common processing settings -----------------------------------------------
 
 type
   TCommonSettings = record
@@ -40,7 +40,7 @@ type
     InMemoryProcessingAllowed:  Boolean;
   end;
 
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+//--- ZIP-specific processing settings -----------------------------------------
 
   TZIP_EndOfCentralDirectoryProcessingSettings = record
     IgnoreEndOfCentralDirectory:    Boolean;
@@ -90,7 +90,7 @@ type
     LocalHeader:              TZIP_LocalHeaderProcessingSettings;
   end;
 
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+//--- SCS#-specific processing settings ----------------------------------------
 
   TSCS_EntrySettings = record
     IgnoreCRC32:            Boolean;
@@ -113,7 +113,7 @@ type
     PathResolve:  TSCS_PathResolveSettings;
   end;
 
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+//--- Main structure -----------------------------------------------------------
 
   TFileProcessingSettings = record
     Common:       TCommonSettings;
@@ -122,7 +122,7 @@ type
     SCSSettings:  TSCS_Settings;
   end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 const
   DefaultFileProcessingSettings: TFileProcessingSettings = (

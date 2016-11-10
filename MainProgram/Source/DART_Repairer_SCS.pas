@@ -22,18 +22,28 @@ uses
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
+//--- SCS# archive signature ---------------------------------------------------
+
 const
   FileSignature_SCS = UInt32($23534353);  // SCS#
 
+//--- Known hash algorithms ----------------------------------------------------
+
   SCS_HASH_City = UInt32($59544943);  // CITY
+
+//--- Entry bit flags ----------------------------------------------------------
 
   SCS_FLAG_Directory  = $00000001;
   SCS_FLAG_Compressed = $00000002;
   SCS_FLAG_Unknown    = $00000004;  // seems to be always set
 
+//--- Default offsets ----------------------------------------------------------
+
   SCS_DefaultEntryTableOffset = UInt64($0000000000001000);
 
 type
+//--- Archive header record ----------------------------------------------------
+
   TSCS_ArchiveHeader = packed record
     Signature:      UInt32;
     Unknown:        UInt32;
@@ -42,6 +52,8 @@ type
     EntriesOffset:  UInt64;
     UnknownOffset:  UInt64;
   end;
+
+//--- Entry record (table item) ------------------------------------------------
 
   TSCS_EntryRecord = packed record
     Hash:             UInt64;
@@ -52,12 +64,16 @@ type
     CompressedSize:   UInt32;
   end;
 
+//--- Utility data -------------------------------------------------------------
+
   TSCS_UtilityData = record
     Resolved:           Boolean;
     Erroneous:          Boolean;
     SubEntries:         array of AnsiString;
     OriginalDataOffset: UInt64;
   end;
+
+//--- Main structure -----------------------------------------------------------
 
   TSCS_Entry = record
     Bin:          TSCS_EntryRecord;
@@ -78,6 +94,8 @@ type
   end;
 
 const
+//--- Path constants, predefined paths -----------------------------------------
+
   SCS_RootPath = '';
 
   SCS_PathDelim = '/';
@@ -97,7 +115,11 @@ const
     'automat','def','effect','map','material','model','model2',
     'prefab','prefab2','sound','system','ui','unit','vehicle');
 
-//==============================================================================
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                 TRepairer_SCS                                }
+{------------------------------------------------------------------------------}
+{==============================================================================}
 
 const
   PROCSTAGEIDX_SCS_ArchiveHeaderLoading      = PROCSTAGEIDX_Max + 1;
@@ -115,6 +137,9 @@ const
   PROCSTAGEIDX_SCS_EntrySaving               = PROCSTAGEIDX_Max + 13;
   PROCSTAGEIDX_SCS_Max                       = PROCSTAGEIDX_SCS_EntrySaving;
 
+{==============================================================================}
+{   TRepairer_SCS - class declaration                                          }
+{==============================================================================}
 type
   TRepairer_SCS = class(TRepairer)
   protected
@@ -150,6 +175,20 @@ uses
   SysUtils, Classes,
   BitOps, CITY,
   DART_MemoryBuffer, DART_AnsiStringList;
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                                 TRepairer_SCS                                }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+{==============================================================================}
+{   TRepairer_SCS - class implementation                                       }
+{==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   TRepairer_SCS - protected methods                                          }
+{------------------------------------------------------------------------------}
 
 Function TRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
 begin
@@ -665,7 +704,9 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
     Inc(fArchiveStructure.DataBytes,fArchiveStructure.Entries[i].Bin.CompressedSize);
 end;
 
-//==============================================================================
+{------------------------------------------------------------------------------}
+{   TRepairer_SCS - public methods                                             }
+{------------------------------------------------------------------------------}
 
 class Function TRepairer_SCS.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

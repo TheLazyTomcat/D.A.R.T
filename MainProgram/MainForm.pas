@@ -117,6 +117,8 @@ const
      List_MethodColumn = 3;
      List_StateColumn  = 4;
 
+//==============================================================================
+
 {$IFNDEF FPC}
 procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
 var

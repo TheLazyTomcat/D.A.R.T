@@ -86,6 +86,8 @@ uses
   {$ENDIF}
 {$ENDIF};
 
+//==============================================================================
+
 procedure TfrmProcSettingsSCS.GetInstalledGames;
 type
   TKnownGameItem = record
