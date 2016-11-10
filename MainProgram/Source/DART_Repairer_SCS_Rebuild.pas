@@ -30,7 +30,10 @@ implementation
 uses
   SysUtils, Classes,
   BitOps, CRC32,
-  DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer;
+  DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils
+{$IFEND};
 
 procedure TRepairer_SCS_Rebuild.SCS_DiscardDirectories;
 var

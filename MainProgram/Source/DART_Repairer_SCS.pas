@@ -14,7 +14,7 @@ interface
 uses
   AuxTypes,
   CRC32, WinSyncObjs,
-  DART_Auxiliary, DART_ProcessingSettings, DART_Repairer;
+  DART_ProcessingSettings, DART_Repairer;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -137,7 +137,6 @@ type
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
-  published
     property ArchiveStructure: TSCS_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -301,9 +300,9 @@ procedure TRepairer_SCS.SCS_SortEntries;
       If (Idx1 <> Idx2) then
         begin
           If (Idx1 < Low(fArchiveStructure.Entries)) or (Idx1 > High(fArchiveStructure.Entries)) then
-            DoError(103,'Index 1 (%d) out of bounds.'[Idx1]);
+            DoError(103,'Index 1 (%d) out of bounds.',[Idx1]);
           If (Idx2 < Low(fArchiveStructure.Entries)) or (Idx2 > High(fArchiveStructure.Entries)) then
-            DoError(103,'Index 2 (%d) out of bounds.'[Idx1]);
+            DoError(103,'Index 2 (%d) out of bounds.',[Idx1]);
           TempEntry := fArchiveStructure.Entries[Idx1];
           fArchiveStructure.Entries[Idx1] := fArchiveStructure.Entries[Idx2];
           fArchiveStructure.Entries[Idx2] := TempEntry;
@@ -565,7 +564,6 @@ end;
 
 procedure TRepairer_SCS.RectifyFileProcessingSettings;
 begin
-inherited;
 fProcessingSettings := fFileProcessingSettings.SCSSettings;
 fProcessingSettings.PathResolve.BruteForceResolve := False; 
 end;
@@ -574,7 +572,6 @@ end;
 
 procedure TRepairer_SCS.InitializeData;
 begin
-inherited;
 FillChar(fArchiveStructure.ArchiveHeader,SizeOf(TSCS_ArchiveHeader),0);
 SetLength(fArchiveStructure.Entries,0);
 SetLength(fArchiveStructure.KnownPaths,0);
@@ -645,7 +642,6 @@ procedure TRepairer_SCS.ArchiveProcessing;
 var
   i:  Integer;
 begin
-inherited;
 SCS_LoadArchiveHeader;
 SCS_LoadEntries;
 SCS_SortEntries;  // <- this step is optional at this point

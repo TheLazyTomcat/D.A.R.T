@@ -23,12 +23,23 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
+{$IF not Declared(FPC_FULLVERSION)}
+const
+  FPC_FULLVERSION = Integer(0);
+{$IFEND}
+
 implementation
 
 uses
   SysUtils, Classes,
   AuxTypes, CRC32, 
-  DART_MemoryBuffer, DART_Repairer;
+  DART_MemoryBuffer, DART_Repairer
+{$IF Defined(FPC)}
+  , LazUTF8
+{$IF FPC_FULLVERSION < 20701}
+  , LazFileUtils
+{$IFEND}
+{$IFEND};
 
 procedure TRepairer_ZIP_Rebuild.ZIP_RebuildArchive;
 var

@@ -108,8 +108,8 @@ const
   AnimImgIdx_Count = 7;
 
 {%H-}List_IconColumn   = -1;
-     List_NameColumn   = 0;
-     List_SizeColumn   = 1;
+{%H-}List_NameColumn   = 0;
+{%H-}List_SizeColumn   = 1;
      List_TypeColumn   = 2;
      List_MethodColumn = 3;
      List_StateColumn  = 4;

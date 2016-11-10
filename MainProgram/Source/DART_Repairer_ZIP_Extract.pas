@@ -23,12 +23,23 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
+{$IF not Declared(FPC_FULLVERSION)}
+const
+  FPC_FULLVERSION = Integer(0);
+{$IFEND}
+
 implementation
 
 uses
   Windows, SysUtils, Classes, StrUtils,
   AuxTypes,
-  DART_MemoryBuffer, DART_Repairer;
+  DART_MemoryBuffer, DART_Repairer
+{$IFDEF FPC}
+  , LazUTF8
+{$IF not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils
+{$IFEND}
+{$ENDIF};
 
 {$IF not declared(FILE_WRITE_ATTRIBUTES)}
 const

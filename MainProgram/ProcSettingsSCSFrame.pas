@@ -12,8 +12,8 @@ unit ProcSettingsSCSFrame;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, 
-  Dialogs, ExtCtrls, StdCtrls, Spin, Menus,
+  {$IFNDEF FPC}Windows,{$ENDIF} SysUtils, Variants, Classes, Graphics, Controls,
+  Forms, Dialogs, ExtCtrls, StdCtrls, Spin, Menus,
   DART_ProcessingSettings;
 
 type
@@ -71,10 +71,17 @@ type
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 uses
-  Registry;
+  Registry
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils, LazUTF8
+{$IFEND};
 
 procedure TfrmProcSettingsSCS.GetInstalledGames;
 type
@@ -322,14 +329,25 @@ var
   var
     SearchRec: TSearchRec;
   begin
-    {$message 'FPC - UTF8 variant'}
+    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+    If FindFirstUTF8(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
+    try
+      repeat
+        Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
+      until FindNextUTF8(SearchRec) <> 0;
+    finally
+      FindCloseUTF8(SearchRec);
+    end;
+    {$ELSE}
     If FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
-      begin
-        repeat
-          Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
-        until FindNext(SearchRec) <> 0;
-        FindClose(SearchRec);
-      end;
+    try
+      repeat
+        Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
+      until FindNext(SearchRec) <> 0;
+    finally
+      FindClose(SearchRec);
+    end;
+    {$ENDIF}
   end;
 
 begin

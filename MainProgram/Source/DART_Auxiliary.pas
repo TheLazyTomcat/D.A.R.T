@@ -21,10 +21,21 @@ Function GetFileSignature(const FilePath: String): UInt32;
 
 Function GetAvailableMemory: UInt64;
 
+{$IF not Declared(FPC_FULLVERSION)}
+const
+  FPC_FULLVERSION = Integer(0);
+{$IFEND}
+
 implementation
 
 uses
-  Windows, SysUtils, Classes;
+  Windows, SysUtils, Classes
+{$IF Defined(FPC) and not Defined(Unicode)}
+  , LazUTF8
+{$IF FPC_FULLVERSION < 20701}
+  , LazFileUtils
+{$IFEND}
+{$IFEND};
 
 Function GetFileSize(const FilePath: String): Int64;
 var
@@ -35,18 +46,19 @@ If FindFirstUTF8(FilePath,faAnyFile,SearchResult) = 0 then
 {$ELSE}
 If FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
 {$IFEND}
-  begin
+  try
   {$WARN SYMBOL_PLATFORM OFF}
     Int64Rec(Result).Hi := SearchResult.FindData.nFileSizeHigh;
     Int64Rec(Result).Lo := SearchResult.FindData.nFileSizeLow;
   {$WARN SYMBOL_PLATFORM ON}
+  finally
   {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
     FindCloseUTF8(SearchResult);
   {$ELSE}
     FindClose(SearchResult);
   {$IFEND}
-    end
-  else Result := 0;
+  end
+else Result := 0;
 end;
 
 //------------------------------------------------------------------------------

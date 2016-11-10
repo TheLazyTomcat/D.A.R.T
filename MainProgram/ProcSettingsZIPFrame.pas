@@ -12,8 +12,8 @@ unit ProcSettingsZIPFrame;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, 
-  Dialogs, ExtCtrls, StdCtrls,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, ExtCtrls,
+  StdCtrls,
   DART_ProcessingSettings;
 
 type
@@ -80,7 +80,11 @@ type
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}  
 
 procedure TfrmProcSettingsZIP.Initialize;
 begin

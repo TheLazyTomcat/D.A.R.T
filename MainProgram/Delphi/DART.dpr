@@ -10,25 +10,29 @@ program DART;
 uses
   FastMM4,
   Forms,
-  MainForm in '..\MainForm.pas' {fMainForm},
-  PrcsSettingsForm in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm},
-  ResultInfoForm in '..\ResultInfoForm.pas' {fResultInfoForm},
-  DART_Auxiliary in '..\Source\DART_Auxiliary.pas',
-  DART_FileManager in '..\Source\DART_FileManager.pas',
+
+  DART_Auxiliary          in '..\Source\DART_Auxiliary.pas',
+  DART_MemoryBuffer       in '..\Source\DART_MemoryBuffer.pas',
+  DART_AnsiStringList     in '..\Source\DART_AnsiStringList.pas',
+  DART_PathDeconstructor  in '..\Source\DART_PathDeconstructor.pas',
   DART_ProcessingSettings in '..\Source\DART_ProcessingSettings.pas',
-  DART_Repairer_SCS in '..\Source\DART_Repairer_SCS.pas',
-  DART_Repairer_ZIP in '..\Source\DART_Repairer_ZIP.pas',
-  DART_Repairer in '..\Source\DART_Repairer.pas',
-  DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
-  DART_MemoryBuffer in '..\Source\DART_MemoryBuffer.pas',
-  ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
-  ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
+
+  DART_Repairer             in '..\Source\DART_Repairer.pas',
+  DART_Repairer_ZIP         in '..\Source\DART_Repairer_ZIP.pas',
   DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
   DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas',
-  DART_AnsiStringList in '..\Source\DART_AnsiStringList.pas',
-  DART_Repairer_SCS_Extract in '..\Source\DART_Repairer_SCS_Extract.pas',
+  DART_Repairer_SCS         in '..\Source\DART_Repairer_SCS.pas',
   DART_Repairer_SCS_Rebuild in '..\Source\DART_Repairer_SCS_Rebuild.pas',
-  DART_PathDeconstructor in '..\Source\DART_PathDeconstructor.pas';
+  DART_Repairer_SCS_Extract in '..\Source\DART_Repairer_SCS_Extract.pas',
+
+  DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
+  DART_FileManager    in '..\Source\DART_FileManager.pas',
+
+  MainForm             in '..\MainForm.pas' {fMainForm},
+  ResultInfoForm       in '..\ResultInfoForm.pas' {fResultInfoForm},
+  ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
+  ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
+  PrcsSettingsForm     in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm};
 
 {$R *.res}
 

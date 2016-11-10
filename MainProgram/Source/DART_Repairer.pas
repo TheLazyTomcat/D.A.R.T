@@ -176,20 +176,23 @@ type
     procedure Run; virtual;
     procedure Stop; virtual;
     Function Terminated: Boolean; virtual;
+    property ResultInfo: TResultInfo read fResultInfo;
   published
     property ExpectedSignature: UInt32 read fExpectedSignature;
-    property ResultInfo: TResultInfo read fResultInfo;
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
 
 implementation
 
 uses
-  Windows, Math, ZLibExAPI;
+  Windows, Math{$IFNDEF FPC}, ZLibExAPI{$ENDIF}
+{$IF Defined(FPC) and not Defined(Unicode)}
+  , LazUTF8
+{$IFEND};
 
 {$IFDEF zlib_lib}
-  {$I 'libs\lazarus.zlib.128\zlib_lib.pas'}
-{$ENDIF}  
+//{$INCLUDE 'libs\lazarus.zlib.128\zlib_lib.pas'}
+{$ENDIF}
 
 const
   // Size of the buffer used in progress-aware stream reading and writing
@@ -396,7 +399,7 @@ DoProgress(ProgressStage,0.0);
 Max := Ceil(Size / fIO_Buffer.Size);
 For i := 1 to Max do
   begin
-    Dec(Size,Stream.Read(Buffer^,Min(fIO_Buffer.Size,Size)));
+    Dec(Size,Stream.Read(Buffer^,Min(Int64(fIO_Buffer.Size),Int64(Size))));
     Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + fIO_Buffer.Size);
     DoProgress(ProgressStage,i / Max);
   end;
@@ -413,7 +416,7 @@ DoProgress(ProgressStage,0.0);
 Max := Ceil(Size / fIO_Buffer.Size);
 For i := 1 to Max do
   begin
-    Dec(Size,Stream.Write(Buffer^,Min(IO_BufferSize,Size)));
+    Dec(Size,Stream.Write(Buffer^,Min(Int64(fIO_Buffer.Size),Int64(Size))));
     Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + fIO_Buffer.Size);
     DoProgress(ProgressStage,i / Max);
   end;
@@ -423,6 +426,11 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
+{$IFDEF FPC}
+begin
+DoError(-1,'decompression disabled');
+end;
+{$ELSE}
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -450,7 +458,7 @@ var
       end;
     Result := ResCode;
   end;
-  
+
 begin
 DoProgress(ProgressStage,0.0);
 OutBuff := nil;
@@ -484,10 +492,16 @@ If InSize > 0 then
   end;
 DoProgress(ProgressStage,1.0);
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
+{$IFDEF FPC}
+begin
+DoError(-1,'compression disabled');
+end;
+{$ELSE}
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -557,6 +571,7 @@ If InSize > 0 then
   end;
 DoProgress(ProgressStage,1.0);
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -716,5 +731,18 @@ Function TRepairer.Terminated: Boolean;
 begin
 Result := InterlockedExchangeAdd(fTerminatedFlag,0) <> 0;
 end;
+
+//==============================================================================
+
+initialization
+{$IFDEF zlib_lib_dll}
+  ExtractLibrary;
+  Initialize;
+{$ENDIF}
+
+{$IFDEF zlib_lib_dll}
+finalization
+  Finalize;
+{$ENDIF}
 
 end.

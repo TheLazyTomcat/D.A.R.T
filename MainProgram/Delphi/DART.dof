@@ -129,7 +129,7 @@ LegalTrademarks=D.A.R.T
 OriginalFilename=DART.exe
 ProductName=D.A.R.T
 ProductVersion=1.2.0
-Comments=Tool for repairing *.zip archives with damaged headers
+Comments=Tool for repairing damaged ZIP and SCS# archives
 [HistoryLists\hlConditionals]
 Count=1
 Item0=Windows;x86;Delphi

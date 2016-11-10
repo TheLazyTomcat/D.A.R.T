@@ -26,7 +26,10 @@ implementation
 uses
   SysUtils, Classes, StrUtils,
   BitOps,
-  DART_MemoryBuffer, DART_Repairer;
+  DART_MemoryBuffer, DART_Repairer
+{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  , LazFileUtils
+{$IFEND};
 
 procedure TRepairer_SCS_Extract.SCS_ExtractArchive;
 var

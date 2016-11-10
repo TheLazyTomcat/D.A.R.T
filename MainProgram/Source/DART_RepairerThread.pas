@@ -48,10 +48,10 @@ type
     procedure PauseProcessing; virtual;
     procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
-  published
-    property FileIndex: Integer read fFileIndex;
     property FileProcessingSettings: TFileProcessingSettings read fFileProcessingSettings;
     property ResultInfo: TResultInfo read fResultInfo;
+  published
+    property FileIndex: Integer read fFileIndex;
     property OnFileProgress: TFileProgressEvent read fOnFileProgress write fOnFileProgress;
   end;
 

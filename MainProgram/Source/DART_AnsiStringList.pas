@@ -88,7 +88,7 @@ If Length(Str) > 0 then
             If Len > 0 then
               begin
                 SetLength(Buff,Len);
-                Move(PAnsiChar(PtrUInt(P) - PtrUInt(Len))^,PAnsiChar(Buff)^,Len);
+                Move({%H-}PAnsiChar({%H-}PtrUInt(P) - PtrUInt(Len))^,PAnsiChar(Buff)^,Len);
                 Add(Buff);
                 Len := 0;
               end;
@@ -99,7 +99,7 @@ If Length(Str) > 0 then
     If Len > 0 then
       begin
         SetLength(Buff,Len);
-        Move(PAnsiChar(PtrUInt(P) - PtrUInt(Len))^,PAnsiChar(Buff)^,Len);
+        Move({%H-}PAnsiChar({%H-}PtrUInt(P) - PtrUInt(Len))^,PAnsiChar(Buff)^,Len);
         Add(Buff);
       end;
   end;

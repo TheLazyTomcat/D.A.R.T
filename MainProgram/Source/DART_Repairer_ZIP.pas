@@ -178,14 +178,16 @@ type
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
-  published
     property ArchiveStructure: TZIP_ArchiveStructure read fArchiveStructure;
   end;
 
 implementation
 
 uses
-  Windows, SysUtils, Classes, StrUtils;
+  Windows, SysUtils, Classes, StrUtils
+{$IF Defined(FPC)}
+  , LazUTF8
+{$IFEND};
 
 procedure TRepairer_ZIP.ZIP_PrepareEntryProgressInfo(EntryIndex: Integer);
 begin
@@ -732,7 +734,6 @@ end;
 
 procedure TRepairer_ZIP.RectifyFileProcessingSettings;
 begin
-inherited;
 fProcessingSettings := fFileProcessingSettings.ZIPSettings;
 If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
   fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
@@ -758,7 +759,6 @@ end;
 
 procedure TRepairer_ZIP.InitializeData;
 begin
-inherited;
 SetLength(fArchiveStructure.Entries,0);
 FillChar(fArchiveStructure.EndOfCentralDirectory.BinPart,SizeOf(TZIP_EndOfCentralDirectoryRecord),0);
 fArchiveStructure.EndOfCentralDirectory.Comment := '';
@@ -800,7 +800,6 @@ end;
 
 procedure TRepairer_ZIP.ArchiveProcessing;
 begin
-inherited;
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
     ZIP_LoadEndOfCentralDirectory;

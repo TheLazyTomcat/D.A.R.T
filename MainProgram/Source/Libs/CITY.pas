@@ -27,9 +27,9 @@
 ===============================================================================}
 unit CITY;
 
-interface
-
 {$INCLUDE 'CITY_defs.inc'}
+
+interface
 
 uses
   AuxTypes;
@@ -146,18 +146,14 @@ end;
 
 Function UNALIGNED_LOAD32(Ptr: Pointer): UInt32;
 begin
-{$IFDEF FPC}{$HINTS OFF}{$ENDIF}
-Move(Ptr^,Result,SizeOf(Result));
-{$IFDEF FPC}{$HINTS ON}{$ENDIF}
+Move(Ptr^,Addr(Result)^,SizeOf(Result));
 end;
 
 //------------------------------------------------------------------------------
 
 Function UNALIGNED_LOAD64(Ptr: Pointer): UInt64;
 begin
-{$IFDEF FPC}{$HINTS OFF}{$ENDIF}
-Move(Ptr^,{%H-}Result,SizeOf(Result));
-{$IFDEF FPC}{$HINTS ON}{$ENDIF}
+Move(Ptr^,Addr(Result)^,SizeOf(Result));
 end;
 
 //------------------------------------------------------------------------------
