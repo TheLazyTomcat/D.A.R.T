@@ -26,7 +26,7 @@ interface
 uses
   SysUtils, Classes,
   AuxTypes, WinSyncObjs,
-  DART_ProcessingSettings, DART_MemoryBuffer;
+  DART_MemoryBuffer, DART_ProcessingSettings;
 
 // Text constant identifying what method is used to call zlib ------------------
 const
@@ -186,9 +186,9 @@ implementation
 
 uses
   Windows, Math{$IFNDEF FPC}, ZLibExAPI{$ENDIF}
-{$IF Defined(FPC) and not Defined(Unicode)}
+{$IFDEF FPC_NonUnicode}
   , LazUTF8
-{$IFEND};
+{$ENDIF};
 
 {$IFDEF zlib_lib}
 //{$INCLUDE 'libs\lazarus.zlib.128\zlib_lib.pas'}
@@ -658,11 +658,11 @@ end;
 
 class Function TRepairer.CreateFileStream(const FileName: String; Mode: Word): TFileStream;
 begin
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode}
 Result := TFileStream.Create(UTF8ToSys(FileName),Mode);
 {$ELSE}
 Result := TFileStream.Create(FileName,Mode);
-{$IFEND}
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------

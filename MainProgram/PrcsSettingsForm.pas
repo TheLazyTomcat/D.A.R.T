@@ -12,8 +12,10 @@ unit PrcsSettingsForm;
 interface
 
 uses
-  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,ExtCtrls,
-  ProcSettingsZIPFrame, ProcSettingsSCSFrame, DART_ProcessingSettings;
+  Windows, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, ExtCtrls,
+  DART_ProcessingSettings,
+  ProcSettingsZIPFrame, ProcSettingsSCSFrame;
 
 type
 {$IFNDEF FPC}
@@ -92,14 +94,10 @@ implementation
 {$ENDIF}  
 
 uses
-  Windows, StrUtils, //Repairer,
-{$WARN UNIT_PLATFORM OFF}
-  FileCtrl
-{$WARN UNIT_PLATFORM ON}
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  StrUtils,{$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON}
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils, LazUTF8
-{$IFEND};
-
+{$ENDIF};
 
 {$R '.\Resources\SettDescr.res'}
 
@@ -227,20 +225,20 @@ begin
 If rbRebuild.Checked then
   begin
     fFileProcessingSettings.Common.RepairMethod := rmRebuild;
-  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
     fFileProcessingSettings.Common.TargetPath := ExpandFileNameUTF8(lbleTarget.Text);
   {$ELSE}
     fFileProcessingSettings.Common.TargetPath := ExpandFileName(lbleTarget.Text);
-  {$IFEND}
+  {$ENDIF}
   end;
 If rbExtract.Checked then
   begin
     fFileProcessingSettings.Common.RepairMethod := rmExtract;
-  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
     fFileProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(ExpandFileNameUTF8(lbleTarget.Text));
   {$ELSE}
     fFileProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(ExpandFileName(lbleTarget.Text));
-  {$IFEND}
+  {$ENDIF}
   end;
 fFileProcessingSettings.Common.IgnoreFileSignature := cbIgnoreFileSignature.Checked;
 fFileProcessingSettings.Common.InMemoryProcessing := cbInMemoryProcessing.Checked;
@@ -334,15 +332,6 @@ end;
 procedure TfPrcsSettingsForm.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   Control:  TControl;
-
-{$IFDEF FPC}
-  Function Point(X,Y: Integer): TPoint;
-  begin
-    Result.x := X;
-    Result.y := Y;
-  end;
-{$ENDIF}
-
 begin
 If Sender is TGroupBox then
   begin
@@ -404,20 +393,20 @@ var
 begin
 case btnBrowse.Tag of
   5:  begin   // rebuild -> browse for file
-      {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      {$IFDEF FPC_NonUnicode_NoUTF8RTL}
         TempStr := ExpandFileNameUTF8(lbleTarget.Text);
         If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then
       {$ELSE}
         TempStr := ExpandFileName(lbleTarget.Text);
         If DirectoryExists(ExtractFileDir(TempStr)) then
-      {$IFEND}
+      {$ENDIF}
           diaSaveDialog.InitialDir := ExtractFileDir(TempStr);
         diaSaveDialog.FileName := TempStr;
         If diaSaveDialog.Execute then
           lbleTarget.Text := diaSaveDialog.FileName;
       end;
   6:  begin   // extract -> browse for directory
-      {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+      {$IFDEF FPC_NonUnicode_NoUTF8RTL}
         TempStr := ExpandFileNameUTF8(IncludeTrailingPathDelimiter(lbleTarget.Text));
         If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then TempStr := ExtractFileDir(TempStr)
           else If DirectoryExistsUTF8(ExtractFileDir(ExpandFileNameUTF8(TempStr + '..\'))) then
@@ -431,7 +420,7 @@ case btnBrowse.Tag of
             TempStr := ExtractFileDir(ExpandFileName(TempStr + '..\'))
           else
             TempStr := ExtractFileDir(ParamStr(0));
-      {$IFEND}
+      {$ENDIF}
       {$IFDEF FPC}
         with TSelectDirectoryDialog.Create(Self) do
           begin

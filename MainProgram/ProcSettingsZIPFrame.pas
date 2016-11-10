@@ -294,15 +294,6 @@ end;
 procedure TfrmProcSettingsZIP.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   Control:  TControl;
-
-{$IFDEF FPC}
-  Function Point(X,Y: Integer): TPoint;
-  begin
-    Result.x := X;
-    Result.y := Y;
-  end;
-{$ENDIF}
-
 begin
 If Sender is TGroupBox then
   begin

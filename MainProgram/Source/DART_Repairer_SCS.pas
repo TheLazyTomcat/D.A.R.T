@@ -83,13 +83,17 @@ const
   SCS_PathDelim = '/';
 
   SCS_PredefinedPaths: array[0..17] of String = (
-    // modifications stuff
+  {
+    modifications stuff
+  }
     'manifest.sii','mod_description.txt',
-
-    // untracked files from ETS2 base.scs
+  {
+    untracked files from ETS2 base.scs
+  }
     'version.txt','autoexec.cfg',
-    
-    // some folders from ETS2
+  {
+    some folders from ETS2
+  }
     'automat','def','effect','map','material','model','model2',
     'prefab','prefab2','sound','system','ui','unit','vehicle');
 
@@ -443,11 +447,12 @@ var
                 ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,OutBuff,OutSize,PROCSTAGEIDX_NoProgress,Path,WINDOWBITS_ZLib);
                 try
                   If UInt32(OutSize) <> Bin.UncompressedSize then
-                  {$IFDEF FPC}
-                    DoError(104,'Decompressed size does not match for entry #%d ("%s").',[Idx,Path]);
-                  {$ELSE}
-                    DoError(104,'Decompressed size does not match for entry #%d ("%s").',[Idx,UTF8ToAnsi(Path)]);
-                  {$ENDIF}
+                    DoError(104,'Decompressed size does not match for entry #%d ("%s").',
+                    {$IFDEF Unicode}
+                      [Idx,UTF8Decode(Path)]
+                    {$ELSE}
+                      {$IFDEF FPC}[Idx,Path]{$ELSE}[Idx,UTF8ToAnsi(Path)]{$ENDIF}
+                    {$ENDIF});
                   Move(OutBuff^,PAnsiChar(EntryString)^,OutSize);
                 finally
                   FreeMem(OutBuff,OutSize);

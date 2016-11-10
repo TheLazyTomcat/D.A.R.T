@@ -23,23 +23,18 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
-{$IF not Declared(FPC_FULLVERSION)}
-const
-  FPC_FULLVERSION = Integer(0);
-{$IFEND}
-
 implementation
 
 uses
   SysUtils, Classes,
   AuxTypes, CRC32, 
   DART_MemoryBuffer, DART_Repairer
-{$IF Defined(FPC)}
+{$IFDEF FPC}
   , LazUTF8
-{$IF FPC_FULLVERSION < 20701}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
-{$IFEND}
-{$IFEND};
+  {$ENDIF}
+{$ENDIF};
 
 procedure TRepairer_ZIP_Rebuild.ZIP_RebuildArchive;
 var
@@ -51,11 +46,11 @@ var
 begin
 DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
 {$ELSE}
 ForceDirectories(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
-{$IFEND}
+{$ENDIF}
 // create output stream
 If fFileProcessingSettings.Common.InMemoryProcessing then
   RebuildArchiveStream := TMemoryStream.Create
@@ -124,8 +119,13 @@ try
             // data needs to be decompressed for further processing
             ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
               DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntryDecompressing,
-              {$IFDEF FPC}WinCPToUTF8(CentralDirectoryHeader.FileName),
-              {$ELSE}CentralDirectoryHeader.FileName,{$ENDIF}WINDOWBITS_Raw);
+            {$IFDEF FPC}
+              {$IFDEF Unicode}
+                UTF8Decode(WinCPToUTF8(CentralDirectoryHeader.FileName)),
+              {$ELSE}
+                WinCPToUTF8(CentralDirectoryHeader.FileName),
+              {$ENDIF}
+            {$ELSE}String(CentralDirectoryHeader.FileName),{$ENDIF}WINDOWBITS_Raw);
             try
               If UtilityData.NeedsCRC32 then
                 begin

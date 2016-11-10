@@ -71,7 +71,8 @@ type
 implementation
 
 uses
-  SysUtils, DART_Repairer_SCS;
+  SysUtils,
+  DART_Repairer_SCS;
 
 Function TPathNode.GetSubNodeCount: Integer;
 begin

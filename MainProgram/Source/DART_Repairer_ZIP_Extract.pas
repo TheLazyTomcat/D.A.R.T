@@ -23,11 +23,6 @@ type
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
-{$IF not Declared(FPC_FULLVERSION)}
-const
-  FPC_FULLVERSION = Integer(0);
-{$IFEND}
-
 implementation
 
 uses
@@ -36,12 +31,12 @@ uses
   DART_MemoryBuffer, DART_Repairer
 {$IFDEF FPC}
   , LazUTF8
-{$IF not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
-{$IFEND}
+  {$ENDIF}
 {$ENDIF};
 
-{$IF not declared(FILE_WRITE_ATTRIBUTES)}
+{$IF not Declared(FILE_WRITE_ATTRIBUTES)}
 const
   FILE_WRITE_ATTRIBUTES = 256;
 {$IFEND}
@@ -67,11 +62,11 @@ var
       Flags := FILE_ATTRIBUTE_NORMAL or FILE_FLAG_BACKUP_SEMANTICS
     else
       Flags := FILE_ATTRIBUTE_NORMAL;
-  {$IF Defined(FPC) and not Defined(Unicode)}
+  {$IFDEF FPC_NonUnicode}
     FileHandle := CreateFile(PChar(UTF8ToWinCP(FileName)),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,Flags,0);
   {$ELSE}
     FileHandle := CreateFile(PChar(FileName),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ or FILE_SHARE_WRITE,nil,OPEN_EXISTING,Flags,0);
-  {$IFEND}
+  {$ENDIF}
     If FileHandle <> INVALID_HANDLE_VALUE then
       try
         If DosDateTimeToFileTime(LastModDate,LastModTime,{%H-}FileTime) then
@@ -98,18 +93,22 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       // construct full path for entry output file
       FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
                          {$IFDEF FPC}
+                           {$IFDEF Unicode}
+                           AnsiReplaceStr(UTF8Decode(WinCPToUTF8(LocalHeader.FileName)),'/','\');
+                           {$ELSE}
                            AnsiReplaceStr(WinCPToUTF8(LocalHeader.FileName),'/','\');
+                           {$ENDIF}
                          {$ELSE}
-                           AnsiReplaceStr(LocalHeader.FileName,'/','\');
+                           AnsiReplaceStr(String(LocalHeader.FileName),'/','\');
                          {$ENDIF}
       // create necessary directory structure for the entry output file
-    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+    {$IFDEF FPC_NonUnicode_NoUTF8RTL}
       If not DirectoryExistsUTF8(ExtractFileDir(FullEntryFileName)) then
         ForceDirectoriesUTF8(ExtractFileDir(FullEntryFileName));
     {$ELSE}
       If not DirectoryExists(ExtractFileDir(FullEntryFileName)) then
         ForceDirectories(ExtractFileDir(FullEntryFileName));
-    {$IFEND}
+    {$ENDIF}
       // set file times for created directory
       WriteFileTime(ExtractFileDir(FullEntryFileName),LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate,True);
       If (ExtractFileName(FullEntryFileName) <> '') and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
@@ -164,8 +163,13 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
                     // decompressing data
                     ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
                       DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntryDecompressing,
-                      {$IFDEF FPC}WinCPToUTF8(CentralDirectoryHeader.FileName),
-                      {$ELSE}CentralDirectoryHeader.FileName,{$ENDIF}WINDOWBITS_Raw);
+                    {$IFDEF FPC}
+                      {$IFDEF Unicode}
+                        UTF8Decode(WinCPToUTF8(CentralDirectoryHeader.FileName)),
+                      {$ELSE}
+                        WinCPToUTF8(CentralDirectoryHeader.FileName),
+                      {$ENDIF}
+                    {$ELSE}String(CentralDirectoryHeader.FileName),{$ENDIF}WINDOWBITS_Raw);
                     try
                       // write decompressed data into entry output file
                       ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntrySaving);

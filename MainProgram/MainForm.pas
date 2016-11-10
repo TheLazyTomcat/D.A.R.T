@@ -90,12 +90,15 @@ implementation
 
 uses
   Windows, ShellAPI,
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-  LazFileUtils, LazUTF8,
-{$IFEND}
   WinFileInfo, TaskbarProgress,
-  ResultInfoForm, PrcsSettingsForm,
-  DART_ProcessingSettings, DART_Repairer; 
+  DART_ProcessingSettings, DART_Repairer,
+  ResultInfoForm, PrcsSettingsForm
+{$IFDEF FPC_NonUnicode}
+  , LazUTF8
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
+  , LazFileUtils
+  {$ENDIF}
+{$ENDIF};
 
 {$IFDEF FPC}
   {$R *.lfm}
@@ -167,7 +170,7 @@ begin
 If ParamCount > 0 then
   For i := 1 to ParamCount do
     begin
-    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+    {$IFDEF FPC_NonUnicode_NoUTF8RTL}
       FileName := SysToUTF8(ParamStr(i));
       If FileExistsUTF8(FileName) then
         FileManager.Add(ExpandFileNameUTF8(FileName));
@@ -175,7 +178,7 @@ If ParamCount > 0 then
       FileName := ParamStr(i);
       If FileExists(FileName) then
         FileManager.Add(ExpandFileName(FileName));
-    {$IFEND}
+    {$ENDIF}
     end;
 end;
 
@@ -270,11 +273,11 @@ FileManager.OnFileProgress := OnFileProgress;
 FileManager.OnFileStatus := OnFileStatus;
 FileManager.OnManagerStatus := OnManagerStatus;
 OnManagerStatus(nil);
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode}
 diaOpenDialog.InitialDir := ExtractFileDir(SysToUTF8(ParamStr(0)));
 {$ELSE}
 diaOpenDialog.InitialDir := ExtractFileDir(ParamStr(0));
-{$IFEND}
+{$ENDIF}
 mfSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
 mfResultInfo.ShortCut := ShortCut(Ord('R'),[ssAlt]);
 mfClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
@@ -468,11 +471,11 @@ var
 begin
 If FileManager.ManagerStatus = mstReady then
   For i := Low(FileNames) to High(FileNames) do
-  {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
     If FileExistsUTF8(FileNames[i]) then
   {$ELSE}
     If FileExists(FileNames[i]) then
-  {$IFEND}
+  {$ENDIF}
       FileManager.Add(FileNames[i]);
 end;
 {$ENDIF}

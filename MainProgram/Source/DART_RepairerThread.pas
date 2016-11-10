@@ -7,12 +7,13 @@
 -------------------------------------------------------------------------------}
 unit DART_RepairerThread;
 
-interface
-
 {$INCLUDE DART_defs.inc}
 
+interface
+
 uses
-  Classes, WinSyncObjs,
+  Classes,
+  WinSyncObjs,
   DART_ProcessingSettings, DART_Repairer;
 
 {==============================================================================}
@@ -146,7 +147,7 @@ end;
 procedure TRepairerThread.StartProcessing;
 begin
 fFlowControlObject.SetEvent;
-{$IF Defined(FPC) or (CompilerVersion >= 21)}
+{$IF Defined(FPC) or (CompilerVersion >= 21)} // Delphi 2010+
 Start;
 {$ELSE}
 Resume;

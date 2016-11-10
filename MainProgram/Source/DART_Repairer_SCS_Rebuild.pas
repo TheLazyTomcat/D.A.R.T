@@ -31,9 +31,9 @@ uses
   SysUtils, Classes,
   BitOps, CRC32,
   DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
-{$IFEND};
+{$ENDIF};
 
 procedure TRepairer_SCS_Rebuild.SCS_DiscardDirectories;
 var
@@ -131,11 +131,11 @@ var
                 EntryFileName := EntryFileName + 'D'
               else
                 EntryFileName := EntryFileName + 'F';
-            {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+            {$IFDEF FPC_NonUnicode_NoUTF8RTL}
               ForceDirectoriesUTF8(ExtractFileDir(EntryFileName));
             {$ELSE}
               ForceDirectories(ExtractFileDir(EntryFileName));
-            {$IFEND}
+            {$ENDIF}
               EntryExtractFile := CreateFileStream(EntryFileName,fmCreate or fmShareDenyWrite);
               try
                 EntryExtractFile.WriteBuffer(Data^,DataSize);
@@ -151,11 +151,11 @@ var
 begin
 DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
 // create directory for the rebuild file
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
 {$ELSE}
 ForceDirectories(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
-{$IFEND}
+{$ENDIF}
 // create output stream
 If fFileProcessingSettings.Common.InMemoryProcessing then
   RebuildArchiveStream := TMemoryStream.Create
@@ -199,7 +199,9 @@ try
               begin
                 ProgressedCompressBuffer(PChar(DirEntryStr),Length(DirEntryStr),
                   CompressedBuff,CompressedSize,PROCSTAGEIDX_NoProgress,
-                  {$IFDEF FPC}FileName,{$ELSE}UTF8ToAnsi(FileName),{$ENDIF}WINDOWBITS_ZLib);
+                {$IFDEF FPC}
+                  {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
+                {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
                 try
                   Bin.CompressedSize := CompressedSize;
                   SetFlagValue(Bin.Flags,SCS_FLAG_Compressed);
@@ -234,7 +236,9 @@ try
                     // data needs to be decompressed for CRC32 calculation
                     ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
                       DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
-                      {$IFDEF FPC}FileName,{$ELSE}UTF8ToAnsi(FileName),{$ENDIF}WINDOWBITS_ZLib);
+                    {$IFDEF FPC}
+                      {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
+                    {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
                     try
                       ExtractUnresolvedEntry(i,DecompressedBuff,DecompressedSize);
                       If (Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0) then

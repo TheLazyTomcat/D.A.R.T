@@ -27,9 +27,9 @@ uses
   SysUtils, Classes, StrUtils,
   BitOps,
   DART_MemoryBuffer, DART_Repairer
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
-{$IFEND};
+{$ENDIF};
 
 procedure TRepairer_SCS_Extract.SCS_ExtractArchive;
 var
@@ -57,8 +57,15 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
         begin
           // file name of the entry was fully resolved, construct full path for entry output file
           FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
-                              {$IFDEF FPC}AnsiReplaceStr(FileName,SCS_PathDelim,'\');
-                              {$ELSE}AnsiReplaceStr(UTF8ToAnsi(FileName),SCS_PathDelim,'\');{$ENDIF}
+                             {$IFDEF FPC}
+                               {$IFDEF Unicode}
+                               AnsiReplaceStr(UTF8Decode(FileName),SCS_PathDelim,'\');
+                               {$ELSE}
+                               AnsiReplaceStr(FileName,SCS_PathDelim,'\');
+                               {$ENDIF}
+                             {$ELSE}
+                               AnsiReplaceStr(String(UTF8ToAnsi(FileName)),SCS_PathDelim,'\');
+                             {$ENDIF}
         end
       else
         begin
@@ -85,13 +92,13 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
             end;
         end;
       // create necessary directory structure for the entry output file
-    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+    {$IFDEF FPC_NonUnicode_NoUTF8RTL}
       If not DirectoryExistsUTF8(ExtractFileDir(FullEntryFileName)) then
         ForceDirectoriesUTF8(ExtractFileDir(FullEntryFileName));
     {$ELSE}
       If not DirectoryExists(ExtractFileDir(FullEntryFileName)) then
         ForceDirectories(ExtractFileDir(FullEntryFileName));
-    {$IFEND}
+    {$ENDIF}
       If not GetFlagState(Bin.Flags,SCS_FLAG_Directory) or ForceExtract then
         begin
           // processed entry is a file or extraction is forced (unresolved entry), extract it
@@ -109,7 +116,9 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
                 // entry data are compressed using ZLib (full zlib stream with header)
                 ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
                   DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
-                  {$IFDEF FPC}FileName,{$ELSE}UTF8ToAnsi(FileName),{$ENDIF}WINDOWBITS_ZLib);
+                {$IFDEF FPC}
+                  {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
+                {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
                 try
                   // write decompressed data into entry output file
                   ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntrySaving);

@@ -185,9 +185,9 @@ implementation
 
 uses
   Windows, SysUtils, Classes, StrUtils
-{$IF Defined(FPC)}
+{$IFDEF FPC}
   , LazUTF8
-{$IFEND};
+{$ENDIF};
 
 procedure TRepairer_ZIP.ZIP_PrepareEntryProgressInfo(EntryIndex: Integer);
 begin
@@ -579,10 +579,15 @@ else
               DoProgress(PROCSTAGEIDX_ZIP_LocalHeadersLoading,(i + 1) / Length(fArchiveStructure.Entries));
               If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
                 If not AnsiSameText(FileName,fArchiveStructure.Entries[i].LocalHeader.FileName) then
+                  DoError(103,'Mismatch in local and central directory file name for entry #%d (%s; %s).',
                 {$IFDEF FPC}
-                  DoError(103,'Mismatch in local and central directory file name for entry #%d (%s; %s).',[i,WinCPToUTF8(FileName),WinCPToUTF8(fArchiveStructure.Entries[i].LocalHeader.FileName)]);
+                  {$IFDEF Unicode}
+                    [i,UTF8Decode(WinCPToUTF8(FileName)),UTF8Decode(WinCPToUTF8(fArchiveStructure.Entries[i].LocalHeader.FileName))]);
+                  {$ELSE}
+                    [i,WinCPToUTF8(FileName),WinCPToUTF8(fArchiveStructure.Entries[i].LocalHeader.FileName)]);
+                  {$ENDIF}
                 {$ELSE}
-                  DoError(103,'Mismatch in local and central directory file name for entry #%d (%s; %s).',[i,FileName,fArchiveStructure.Entries[i].LocalHeader.FileName]);
+                    [i,String(FileName),String(fArchiveStructure.Entries[i].LocalHeader.FileName)]);
                 {$ENDIF}
             end;
       end

@@ -79,9 +79,12 @@ implementation
 
 uses
   Registry
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
-  , LazFileUtils, LazUTF8
-{$IFEND};
+{$IFDEF FPC_NonUnicode}
+  , LazUTF8
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
+  , LazFileUtils
+  {$ENDIF}
+{$ENDIF};
 
 procedure TfrmProcSettingsSCS.GetInstalledGames;
 type
@@ -143,11 +146,11 @@ var
   end;
 
 begin
-{$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+{$IFDEF FPC_NonUnicode}
 diaHelpFilesOpen.InitialDir := ExtractFileDir(SysToUTF8(ParamStr(0)));
 {$ELSE}
 diaHelpFilesOpen.InitialDir := ExtractFileDir(ParamStr(0));
-{$IFEND}
+{$ENDIF}
 GetInstalledGames;
 For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
   If fGameInstallDirs[i] <> '' then
@@ -270,15 +273,6 @@ end;
 procedure TfrmProcSettingsSCS.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   Control:  TControl;
-
-{$IFDEF FPC}
-  Function Point(X,Y: Integer): TPoint;
-  begin
-    Result.x := X;
-    Result.y := Y;
-  end;
-{$ENDIF}
-
 begin
 If Sender is TGroupBox then
   begin
@@ -329,7 +323,7 @@ var
   var
     SearchRec: TSearchRec;
   begin
-    {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
+  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
     If FindFirstUTF8(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
     try
       repeat
@@ -338,7 +332,7 @@ var
     finally
       FindCloseUTF8(SearchRec);
     end;
-    {$ELSE}
+  {$ELSE}
     If FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
     try
       repeat
@@ -347,7 +341,7 @@ var
     finally
       FindClose(SearchRec);
     end;
-    {$ENDIF}
+  {$ENDIF}
   end;
 
 begin
