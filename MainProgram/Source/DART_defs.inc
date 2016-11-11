@@ -6,9 +6,9 @@
   {$DEFINE DevMsgs}
 {$ENDIF}
 
-{$IF defined(CPU64) or defined(CPU64BITS)}
+{$IF Defined(CPU64) or Defined(CPU64BITS)}
   {$DEFINE 64bit}
-{$ELSEIF defined(CPU16)}
+{$ELSEIF Defined(CPU16)}
   {$MESSAGE FATAL 'Unsupported CPU.'}
 {$ELSE}
   {$DEFINE 32bit}
@@ -26,3 +26,8 @@
   {$UNDEF FPC_NonUnicode_NoUTF8RTL}
 {$IFEND}
 
+{.$DEFINE FPC_Internal_ZLib} // do not activate, it is causing problems (stalls at decompression)
+
+{$IFNDEF FPC}
+  {$UNDEF FPC_Internal_ZLib}
+{$ENDIF}

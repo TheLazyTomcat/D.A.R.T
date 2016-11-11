@@ -59,5 +59,6 @@ object fResultInfoForm: TfResultInfoForm
     ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 0
+    WordWrap = False
   end
 end

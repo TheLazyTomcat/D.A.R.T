@@ -154,10 +154,10 @@ with TWinFileInfo.Create(WFI_LS_LoadVersionInfo or WFI_LS_LoadFixedFileInfo or W
   begin
     stbStatusBar.Panels[0].Text :=
       VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
-      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' ' +
+      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' (' +
       {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64 '{$ELSE}+ '32 '{$ENDIF} + zlib_method_str +
       ' #' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
-      {$IFDEF Debug}+ ' debug'{$ENDIF};
+      {$IFDEF Debug}+ ' debug'{$ENDIF} + ')';
     Free;
   end;
 end;

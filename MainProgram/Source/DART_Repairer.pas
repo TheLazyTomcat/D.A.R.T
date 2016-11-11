@@ -9,40 +9,12 @@ unit DART_Repairer;
 
 {$INCLUDE DART_defs.inc}
 
-{$DEFINE zlib_lib}
-{.$DEFINE zlib_lib_dll}
-
-{$IFDEF FPC}
-  {$IFNDEF zlib_lib}
-    {$UNDEF zlib_lib_dll}
-  {$ENDIF}
-{$ELSE}
-  {$UNDEF zlib_lib}
-  {$UNDEF zlib_lib_dll}
-{$ENDIF}
-
 interface
 
 uses
   SysUtils, Classes,
   AuxTypes, WinSyncObjs,
   DART_MemoryBuffer, DART_ProcessingSettings;
-
-// Text constant identifying what method is used to call zlib ------------------
-const
-{$IFDEF FPC}
-  {$IFDEF zlib_lib}
-    {$IFDEF zlib_lib_dll}
-      zlib_method_str = 'D';  // ZLib is loaded from a DLL
-    {$ELSE}
-      zlib_method_str = 'S';  // ZLib is statically linked
-    {$ENDIF}
-  {$ELSE}
-    zlib_method_str = 'P';    // PasZLib is used
-  {$ENDIF}
-{$ELSE}
-  zlib_method_str = 'E';      // ZLibEx (delphi zlib) is used (statically linked)
-{$ENDIF}
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -199,17 +171,53 @@ type
     property OnProgress: TProgressEvent read fOnProgress write fOnProgress;
   end;
 
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                              Auxiliary functions                             }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+// Returns text identifying what method is used to call zlib
+Function zlib_method_str: String;
+
 implementation
 
 uses
-  Windows, Math{$IFNDEF FPC}, ZLibExAPI{$ENDIF}
+  Windows, Math
+{$IFDEF FPC}
+  {$IFDEF FPC_Internal_ZLib}
+  , PasZLib
+  {$ELSE}
+  , laz_zlib
+  {$ENDIF}
+{$ELSE}
+  , ZLibExAPI
+{$ENDIF}
 {$IFDEF FPC_NonUnicode}
   , LazUTF8
 {$ENDIF};
 
-{$IFDEF zlib_lib}
-//{$INCLUDE 'libs\lazarus.zlib.128\zlib_lib.pas'}
-{$ENDIF}
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                              Auxiliary functions                             }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+Function zlib_method_str: String;
+begin
+{$IFDEF FPC}
+{$IFDEF FPC_Internal_ZLib}
+Result := 'P';      // PasZLib is used
+{$ELSE FPC_Internal_ZLib}
+If laz_zlib.zlib_dll then
+{%H-}Result := 'D'  // ZLib is loaded from a DLL
+else
+{%H-}Result := 'S'; // ZLib is statically linked
+{$ENDIF FPC_Internal_ZLib}
+{$ELSE FPC}
+Result := 'E';      // ZLibEx (delphi zlib) is used (statically linked)
+{$ENDIF FPC}
+end;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -468,11 +476,6 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
-{$IFDEF FPC}
-begin
-DoError(-1,'decompression disabled');
-end;
-{$ELSE}
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -486,16 +489,16 @@ var
   begin
     If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
       begin
-      {$IF not defined(FPC) or defined(zlib_lib)}
-        If Assigned(ZStream.msg) then
-          DoError(3,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
-        else
-          DoError(3,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
-      {$ELSE}
+      {$IF Defined(FPC) and Defined(FPC_Internal_ZLib)}
         If Length(ZStream.msg) > 0 then
-          DoError(3,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
+          DoError(3,'zlib: %s - %s ("%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
         else
-          DoError(3,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
+          DoError(3,'zlib: %s ("%s")',[zError(2 - ResCode),EntryName]);
+      {$ELSE}
+        If Assigned(ZStream.msg) then
+          DoError(3,'zlib: %s - %s ("%s")',[z_errmsg[2 - ResCode],ZStream.msg,EntryName])
+        else
+          DoError(3,'zlib: %s ("%s")',[z_errmsg[2 - ResCode],EntryName]);
       {$IFEND}
       end;
     Result := ResCode;
@@ -534,16 +537,10 @@ If InSize > 0 then
   end;
 DoProgress(ProgressStage,1.0);
 end;
-{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 procedure TRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer);
-{$IFDEF FPC}
-begin
-DoError(-1,'compression disabled');
-end;
-{$ELSE}
 {$IFNDEF FPC}
 type
   TZStream = TZStreamRec;
@@ -553,25 +550,24 @@ var
   SizeDelta:  Integer;
   ResultCode: Integer;
 
-  Function RaiseDecompressionError(ResCode: Integer): Integer;
+  Function RaiseCompressionError(ResCode: Integer): Integer;
   begin
     If (ResCode < 0) and (ResCode <> Z_BUF_ERROR) then
       begin
-      {$IF not defined(FPC) or defined(zlib_lib)}
-        If Assigned(ZStream.msg) then
-          DoError(4,'zlib: %s - %s (entry "%s")',[z_errmsg[2 - ResCode],PAnsiChar(ZStream.msg),EntryName])
-        else
-          DoError(4,'zlib: %s (entry "%s")',[z_errmsg[2 - ResCode],EntryName]);
-      {$ELSE}
+      {$IF Defined(FPC) and Defined(FPC_Internal_ZLib)}
         If Length(ZStream.msg) > 0 then
-          DoError(4,'zlib: %s - %s (entry "%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
+          DoError(4,'zlib: %s - %s ("%s")',[zError(2 - ResCode),ZStream.msg,EntryName])
         else
-          DoError(4,'zlib: %s (entry "%s")',[zError(2 - ResCode),EntryName]);
+          DoError(4,'zlib: %s ("%s")',[zError(2 - ResCode),EntryName]);
+      {$ELSE}
+        If Assigned(ZStream.msg) then
+          DoError(4,'zlib: %s - %s ("%s")',[z_errmsg[2 - ResCode],ZStream.msg,EntryName])
+        else
+          DoError(4,'zlib: %s ("%s")',[z_errmsg[2 - ResCode],EntryName]);
       {$IFEND}
       end;
     Result := ResCode;
   end;
-
 begin
 DoProgress(ProgressStage,0.0);
 OutBuff := nil;
@@ -581,7 +577,7 @@ If InSize > 0 then
     FillChar({%H-}ZStream,SizeOf(TZStream),0);
     SizeDelta := ((InSize div 4) + 255) and not 255;
     OutSize := SizeDelta;
-    RaiseDecompressionError(DeflateInit2(ZStream,Z_DEFAULT_COMPRESSION,Z_DEFLATED,WindowBits,8,Z_DEFAULT_STRATEGY));
+    RaiseCompressionError(DeflateInit2(ZStream,Z_DEFAULT_COMPRESSION,Z_DEFLATED,WindowBits,8,Z_DEFAULT_STRATEGY));
     try
       ZStream.next_in := InBuff;
       ZStream.avail_in := InSize;
@@ -589,7 +585,7 @@ If InSize > 0 then
         ReallocateMemoryBuffer(fCED_Buffer,OutSize);
         ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
         ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
-        ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_NO_FLUSH));
+        ResultCode := RaiseCompressionError(Deflate(ZStream,Z_NO_FLUSH));
         DoProgress(ProgressStage,ZStream.total_in / InSize);
         Inc(OutSize, SizeDelta);
       until (ResultCode = Z_STREAM_END) or (ZStream.avail_in = 0);
@@ -599,7 +595,7 @@ If InSize > 0 then
           ReallocateMemoryBuffer(fCED_Buffer,OutSize);
           ZStream.next_out := {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + PtrUInt(ZStream.total_out));
           ZStream.avail_out := fCED_Buffer.Size - ZStream.total_out;
-          ResultCode := RaiseDecompressionError(Deflate(ZStream,Z_FINISH));
+          ResultCode := RaiseCompressionError(Deflate(ZStream,Z_FINISH));
           DoProgress(ProgressStage,ZStream.total_in / InSize);
           Inc(OutSize, SizeDelta);
         end;
@@ -608,12 +604,11 @@ If InSize > 0 then
       GetMem(OutBuff,OutSize);
       Move(fCED_Buffer.Memory^,OutBuff^,OutSize);
     finally
-      RaiseDecompressionError(DeflateEnd(ZStream));
+      RaiseCompressionError(DeflateEnd(ZStream));
     end;
   end;
 DoProgress(ProgressStage,1.0);
 end;
-{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -778,15 +773,15 @@ end;
 
 //==============================================================================
 
+{$IFDEF FPC}
+{$IFNDEF FPC_Internal_ZLib}
 initialization
-{$IFDEF zlib_lib_dll}
   ExtractLibrary;
   Initialize;
-{$ENDIF}
 
-{$IFDEF zlib_lib_dll}
 finalization
   Finalize;
+{$ENDIF}
 {$ENDIF}
 
 end.
