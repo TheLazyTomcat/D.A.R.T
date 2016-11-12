@@ -56,7 +56,6 @@ uses
 
 procedure TRepairer_SCS_Extract.SCS_ExtractArchive;
 var
-
   ProcessedBytes:     UInt64;
   i:                  Integer;
   FullEntryFileName:  String;

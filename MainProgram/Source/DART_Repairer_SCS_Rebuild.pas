@@ -338,6 +338,7 @@ If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.
   DoError(200,'Output is directed into an input file, cannot proceed.');
 inherited;
 // reconstruct all directory entries from file names
+fEntriesSorted := False;
 SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;

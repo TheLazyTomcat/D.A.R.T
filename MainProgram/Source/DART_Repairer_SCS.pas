@@ -93,9 +93,9 @@ type
     DataBytes:      UInt64;
   end;
 
-const
 //--- Path constants, predefined paths -----------------------------------------
 
+const
   SCS_RootPath = '';
 
   SCS_PathDelim = '/';
@@ -268,18 +268,27 @@ end;
 
 procedure TRepairer_SCS.SCS_PrepareEntryProgressInfo(EntryIndex: Integer; ProcessedBytes: UInt64);
 begin
-fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset +
-  (ProcessedBytes / fArchiveStructure.DataBytes) * fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
-fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range := (fArchiveStructure.Entries[EntryIndex].Bin.CompressedSize / fArchiveStructure.DataBytes) *
+fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset +
+  (ProcessedBytes / fArchiveStructure.DataBytes) *
   fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
-fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset;
-fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
-fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset +
-                                                               fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range;
-fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.2;
-fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset +
-                                                        fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range;
-fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Range := fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
+fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range :=
+  (fArchiveStructure.Entries[EntryIndex].Bin.CompressedSize / fArchiveStructure.DataBytes) *
+  fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Offset;
+fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
+fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_EntryLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.2;
+fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_EntryDecompressing].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntrySaving].Range :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntryProcessing].Range * 0.4;
 end;
 
 //------------------------------------------------------------------------------
@@ -630,53 +639,67 @@ var
 begin
 inherited;
 SetLength(fProgressStages,Succ(PROCSTAGEIDX_SCS_Max));
-AvailableRange := 1.0 - (fProgressStages[PROCSTAGEIDX_Loading].Range + fProgressStages[PROCSTAGEIDX_Saving].Range);
+AvailableRange := 1.0 - (fProgressStages[PROCSTAGEIDX_Loading].Range +
+                  fProgressStages[PROCSTAGEIDX_Saving].Range);
 // set progress info for loading of archive header
-fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Offset := fProgressStages[PROCSTAGEIDX_Loading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Offset :=
+  fProgressStages[PROCSTAGEIDX_Loading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Range := 0.01 * AvailableRange;
 // loading of entries
-fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Offset +
-                                                           fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range := 0.04 * AvailableRange;
 // loading of paths
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset := fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset +
-                                                         fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range := 0.05 * AvailableRange;
 If fFileProcessingSettings.Common.RepairMethod = rmRebuild then
   DirsRectRange := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range
 else
   DirsRectRange := 0.0;  
 // entries processing
-fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_EntriesProcessing].Range := AvailableRange -
-                                                             (fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Range +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range);
+  (fProgressStages[PROCSTAGEIDX_SCS_ArchiveHeaderLoading].Range +
+   fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range +
+   fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range);
 // individual stages of paths loading
 // help files loading
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset;
 If Length(fProcessingSettings.PathResolve.HelpFiles) > 0 then
-  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range :=
+    0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 // content parsing
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset +
-                                                                      fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range;
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range := 0.0 {0.2} * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range :=
+  0.0 {0.2} * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 // brute force resolve
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset +
-                                                                    fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range;
 If fProcessingSettings.PathResolve.BruteForceResolve then
-  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range :=
+    0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range;
 // actual loading from processed file
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset +
-                                                               fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range;
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range -
-                                                              (fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range +
-                                                              fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range + DirsRectRange);
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range -
+  (fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_HelpFiles].Range +
+   fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_ParseContent].Range +
+   fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_BruteForce].Range + DirsRectRange);
 // directories reconstruction
-fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_DirsRect].Offset := fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset +
-                                                                  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range;
+fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_DirsRect].Offset :=
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Offset +
+  fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_Local].Range;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading_DirsRect].Range := DirsRectRange;
 end;
 
