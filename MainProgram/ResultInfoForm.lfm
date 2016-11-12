@@ -1,0 +1,59 @@
+object fResultInfoForm: TfResultInfoForm
+  Left = 474
+  Height = 336
+  Top = 198
+  Width = 712
+  BorderStyle = bsDialog
+  Caption = 'Result information'
+  ClientHeight = 336
+  ClientWidth = 712
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  KeyPreview = True
+  OnKeyPress = FormKeyPress
+  Position = poMainFormCenter
+  LCLVersion = '1.6.0.4'
+  object lblResultCaption: TLabel
+    Left = 8
+    Height = 13
+    Top = 8
+    Width = 92
+    Caption = 'lblResultCaption'
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object lblHint: TLabel
+    Left = 407
+    Height = 13
+    Top = 318
+    Width = 298
+    Alignment = taRightJustify
+    Caption = 'Press <Ctrl + C> to copy displayed information into clipboard.'
+    Font.Color = clGray
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    ParentColor = False
+    ParentFont = False
+  end
+  object meResultInfoText: TMemo
+    Left = 8
+    Height = 281
+    Top = 32
+    Width = 697
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    ParentFont = False
+    ReadOnly = True
+    ScrollBars = ssBoth
+    TabOrder = 0
+    TabStop = False
+    WordWrap = False
+  end
+end

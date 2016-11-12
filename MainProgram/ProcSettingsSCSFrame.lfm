@@ -1,0 +1,230 @@
+object frmProcSettingsSCS: TfrmProcSettingsSCS
+  Left = 0
+  Height = 473
+  Top = 0
+  Width = 561
+  ClientHeight = 473
+  ClientWidth = 561
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  ParentFont = False
+  TabOrder = 0
+  object pnlBackground: TPanel
+    Left = 0
+    Height = 473
+    Top = 0
+    Width = 561
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 473
+    ClientWidth = 561
+    TabOrder = 0
+    object gbEntries: TGroupBox
+      Tag = 120
+      Left = 0
+      Height = 49
+      Top = 0
+      Width = 561
+      Caption = 'Entries'
+      ClientHeight = 31
+      ClientWidth = 557
+      TabOrder = 0
+      OnMouseMove = GroupBoxMouseMove
+      object cbIgnoreCRC32: TCheckBox
+        Tag = 121
+        Left = 6
+        Height = 17
+        Top = 10
+        Width = 86
+        Caption = 'Ignore CRC32'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 0
+      end
+      object cbIgnoreCompressionFlag: TCheckBox
+        Tag = 122
+        Left = 190
+        Height = 17
+        Top = 10
+        Width = 133
+        Caption = 'Ignore compression flag'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 1
+      end
+    end
+    object gbPathResolve: TGroupBox
+      Tag = 140
+      Left = 0
+      Height = 417
+      Top = 54
+      Width = 561
+      Caption = 'Path resolve'
+      ClientHeight = 399
+      ClientWidth = 557
+      TabOrder = 1
+      OnMouseMove = GroupBoxMouseMove
+      object lblHelpFiles: TLabel
+        Left = 6
+        Height = 13
+        Top = 194
+        Width = 226
+        Caption = 'Help files (one file per line, full absolute paths):'
+        ParentColor = False
+      end
+      object lblCustomPaths: TLabel
+        Left = 6
+        Height = 13
+        Top = 34
+        Width = 162
+        Caption = 'Custom paths (one path per line):'
+        ParentColor = False
+      end
+      object bvlHorSplit: TBevel
+        Left = 6
+        Height = 9
+        Top = 356
+        Width = 545
+        Shape = bsTopLine
+      end
+      object lblLengthLimit: TLabel
+        Left = 399
+        Height = 13
+        Top = 372
+        Width = 80
+        Alignment = taRightJustify
+        Caption = 'Path length limit:'
+        ParentColor = False
+      end
+      object cbAssumeCityHash: TCheckBox
+        Tag = 141
+        Left = 6
+        Height = 17
+        Top = 10
+        Width = 103
+        Caption = 'Assume City hash'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 0
+      end
+      object cbUsePredefinedPaths: TCheckBox
+        Tag = 142
+        Left = 190
+        Height = 17
+        Top = 10
+        Width = 121
+        Caption = 'Use predefined paths'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 1
+      end
+      object cbExtractUnresolvedEntries: TCheckBox
+        Tag = 143
+        Left = 374
+        Height = 17
+        Top = 10
+        Width = 145
+        Caption = 'Extract unresolved entries'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 2
+      end
+      object meHelpFiles: TMemo
+        Tag = 145
+        Left = 6
+        Height = 137
+        Top = 210
+        Width = 545
+        OnMouseMove = SettingsMouseMove
+        ScrollBars = ssBoth
+        TabOrder = 5
+        WordWrap = False
+      end
+      object meCustomPaths: TMemo
+        Tag = 144
+        Left = 6
+        Height = 137
+        Top = 50
+        Width = 545
+        OnMouseMove = SettingsMouseMove
+        ScrollBars = ssBoth
+        TabOrder = 3
+        WordWrap = False
+      end
+      object cbBruteForceResolve: TCheckBox
+        Tag = 146
+        Left = 6
+        Height = 17
+        Top = 370
+        Width = 111
+        Caption = 'Brute-force resolve'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 6
+      end
+      object cbLimitedAlphabet: TCheckBox
+        Tag = 147
+        Left = 190
+        Height = 17
+        Top = 370
+        Width = 96
+        Caption = 'Limited alphabet'
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 7
+      end
+      object seLengthLimit: TSpinEdit
+        Tag = 148
+        Left = 486
+        Height = 21
+        Top = 368
+        Width = 65
+        MaxValue = 0
+        OnMouseMove = SettingsMouseMove
+        TabOrder = 8
+      end
+      object btnBrowseHelpFiles: TButton
+        Left = 528
+        Height = 20
+        Top = 189
+        Width = 24
+        Caption = '6'
+        Font.Color = clWindowText
+        Font.Height = -16
+        Font.Name = 'Webdings'
+        OnClick = btnBrowseHelpFilesClick
+        ParentFont = False
+        TabOrder = 4
+      end
+    end
+  end
+  object pmHelpFiles: TPopupMenu
+    left = 464
+    top = 256
+    object miHelpFiles_Browse: TMenuItem
+      Caption = 'Browse for help files...'
+      OnClick = miHelpFiles_BrowseClick
+    end
+    object miHelpFiles_N1: TMenuItem
+      Caption = '-'
+      Visible = False
+    end
+    object miHelpFiles_ETS2: TMenuItem
+      Caption = 'Euro Truck Simulator 2 files'
+      Visible = False
+      OnClick = LoadGameFiles
+    end
+    object miHelpFiles_ATS: TMenuItem
+      Caption = 'American Truck Simulator files'
+      Visible = False
+      OnClick = LoadGameFiles
+    end
+  end
+  object diaHelpFilesOpen: TOpenDialog
+    Filter = 'SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
+    left = 496
+    top = 256
+  end
+end
