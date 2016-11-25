@@ -94,7 +94,7 @@ OutputDir=.\Release\win_x86
 UnitOutputDir=.\DCU
 PackageDLLOutputDir=
 PackageDCPOutputDir=
-SearchPath=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
+SearchPath=..\Source\Libs;..\Source\Libs\FastMM;..\Source\Libs\delphizlib.128
 Packages=vcl;rtl;vclx;VclSmp;vclshlctrls;AdvCircularProgressPkgD7;TMSMenusD7;AdvShaperPkgD7;alpb;sulab;butcmps;EZJTexturePanelD6;FormShapePkgD7;GradientLabelPkgD7;ic;l3d;lfr;fw;mmjl;ash;tqpb;shlab;vaf;ish;xib;TPNGButton;wbme;verinf;aled;DelphiX70
 Conditionals=Windows;x86;Delphi
 DebugSourceDirs=
@@ -109,9 +109,9 @@ DebugCWD=
 IncludeVerInfo=1
 AutoIncBuild=1
 MajorVer=1
-MinorVer=1
+MinorVer=2
 Release=0
-Build=61
+Build=76
 Debug=0
 PreRelease=0
 Special=0
@@ -122,14 +122,14 @@ CodePage=1250
 [Version Info Keys]
 CompanyName=František Milt
 FileDescription=D.A.R.T - Damaged Archives Repair Tool
-FileVersion=1.1.0.61
+FileVersion=1.2.0.76
 InternalName=D.A.R.T 1.x
 LegalCopyright=© 2015 - 2016 František Milt
 LegalTrademarks=D.A.R.T
 OriginalFilename=DART.exe
 ProductName=D.A.R.T
-ProductVersion=1.1.0
-Comments=Tool for repairing *.zip archives with damaged headers
+ProductVersion=1.2.0
+Comments=Tool for repairing damaged ZIP and SCS# archives
 [HistoryLists\hlConditionals]
 Count=1
 Item0=Windows;x86;Delphi
@@ -137,9 +137,10 @@ Item0=Windows;x86;Delphi
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=2
-Item0=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
-Item1=..\Libs\delphizlib.128;..\Libs\FastMM
+Count=3
+Item0=..\Source\Libs;..\Source\Libs\FastMM;..\Source\Libs\delphizlib.128
+Item1=..\Libs;..\Libs\FastMM;..\Libs\delphizlib.128
+Item2=..\Libs\delphizlib.128;..\Libs\FastMM
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=.\DCU

@@ -1,12 +1,12 @@
 object fMainForm: TfMainForm
-  Left = 583
-  Height = 477
-  Top = 119
-  Width = 688
+  Left = 471
+  Height = 485
+  Top = 113
+  Width = 800
   BorderStyle = bsSingle
   Caption = 'D.A.R.T - Damaged Archives Repair Tool'
-  ClientHeight = 477
-  ClientWidth = 688
+  ClientHeight = 485
+  ClientWidth = 800
   Color = clBtnFace
   Font.Color = clWindowText
   Font.Height = -11
@@ -30,15 +30,15 @@ object fMainForm: TfMainForm
   object bvlProgressSplit: TBevel
     Left = 8
     Height = 9
-    Top = 368
-    Width = 673
+    Top = 376
+    Width = 785
     Anchors = [akLeft, akRight, akBottom]
     Shape = bsTopLine
   end
   object lblOverallProgress: TLabel
     Left = 8
     Height = 13
-    Top = 376
+    Top = 384
     Width = 83
     Anchors = [akLeft, akBottom]
     Caption = 'Overall progress:'
@@ -47,7 +47,7 @@ object fMainForm: TfMainForm
   object lblFileProgress: TLabel
     Left = 8
     Height = 13
-    Top = 416
+    Top = 424
     Width = 65
     Anchors = [akLeft, akBottom]
     Caption = 'File progress:'
@@ -55,9 +55,9 @@ object fMainForm: TfMainForm
   end
   object lvFiles: TListView
     Left = 8
-    Height = 305
+    Height = 313
     Top = 24
-    Width = 673
+    Width = 785
     Anchors = [akTop, akLeft, akRight, akBottom]
     Columns = <    
       item
@@ -72,12 +72,16 @@ object fMainForm: TfMainForm
         Width = 75
       end    
       item
+        Caption = 'File type'
+        Width = 100
+      end    
+      item
         Caption = 'Repair method'
         Width = 100
       end    
       item
         Caption = 'File processing status'
-        Width = 130
+        Width = 140
       end>
     MultiSelect = True
     ParentShowHint = False
@@ -94,8 +98,8 @@ object fMainForm: TfMainForm
   object stbStatusBar: TStatusBar
     Left = 0
     Height = 23
-    Top = 454
-    Width = 688
+    Top = 462
+    Width = 800
     Font.Color = clBtnText
     Font.Height = -11
     Font.Name = 'Tahoma'
@@ -112,8 +116,8 @@ object fMainForm: TfMainForm
   object btnProcessing: TButton
     Left = 8
     Height = 25
-    Top = 336
-    Width = 673
+    Top = 344
+    Width = 785
     Anchors = [akLeft, akRight, akBottom]
     Caption = 'btnProcessing'
     Font.Color = clWindowText
@@ -127,8 +131,8 @@ object fMainForm: TfMainForm
   object prbOverallProgress: TProgressBar
     Left = 8
     Height = 17
-    Top = 392
-    Width = 673
+    Top = 400
+    Width = 785
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
     TabOrder = 2
@@ -136,15 +140,15 @@ object fMainForm: TfMainForm
   object prbFileProgress: TProgressBar
     Left = 8
     Height = 17
-    Top = 432
-    Width = 673
+    Top = 440
+    Width = 785
     Anchors = [akLeft, akRight, akBottom]
     Max = 1000
     TabOrder = 3
   end
   object mnuFiles: TPopupMenu
     OnPopup = mnuFilesPopup
-    left = 624
+    left = 736
     object mfAdd: TMenuItem
       Caption = 'Add files...'
       ShortCut = 45
@@ -167,9 +171,9 @@ object fMainForm: TfMainForm
       Caption = 'File processing settings...'
       OnClick = mfSettingsClick
     end
-    object mfErrorInfo: TMenuItem
-      Caption = 'Error information...'
-      OnClick = mfErrorInfoClick
+    object mfResultInfo: TMenuItem
+      Caption = 'Result information...'
+      OnClick = mfResultInfoClick
     end
     object N2: TMenuItem
       Caption = '-'
@@ -180,20 +184,20 @@ object fMainForm: TfMainForm
     end
   end
   object diaOpenDialog: TOpenDialog
-    Filter = 'SCS mod archive (*.scs)|*.scs|ZIP archive (*.zip)|*.zip|All files (*.*)|*.*'
+    Filter = 'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zip)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
-    left = 592
+    left = 704
   end
   object tmrAnimTimer: TTimer
     Enabled = False
     Interval = 70
     OnTimer = tmrAnimTimerTimer
-    left = 560
+    left = 672
   end
   object imlFileIcons: TImageList
-    left = 528
+    left = 640
     Bitmap = {
-      4C690D0000001000000010000000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      4C690E0000001000000010000000FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
@@ -289,7 +293,39 @@ object fMainForm: TfMainForm
       003400FF00FF00FF00FF00FF00FE00FF0028FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF0000FF007700FF00DC00FF006BFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-      FF00FFFFFF00FFFFFF00FFFFFF000000FF000000FFB20000FF6FFFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF0000000000000000000000000000FFFF0200E9
+      E95D00E9E9B100E9E9E100DDDDEF00E9E9E100E9E9B100E9E95C00FFFF020000
+      0000000000000000000000000000000000000000000000E9E92300EAEACB00EA
+      EAFF00EAEAFF006262FF000000FF006464FF00EAEAFF00EAEAFF00E9E9C900E9
+      E9220000000000000000000000000000000000EAEA2500EAEAEC00EAEAFF00EA
+      EAFF00EAEAFF001D1DFF000000FF001D1DFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAEC00E9E923000000000000000000FFFF0300EAEAD000EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEACD00FFFF020000000000EBEB5B00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EBEB580000000000EAEAB400EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EAEAB20000000000EAEAE800EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EAEAE50000000000E9E9F900EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EAEAF80000000000EAEAE600EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF001C1CFF000000FF001C1CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EAEAE40000000000EAEAB400EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF004A4AFF000000FF004C4CFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EAEAB20000000000EBEB5B00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00E2E2FF00BBBBFF00E3E3FF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF00EBEB580000000000FFFF0300EAEAD000EAEAFF00EAEAFF00EA
+      EAFF00EAEAFF007B7BFF001F1FFF007D7DFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAFF00EAEACD00FFFF02000000000000000000EAEA2500EAEAEC00EAEAFF00EA
+      EAFF00EAEAFF000B0BFF000000FF000D0DFF00EAEAFF00EAEAFF00EAEAFF00EA
+      EAEC00E9E9230000000000000000000000000000000000E9E92300EAEACB00EA
+      EAFF00EAEAFF005D5DFF000000FF005F5FFF00EAEAFF00EAEAFF00E9E9C900E9
+      E92200000000000000000000000000000000000000000000000000FFFF0200E9
+      E95D00E9E9B100EAEAE600E1E1FF00EAEAE600E9E9B100E9E95C00FFFF020000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000000FF000000FFB20000FF6FFFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF000000FF6F0000FFB20000FF000000FFB20000FFFF0000FFFF0000FF8FFFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF000000

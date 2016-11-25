@@ -18,10 +18,10 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <MinorVersionNr Value="1"/>
-      <BuildNr Value="49"/>
+      <MinorVersionNr Value="2"/>
+      <BuildNr Value="51"/>
       <Language Value="0405"/>
-      <StringTable Comments="Tool for repairing *.zip archives with damaged headers" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2016 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.1.0"/>
+      <StringTable Comments="Tool for repairing damaged ZIP and SCS# archives" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2016 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.2.0"/>
     </VersionInfo>
     <BuildModes Count="4">
       <Item1 Name="Debug_win_x86" Default="True"/>
@@ -34,7 +34,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Source;..\Source\Libs;..\Source\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -73,7 +73,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Source;..\Source\Libs;..\Source\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -119,7 +119,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\Libs"/>
+            <OtherUnitFiles Value="..;..\Source;..\Source\Libs;..\Source\Libs\lazarus.zlib.128"/>
             <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -163,44 +163,101 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="7">
+    <Units Count="20">
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="MainForm.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="fMainForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit1>
-      <Unit2>
         <Filename Value="..\PrcsSettingsForm.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fPrcsSettingsForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\Source\DART_RepairerThread.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
-        <Filename Value="..\ErrorForm.pas"/>
+        <Filename Value="..\Source\DART_AnsiStringList.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="fErrorForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\Repairer.pas"/>
+        <Filename Value="..\Source\DART_Auxiliary.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\FilesManager.pas"/>
+        <Filename Value="..\Source\DART_FileManager.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit5>
       <Unit6>
-        <Filename Value="..\TaskbarProgress.pas"/>
+        <Filename Value="..\Source\DART_MemoryBuffer.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit6>
+      <Unit7>
+        <Filename Value="..\Source\DART_PathDeconstructor.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\Source\DART_ProcessingSettings.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\Source\DART_Repairer.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\Source\DART_Repairer_SCS.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\Source\DART_Repairer_SCS_Extract.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\Source\DART_Repairer_SCS_Rebuild.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\Source\DART_Repairer_ZIP.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\Source\DART_Repairer_ZIP_Extract.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\Source\DART_Repairer_ZIP_Rebuild.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\ResultInfoForm.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fResultInfoForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\ProcSettingsZIPFrame.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmProcSettingsZIP"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\ProcSettingsSCSFrame.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmProcSettingsSCS"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\MainForm.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fMainForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit19>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -211,7 +268,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;..\Libs"/>
+      <OtherUnitFiles Value="..;..\Source;..\Source\Libs;..\Source\Libs\lazarus.zlib.128"/>
       <UnitOutputDirectory Value="out_temp\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
