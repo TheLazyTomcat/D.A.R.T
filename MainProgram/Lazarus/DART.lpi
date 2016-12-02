@@ -19,7 +19,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
       <MinorVersionNr Value="2"/>
-      <BuildNr Value="51"/>
+      <BuildNr Value="52"/>
       <Language Value="0405"/>
       <StringTable Comments="Tool for repairing damaged ZIP and SCS# archives" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2016 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.2.0"/>
     </VersionInfo>
@@ -242,6 +242,7 @@
         <Filename Value="..\ProcSettingsZIPFrame.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="frmProcSettingsZIP"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Frame"/>
       </Unit17>
       <Unit18>

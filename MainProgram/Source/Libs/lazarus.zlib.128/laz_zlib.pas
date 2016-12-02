@@ -13,7 +13,7 @@
 ===============================================================================}
 unit laz_zlib;
 
-{$DEFINE zlib_dll}
+{.$DEFINE dll_mode}
 
 {$IF defined(CPU64) or defined(CPU64BITS)}
   {$DEFINE 64bit}
@@ -26,7 +26,7 @@ unit laz_zlib;
 interface
 
 const
-{$IFDEF zlib_dll}
+{$IFDEF dll_mode}
   zlib_dll = True;
 {$ELSE}
   zlib_dll = False;
@@ -75,7 +75,7 @@ type
   end;
   PZStream = ^TZStream;
 
-{$IFDEF zlib_dll}
+{$IFDEF dll_mode}
 
 const
   zlib_file = 'zlib1.dll';
@@ -103,9 +103,9 @@ Function InflateInit2_(strm: PZStream; windowBits: Integer; version: PAnsiChar; 
 Function Inflate_(strm: PZStream; flush: Integer): Integer; cdecl; external name 'inflate';
 Function InflateEnd_(strm: PZStream): Integer; cdecl; external name 'inflateEnd';
 
-Function DeflateInit2_(strm: PZStream; level, method, windowBits, memLevel, Strategy: Integer; version: PAnsiChar; stream_size: Integer): Integer; cdecl; external name 'deflateInit2_';
-Function Deflate_(strm: PZStream; flush: Integer): Integer; cdecl; external name 'deflate';
-Function DeflateEnd_(strm: PZStream): Integer; cdecl; external name 'deflateEnd';
+//Function DeflateInit2_(strm: PZStream; level, method, windowBits, memLevel, Strategy: Integer; version: PAnsiChar; stream_size: Integer): Integer; cdecl; external name 'deflateInit2_';
+//Function Deflate_(strm: PZStream; flush: Integer): Integer; cdecl; external name 'deflate';
+//Function DeflateEnd_(strm: PZStream): Integer; cdecl; external name 'deflateEnd';
 
 {$ENDIF}
 
@@ -113,11 +113,9 @@ Function InflateInit2(var Stream: TZStream; WindowBits: Integer): Integer;
 Function Inflate(var Stream: TZStream; Flush: Integer): Integer;
 Function InflateEnd(var Stream: TZStream): Integer;
 
-Function DeflateInit2(var Stream: TZStream; Level, Method, WindowBits, MemLevel, Strategy: Integer): Integer;
-Function Deflate(var Stream: TZStream; Flush: Integer): Integer;
-Function DeflateEnd(var Stream: TZStream): Integer;
-
-procedure ExtractLibrary;
+Function DeflateInit2(var {%H-}Stream: TZStream; {%H-}Level, {%H-}Method, {%H-}WindowBits, {%H-}MemLevel, {%H-}Strategy: Integer): Integer;
+Function Deflate(var {%H-}Stream: TZStream; {%H-}Flush: Integer): Integer;
+Function DeflateEnd(var {%H-}Stream: TZStream): Integer;
 
 procedure Initialize;
 procedure Finalize;
@@ -126,7 +124,7 @@ implementation
 
 //==============================================================================
 
-{$IFDEF zlib_dll}
+{$IFDEF dll_mode}
 
 uses
   Windows, SysUtils, Classes;
@@ -142,22 +140,25 @@ var
 
 {$ELSE} //======================================================================
 
+uses
+  SysUtils;
+
 const
 {$IFDEF 64bit}
-  {$L 'win64\deflate.o'}
+  //{$L 'win64\deflate.o'}
   {$L 'win64\inflate.o'}
   {$L 'win64\inftrees.o'}
   {$L 'win64\inffast.o'}
-  {$L 'win64\trees.o'}
+  //{$L 'win64\trees.o'}
   {$L 'win64\adler32.o'}
   {$L 'win64\crc32.o'}
   PublicNamePrefix = '';
 {$ELSE}
-  {$L 'win32\deflate.o'}
+  //{$L 'win32\deflate.o'}
   {$L 'win32\inflate.o'}
   {$L 'win32\inftrees.o'}
   {$L 'win32\inffast.o'}
-  {$L 'win32\trees.o'}
+  //{$L 'win32\trees.o'}
   {$L 'win32\adler32.o'}
   {$L 'win32\crc32.o'}
   PublicNamePrefix = '_';
@@ -213,42 +214,58 @@ end;
 
 Function DeflateInit2(var Stream: TZStream; Level, Method, WindowBits, MemLevel, Strategy: Integer): Integer;
 begin
+{$IFDEF dll_mode}
 Result := DeflateInit2_(@Stream,Level,Method,WindowBits,MemLevel,Strategy,PAnsiChar(zlib_version),SizeOf(TZStream));
+{$ELSE}
+Result := Z_OK;
+raise Exception.Create('DeflateInit2: Not implemented.');
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 Function Deflate(var Stream: TZStream; Flush: Integer): Integer;
 begin
+{$IFDEF dll_mode}
 Result := Deflate_(@Stream,Flush);
+{$ELSE}
+Result := Z_OK;
+raise Exception.Create('Deflate: Not implemented.');
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 Function DeflateEnd(var Stream: TZStream): Integer;
 begin
+{$IFDEF dll_mode}
 Result := DeflateEnd_(@Stream);
+{$ELSE}
+Result := Z_OK;
+raise Exception.Create('DeflateEnd: Not implemented.');
+{$ENDIF}
 end;
 
 //==============================================================================
 
+{$IFDEF dll_mode}
 procedure ExtractLibrary;
 begin
-{$IFDEF zlib_dll}
 If not FileExists(ExtractFilePath(ParamStr(0)) + zlib_file) then
   with TResourceStream.Create(hInstance,'zlibdll',RT_RCDATA) do
     begin
       SaveToFile(ExtractFilePath(ParamStr(0)) + zlib_file);
       Free;
     end;
-{$ENDIF}
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 procedure Initialize;
 begin
-{$IFDEF zlib_dll}
+{$IFDEF dll_mode}
+ExtractLibrary;
 LibModule := LoadLibrary(zlib_file);
 If LibModule <> 0 then
   begin
@@ -267,7 +284,7 @@ end;
 
 procedure Finalize;
 begin
-{$IFDEF zlib_dll}
+{$IFDEF dll_mode}
 If LibModule <> 0 then
   FreeLibrary(LibModule);
 {$ENDIF}

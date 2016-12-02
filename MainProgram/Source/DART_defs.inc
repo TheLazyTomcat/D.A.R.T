@@ -26,7 +26,7 @@
   {$UNDEF FPC_NonUnicode_NoUTF8RTL}
 {$IFEND}
 
-{.$DEFINE FPC_Internal_ZLib} // do not activate, it is causing problems (stalls at decompression)
+{$DEFINE FPC_Internal_ZLib}
 
 {$IFNDEF FPC}
   {$UNDEF FPC_Internal_ZLib}

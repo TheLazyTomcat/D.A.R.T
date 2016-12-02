@@ -50,6 +50,16 @@ uses
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
+const
+(*
+  Maximum size of a directory entry that will not be compressed, in bytes.
+  If the entry is larger, it will be compressed in the output, otherwise it will
+  be stored with no compression.
+
+  When set to 0, all directory entries will be compressed.
+*)
+  DirEntryUncompMaxSize = 32;
+
 {==============================================================================}
 {   TRepairer_SCS_Rebuild - class implementation                               }
 {==============================================================================}
@@ -218,7 +228,7 @@ try
             Bin.DataOffset := UInt64(RebuildArchiveStream.Position);
             Bin.CRC32 := AnsiStringCRC32(DirEntryStr);
             Bin.UncompressedSize := Length(DirEntryStr);
-            If Bin.UncompressedSize > 32 then
+            If Bin.UncompressedSize > DirEntryUncompMaxSize then
               begin
                 ProgressedCompressBuffer(PChar(DirEntryStr),Length(DirEntryStr),
                   CompressedBuff,CompressedSize,PROCSTAGEIDX_NoProgress,
