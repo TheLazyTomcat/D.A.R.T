@@ -47,8 +47,9 @@ type
     cbInMemoryProcessing: TCheckBox;
     cbIgnoreErroneousEntries: TCheckBox;
     grbArchiveSettings: TGroupBox;
+    scbArchiveSettings: TScrollBox;
     frmProcSettingsZIP: TfrmProcSettingsZIP;
-    frmProcSettingsSCS: TfrmProcSettingsSCS;       
+    frmProcSettingsSCS: TfrmProcSettingsSCS;
     lblSettingDescription: TLabel;
     meSettingDescription: TMemo;
     btnDefault: TButton;

@@ -1,289 +1,413 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 210
-  Top = 16
+  Left = 242
+  Height = 544
+  Top = 165
+  Width = 1016
   BorderStyle = bsDialog
   Caption = 'Processing settings'
-  ClientHeight = 704
+  ClientHeight = 544
   ClientWidth = 1016
   Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
-  Font.Style = []
-  Position = poMainFormCenter
   OnCreate = FormCreate
   OnShow = FormShow
-  PixelsPerInch = 96
+  Position = poMainFormCenter
+  LCLVersion = '1.6.0.4'
   object lblSettingDescription: TLabel
-    Left = 592
+    Left = 616
+    Height = 13
     Top = 8
     Width = 93
-    Height = 13
     Caption = 'Setting description:'
+    ParentColor = False
   end
   object btnAccept: TButton
     Left = 808
-    Top = 672
-    Width = 97
     Height = 25
+    Top = 512
+    Width = 97
     Caption = 'Accept'
-    TabOrder = 4
     OnClick = btnAcceptClick
+    TabOrder = 4
   end
   object btnClose: TButton
     Left = 912
-    Top = 672
-    Width = 97
     Height = 25
+    Top = 512
+    Width = 97
     Caption = 'Close'
-    TabOrder = 5
     OnClick = btnCloseClick
+    TabOrder = 5
   end
   object grbCommonSettings: TGroupBox
     Left = 8
-    Top = 8
-    Width = 577
     Height = 185
+    Top = 8
+    Width = 601
     Caption = 'Common settings'
+    ClientHeight = 167
+    ClientWidth = 597
     TabOrder = 0
     OnMouseMove = GroupBoxMouseMove
     object bvlGeneralhorSplit: TBevel
       Left = 6
-      Top = 136
-      Width = 561
       Height = 9
+      Top = 136
+      Width = 585
       Shape = bsTopLine
     end
     object vblGeneralHorSplit_File: TBevel
       Left = 6
-      Top = 56
-      Width = 561
       Height = 9
+      Top = 56
+      Width = 585
       Shape = bsTopLine
     end
     object lblFile: TLabel
       Tag = 1
       Left = 70
+      Height = 13
       Top = 6
       Width = 26
-      Height = 13
       Caption = 'lblFile'
       Color = clBtnFace
-      Constraints.MaxWidth = 497
+      Constraints.MaxWidth = 521
       ParentColor = False
+      Transparent = False
       OnMouseMove = SettingsMouseMove
     end
     object lblFileCpt: TLabel
       Left = 41
+      Height = 13
       Top = 6
       Width = 22
-      Height = 13
       Alignment = taRightJustify
       Caption = 'File:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblFileTypeCpt: TLabel
       Left = 12
+      Height = 13
       Top = 30
       Width = 51
-      Height = 13
       Alignment = taRightJustify
       Caption = 'File type:'
-      Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Style = [fsBold]
+      ParentColor = False
       ParentFont = False
     end
     object lblFileType: TLabel
       Tag = 2
       Left = 70
+      Height = 13
       Top = 30
       Width = 50
-      Height = 13
       Caption = 'lblFileType'
+      ParentColor = False
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
       Tag = 9
       Left = 6
-      Top = 146
-      Width = 121
       Height = 17
+      Top = 146
+      Width = 115
       Caption = 'Ignore file signature'
-      TabOrder = 6
       OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 6
     end
     object rbRebuild: TRadioButton
       Tag = 5
       Left = 6
-      Top = 66
-      Width = 97
       Height = 17
+      Top = 66
+      Width = 91
       Caption = 'Rebuild archive'
-      TabOrder = 2
       OnClick = RepairMethodClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 2
     end
     object rbExtract: TRadioButton
       Tag = 6
       Left = 110
-      Top = 66
-      Width = 97
       Height = 17
+      Top = 66
+      Width = 91
       Caption = 'Extract archive'
-      TabOrder = 3
       OnClick = RepairMethodClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 3
     end
     object lbleTarget: TLabeledEdit
       Tag = 7
       Left = 6
-      Top = 106
-      Width = 536
       Height = 21
-      EditLabel.Width = 36
+      Top = 106
+      Width = 560
+      EditLabel.AnchorSideLeft.Control = lbleTarget
+      EditLabel.AnchorSideRight.Control = lbleTarget
+      EditLabel.AnchorSideRight.Side = asrBottom
+      EditLabel.AnchorSideBottom.Control = lbleTarget
+      EditLabel.Left = 6
       EditLabel.Height = 13
+      EditLabel.Top = 90
+      EditLabel.Width = 560
       EditLabel.Caption = 'Target:'
+      EditLabel.ParentColor = False
       TabOrder = 4
       OnChange = lbleTargetChange
       OnMouseMove = SettingsMouseMove
     end
     object btnBrowse: TButton
       Tag = 8
-      Left = 542
+      Left = 566
+      Height = 21
       Top = 106
       Width = 25
-      Height = 21
       Caption = '...'
-      TabOrder = 5
       OnClick = btnBrowseClick
+      TabOrder = 5
     end
     object cbInMemoryProcessing: TCheckBox
       Tag = 10
       Left = 190
-      Top = 146
-      Width = 129
       Height = 17
+      Top = 146
+      Width = 123
       Caption = 'In memory processing'
-      TabOrder = 7
       OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 7
     end
     object cbIgnoreErroneousEntries: TCheckBox
       Tag = 11
       Left = 374
-      Top = 146
-      Width = 145
       Height = 17
+      Top = 146
+      Width = 138
       Caption = 'Ignore erroneous entries'
-      TabOrder = 8
       OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 8
     end
     object cbForceFileType: TCheckBox
       Tag = 3
-      Left = 374
-      Top = 28
-      Width = 97
+      Left = 398
       Height = 17
+      Top = 28
+      Width = 91
       Caption = 'Force file type:'
-      TabOrder = 0
       OnClick = CheckBoxClick
       OnMouseMove = SettingsMouseMove
+      TabOrder = 0
     end
     object cmbForcedFileType: TComboBox
       Tag = 4
-      Left = 470
+      Left = 494
+      Height = 21
       Top = 26
       Width = 97
-      Height = 21
-      Style = csDropDownList
       ItemHeight = 13
       ItemIndex = 0
-      TabOrder = 1
-      Text = 'ZIP'
-      OnChange = cmbForcedFileTypeChange
       Items.Strings = (
         'ZIP'
-        'SCS#')
+        'SCS#'
+      )
+      OnChange = cmbForcedFileTypeChange
+      Style = csDropDownList
+      TabOrder = 1
+      Text = 'ZIP'
     end
   end
   object meSettingDescription: TMemo
-    Left = 592
+    Left = 616
+    Height = 481
     Top = 24
-    Width = 417
-    Height = 641
+    Width = 393
     Color = clInfoBk
-    Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
     Font.Name = 'Courier New'
-    Font.Style = []
     Lines.Strings = (
       'Move cursor over specific setting to see its '
-      'description.')
+      'description.'
+    )
     ParentFont = False
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 2
   end
   object btnDefault: TButton
-    Left = 592
-    Top = 672
-    Width = 137
+    Left = 616
     Height = 25
+    Top = 512
+    Width = 137
     Caption = 'Load default settings...'
-    TabOrder = 3
     OnClick = btnDefaultClick
+    TabOrder = 3
   end
   object grbArchiveSettings: TGroupBox
     Left = 8
+    Height = 337
     Top = 200
-    Width = 577
-    Height = 497
+    Width = 601
     Caption = 'Archive settings'
+    ClientHeight = 319
+    ClientWidth = 597
     TabOrder = 1
-    inline frmProcSettingsZIP: TfrmProcSettingsZIP
+    object scbArchiveSettings: TScrollBox
       Left = 6
+      Height = 313
       Top = 2
-      Width = 561
-      Height = 473
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = []
-      ParentFont = False
+      Width = 585
+      HorzScrollBar.Page = 561
+      HorzScrollBar.Visible = False
+      VertScrollBar.Increment = 31
+      VertScrollBar.Page = 313
+      VertScrollBar.Smooth = True
+      VertScrollBar.Tracking = True
+      BorderStyle = bsNone
+      ClientHeight = 313
+      ClientWidth = 568
       TabOrder = 0
-    end
-    inline frmProcSettingsSCS: TfrmProcSettingsSCS
-      Left = 6
-      Top = 2
-      Width = 561
-      Height = 473
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = []
-      ParentFont = False
-      TabOrder = 1
+      inline frmProcSettingsSCS: TfrmProcSettingsSCS
+      end
+      inline frmProcSettingsZIP: TfrmProcSettingsZIP
+        TabOrder = 1
+        inherited pnlBackground: TPanel
+          inherited gbGeneral: TGroupBox
+            ClientHeight = 31
+            ClientWidth = 557
+            inherited cbAssumeCompressionMethods: TCheckBox
+              Width = 161
+            end
+          end
+          inherited grbCentralDirectoryHeaders: TGroupBox
+            ClientHeight = 127
+            ClientWidth = 557
+            inherited cbCDIgnoreCentralDirectory: TCheckBox
+              Width = 132
+            end
+            inherited cbCDIgnoreSignature: TCheckBox
+              Width = 135
+            end
+            inherited cbCDIgnoreVersions: TCheckBox
+              Width = 93
+            end
+            inherited cbCDClearEncryptionFlags: TCheckBox
+              Width = 123
+            end
+            inherited cbCDIgnoreCompressionMethod: TCheckBox
+              Width = 151
+            end
+            inherited cbCDIgnoreModTime: TCheckBox
+              Width = 116
+            end
+            inherited cbCDIgnoreModDate: TCheckBox
+              Width = 118
+            end
+            inherited cbCDIgnoreCRC32: TCheckBox
+              Width = 86
+            end
+            inherited cbCDIgnoreSizes: TCheckBox
+              Width = 76
+            end
+            inherited cbCDIgnoreInternalFileAttributes: TCheckBox
+              Width = 156
+            end
+            inherited cbCDIgnoreExternalFileAttributes: TCheckBox
+              Width = 160
+            end
+            inherited cbCDIgnoreLocalHeaderOffset: TCheckBox
+              Width = 143
+            end
+            inherited cbCDIgnoreExtraField: TCheckBox
+              Width = 102
+            end
+            inherited cbCDIgnoreFileComment: TCheckBox
+              Width = 113
+            end
+          end
+          inherited grbLocalHeaders: TGroupBox
+            ClientHeight = 135
+            ClientWidth = 557
+            inherited cbLHIgnoreSignature: TCheckBox
+              Width = 135
+            end
+            inherited cbLHIgnoreVersions: TCheckBox
+              Width = 93
+            end
+            inherited cbLHClearEncryptionFlags: TCheckBox
+              Width = 123
+            end
+            inherited cbLHIgnoreCompressionMethod: TCheckBox
+              Width = 151
+            end
+            inherited cbLHIgnoreModTime: TCheckBox
+              Width = 116
+            end
+            inherited cbLHIgnoreModDate: TCheckBox
+              Width = 118
+            end
+            inherited cbLHIgnoreCRC32: TCheckBox
+              Width = 86
+            end
+            inherited cbLHIgnoreSizes: TCheckBox
+              Width = 76
+            end
+            inherited cbLHIgnoreExtraField: TCheckBox
+              Width = 102
+            end
+            inherited cbLHIgnoreDataDescriptor: TCheckBox
+              Width = 126
+            end
+            inherited cbLHIgnoreLocalHeaders: TCheckBox
+              Width = 116
+            end
+            inherited cbLHIgnoreFileName: TCheckBox
+              Width = 96
+            end
+          end
+          inherited grdEndOfCentralDirectory: TGroupBox
+            ClientHeight = 87
+            ClientWidth = 557
+            inherited cbIgnoreEndOfCentralDirectory: TCheckBox
+              Width = 166
+            end
+            inherited cbIgnoreDiskSplit: TCheckBox
+              Width = 93
+            end
+            inherited cbIgnoreNumberOfEntries: TCheckBox
+              Width = 138
+            end
+            inherited cbIgnoreCentralDirectoryOffset: TCheckBox
+              Width = 164
+            end
+            inherited cbIgnoreComment: TCheckBox
+              Width = 96
+            end
+            inherited cbLimitSearch: TCheckBox
+              Width = 182
+            end
+          end
+        end
+      end
     end
   end
   object diaSaveDialog: TSaveDialog
     DefaultExt = '.scs'
-    Filter = 
-      'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zi' +
-      'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
-    Left = 920
+    Filter = 'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zip)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    left = 976
   end
 end

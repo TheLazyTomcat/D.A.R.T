@@ -1,9 +1,9 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 210
-  Top = 16
+  Left = 242
+  Top = 165
   BorderStyle = bsDialog
   Caption = 'Processing settings'
-  ClientHeight = 704
+  ClientHeight = 544
   ClientWidth = 1016
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,7 +18,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   PixelsPerInch = 96
   TextHeight = 13
   object lblSettingDescription: TLabel
-    Left = 592
+    Left = 616
     Top = 8
     Width = 93
     Height = 13
@@ -26,7 +26,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   end
   object btnAccept: TButton
     Left = 808
-    Top = 672
+    Top = 512
     Width = 97
     Height = 25
     Caption = 'Accept'
@@ -35,7 +35,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   end
   object btnClose: TButton
     Left = 912
-    Top = 672
+    Top = 512
     Width = 97
     Height = 25
     Caption = 'Close'
@@ -45,7 +45,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   object grbCommonSettings: TGroupBox
     Left = 8
     Top = 8
-    Width = 577
+    Width = 601
     Height = 185
     Caption = 'Common settings'
     TabOrder = 0
@@ -53,14 +53,14 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     object bvlGeneralhorSplit: TBevel
       Left = 8
       Top = 150
-      Width = 561
+      Width = 585
       Height = 9
       Shape = bsTopLine
     end
     object vblGeneralHorSplit_File: TBevel
       Left = 8
       Top = 70
-      Width = 561
+      Width = 585
       Height = 9
       Shape = bsTopLine
     end
@@ -72,7 +72,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Height = 13
       Caption = 'lblFile'
       Color = clBtnFace
-      Constraints.MaxWidth = 497
+      Constraints.MaxWidth = 521
       ParentColor = False
       OnMouseMove = SettingsMouseMove
     end
@@ -150,7 +150,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Tag = 7
       Left = 8
       Top = 120
-      Width = 536
+      Width = 560
       Height = 21
       EditLabel.Width = 36
       EditLabel.Height = 13
@@ -161,7 +161,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object btnBrowse: TButton
       Tag = 8
-      Left = 544
+      Left = 568
       Top = 120
       Width = 25
       Height = 21
@@ -193,7 +193,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cbForceFileType: TCheckBox
       Tag = 3
-      Left = 376
+      Left = 400
       Top = 42
       Width = 97
       Height = 17
@@ -204,7 +204,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
     object cmbForcedFileType: TComboBox
       Tag = 4
-      Left = 472
+      Left = 496
       Top = 40
       Width = 97
       Height = 21
@@ -220,10 +220,10 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     end
   end
   object meSettingDescription: TMemo
-    Left = 592
+    Left = 616
     Top = 24
-    Width = 417
-    Height = 641
+    Width = 393
+    Height = 481
     Color = clInfoBk
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -239,8 +239,8 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     TabOrder = 2
   end
   object btnDefault: TButton
-    Left = 592
-    Top = 672
+    Left = 616
+    Top = 512
     Width = 137
     Height = 25
     Caption = 'Load default settings...'
@@ -250,35 +250,46 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   object grbArchiveSettings: TGroupBox
     Left = 8
     Top = 200
-    Width = 577
-    Height = 497
+    Width = 601
+    Height = 337
     Caption = 'Archive settings'
     TabOrder = 1
-    inline frmProcSettingsZIP: TfrmProcSettingsZIP
+    object scbArchiveSettings: TScrollBox
       Left = 8
       Top = 16
-      Width = 561
-      Height = 473
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = []
-      ParentFont = False
+      Width = 585
+      Height = 313
+      HorzScrollBar.Visible = False
+      VertScrollBar.Smooth = True
+      VertScrollBar.Tracking = True
+      BorderStyle = bsNone
       TabOrder = 0
-    end
-    inline frmProcSettingsSCS: TfrmProcSettingsSCS
-      Left = 8
-      Top = 16
-      Width = 561
-      Height = 473
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Style = []
-      ParentFont = False
-      TabOrder = 1
+      inline frmProcSettingsSCS: TfrmProcSettingsSCS
+        Left = 0
+        Top = 0
+        Width = 561
+        Height = 473
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 0
+      end
+      inline frmProcSettingsZIP: TfrmProcSettingsZIP
+        Left = 0
+        Top = 0
+        Width = 561
+        Height = 473
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        TabOrder = 1
+      end
     end
   end
   object diaSaveDialog: TSaveDialog
@@ -286,6 +297,6 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
     Filter = 
       'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zi' +
       'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
-    Left = 920
+    Left = 976
   end
 end
