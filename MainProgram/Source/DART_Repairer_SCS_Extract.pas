@@ -35,7 +35,7 @@ implementation
 uses
   SysUtils, Classes, StrUtils,
   BitOps,
-  DART_MemoryBuffer, DART_Repairer
+  DART_MemoryBuffer, DART_Format_SCS, DART_Repairer
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
 {$ENDIF};

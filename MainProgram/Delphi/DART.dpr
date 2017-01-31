@@ -17,13 +17,18 @@ uses
   DART_PathDeconstructor  in '..\Source\DART_PathDeconstructor.pas',
   DART_ProcessingSettings in '..\Source\DART_ProcessingSettings.pas',
 
+  DART_Format_SCS in '..\Source\DART_Format_SCS.pas',
+  DART_Format_ZIP in '..\Source\DART_Format_ZIP.pas',
+
   DART_Repairer             in '..\Source\DART_Repairer.pas',
   DART_Repairer_ZIP         in '..\Source\DART_Repairer_ZIP.pas',
   DART_Repairer_ZIP_Rebuild in '..\Source\DART_Repairer_ZIP_Rebuild.pas',
   DART_Repairer_ZIP_Extract in '..\Source\DART_Repairer_ZIP_Extract.pas',
+  DART_Repairer_ZIP_Convert in '..\Source\DART_Repairer_ZIP_Convert.pas',
   DART_Repairer_SCS         in '..\Source\DART_Repairer_SCS.pas',
   DART_Repairer_SCS_Rebuild in '..\Source\DART_Repairer_SCS_Rebuild.pas',
   DART_Repairer_SCS_Extract in '..\Source\DART_Repairer_SCS_Extract.pas',
+  DART_Repairer_SCS_Convert in '..\Source\DART_Repairer_SCS_Convert.pas',
 
   DART_RepairerThread in '..\Source\DART_RepairerThread.pas',
   DART_FileManager    in '..\Source\DART_FileManager.pas',

@@ -60,8 +60,8 @@ implementation
 
 uses
   SysUtils,
-  DART_Repairer_ZIP_Rebuild, DART_Repairer_ZIP_Extract,
-  DART_Repairer_SCS_Rebuild, DART_Repairer_SCS_Extract;
+  DART_Repairer_ZIP_Rebuild, DART_Repairer_ZIP_Extract, DART_Repairer_ZIP_Convert,
+  DART_Repairer_SCS_Rebuild, DART_Repairer_SCS_Extract, DART_Repairer_SCS_Convert;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -117,6 +117,7 @@ case fFileProcessingSettings.Common.FileType of
     case fFileProcessingSettings.Common.RepairMethod of
       rmRebuild:  fRepairer := TRepairer_SCS_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
       rmExtract:  fRepairer := TRepairer_SCS_Extract.Create(fFlowControlObject,fFileProcessingSettings);
+      rmConvert:  fRepairer := TRepairer_SCS_Convert.Create(fFlowControlObject,fFileProcessingSettings);
     else
       raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
     end;
@@ -124,6 +125,7 @@ case fFileProcessingSettings.Common.FileType of
     case fFileProcessingSettings.Common.RepairMethod of
       rmRebuild:  fRepairer := TRepairer_ZIP_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
       rmExtract:  fRepairer := TRepairer_ZIP_Extract.Create(fFlowControlObject,fFileProcessingSettings);
+      rmConvert:  fRepairer := TRepairer_ZIP_Convert.Create(fFlowControlObject,fFileProcessingSettings);
     else
       raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
     end;

@@ -114,7 +114,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
-      Tag = 9
+      Tag = 10
       Left = 8
       Top = 160
       Width = 121
@@ -147,7 +147,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object lbleTarget: TLabeledEdit
-      Tag = 7
+      Tag = 8
       Left = 8
       Top = 120
       Width = 560
@@ -160,7 +160,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object btnBrowse: TButton
-      Tag = 8
+      Tag = 9
       Left = 568
       Top = 120
       Width = 25
@@ -170,7 +170,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnClick = btnBrowseClick
     end
     object cbInMemoryProcessing: TCheckBox
-      Tag = 10
+      Tag = 11
       Left = 192
       Top = 160
       Width = 129
@@ -181,7 +181,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreErroneousEntries: TCheckBox
-      Tag = 11
+      Tag = 12
       Left = 376
       Top = 160
       Width = 145
@@ -217,6 +217,17 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Items.Strings = (
         'ZIP'
         'SCS#')
+    end
+    object rbConvert: TRadioButton
+      Tag = 7
+      Left = 216
+      Top = 80
+      Width = 97
+      Height = 17
+      Caption = 'Convert archive'
+      TabOrder = 9
+      OnClick = RepairMethodClick
+      OnMouseMove = SettingsMouseMove
     end
   end
   object meSettingDescription: TMemo

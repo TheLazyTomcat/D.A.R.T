@@ -151,6 +151,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Width = 121
         Height = 17
         Caption = 'Brute-force resolve'
+        Enabled = False
         TabOrder = 6
         OnClick = CheckBoxClick
         OnMouseMove = SettingsMouseMove

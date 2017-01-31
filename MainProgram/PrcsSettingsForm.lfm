@@ -1,5 +1,5 @@
 object fPrcsSettingsForm: TfPrcsSettingsForm
-  Left = 242
+  Left = 255
   Height = 544
   Top = 165
   Width = 1016
@@ -14,7 +14,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poMainFormCenter
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.4.4.0'
   object lblSettingDescription: TLabel
     Left = 616
     Height = 13
@@ -117,7 +117,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object cbIgnoreFileSignature: TCheckBox
-      Tag = 9
+      Tag = 10
       Left = 6
       Height = 17
       Top = 146
@@ -150,7 +150,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 3
     end
     object lbleTarget: TLabeledEdit
-      Tag = 7
+      Tag = 8
       Left = 6
       Height = 21
       Top = 106
@@ -170,7 +170,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       OnMouseMove = SettingsMouseMove
     end
     object btnBrowse: TButton
-      Tag = 8
+      Tag = 9
       Left = 566
       Height = 21
       Top = 106
@@ -180,7 +180,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 5
     end
     object cbInMemoryProcessing: TCheckBox
-      Tag = 10
+      Tag = 11
       Left = 190
       Height = 17
       Top = 146
@@ -191,7 +191,7 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       TabOrder = 7
     end
     object cbIgnoreErroneousEntries: TCheckBox
-      Tag = 11
+      Tag = 12
       Left = 374
       Height = 17
       Top = 146
@@ -228,6 +228,17 @@ object fPrcsSettingsForm: TfPrcsSettingsForm
       Style = csDropDownList
       TabOrder = 1
       Text = 'ZIP'
+    end
+    object rbConvert: TRadioButton
+      Tag = 7
+      Left = 214
+      Height = 17
+      Top = 66
+      Width = 95
+      Caption = 'Convert archive'
+      OnClick = RepairMethodClick
+      OnMouseMove = SettingsMouseMove
+      TabOrder = 9
     end
   end
   object meSettingDescription: TMemo

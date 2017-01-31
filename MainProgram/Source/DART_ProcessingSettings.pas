@@ -13,14 +13,14 @@ interface
 
 type
   TFileType = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft);
-  TRepairMethod = (rmUnknown,rmRebuild,rmExtract);
+  TRepairMethod = (rmUnknown,rmRebuild,rmExtract,rmConvert);
 
 const
   FileTypeStrArr: array[TFileType] of String =
     ('Unknown','SCS#','SCS# (forced)','ZIP','ZIP (forced)','ZIP (defaulted)');
 
   RepairerMethodStrArr: array[TRepairMethod] of String =
-    ('Unknown','Rebuild archive','Extract archive');  
+    ('Unknown','Rebuild archive','Extract archive','Convert archive');
 
 //--- Common processing settings -----------------------------------------------
 

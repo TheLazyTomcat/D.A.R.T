@@ -13,107 +13,8 @@ interface
 
 uses
   AuxTypes,
-  CRC32, WinSyncObjs,
-  DART_ProcessingSettings, DART_Repairer;
-
-{==============================================================================}
-{------------------------------------------------------------------------------}
-{                         SCS# structures and constants                        }
-{------------------------------------------------------------------------------}
-{==============================================================================}
-
-//--- SCS# archive signature ---------------------------------------------------
-
-const
-  FileSignature_SCS = UInt32($23534353);  // SCS#
-
-//--- Known hash algorithms ----------------------------------------------------
-
-  SCS_HASH_City = UInt32($59544943);  // CITY
-
-//--- Entry bit flags ----------------------------------------------------------
-
-  SCS_FLAG_Directory  = $00000001;
-  SCS_FLAG_Compressed = $00000002;
-  SCS_FLAG_Unknown    = $00000004;  // seems to be always set
-
-//--- Default offsets ----------------------------------------------------------
-
-  SCS_DefaultEntryTableOffset = UInt64($0000000000001000);
-
-type
-//--- Archive header record ----------------------------------------------------
-
-  TSCS_ArchiveHeader = packed record
-    Signature:      UInt32;
-    Unknown:        UInt32;
-    HashType:       UInt32;
-    Entries:        UInt32;
-    EntriesOffset:  UInt64;
-    UnknownOffset:  UInt64;
-  end;
-
-//--- Entry record (table item) ------------------------------------------------
-
-  TSCS_EntryRecord = packed record
-    Hash:             UInt64;
-    DataOffset:       UInt64;
-    Flags:            UInt32;
-    CRC32:            TCRC32;
-    UncompressedSize: UInt32;
-    CompressedSize:   UInt32;
-  end;
-
-//--- Utility data -------------------------------------------------------------
-
-  TSCS_UtilityData = record
-    Resolved:           Boolean;
-    Erroneous:          Boolean;
-    SubEntries:         array of AnsiString;
-    OriginalDataOffset: UInt64;
-  end;
-
-//--- Main structure -----------------------------------------------------------
-
-  TSCS_Entry = record
-    Bin:          TSCS_EntryRecord;
-    FileName:     AnsiString;
-    UtilityData:  TSCS_UtilityData;
-  end;
-
-  TSCS_KnownPathItem = record
-    Path: AnsiString;
-    Hash: TCRC32;
-  end;
-
-  TSCS_ArchiveStructure = record
-    ArchiveHeader:  TSCS_ArchiveHeader;
-    Entries:        array of TSCS_Entry;
-    KnownPaths:     array of TSCS_KnownPathItem;
-    DataBytes:      UInt64;
-  end;
-
-//--- Path constants, predefined paths -----------------------------------------
-
-const
-  SCS_RootPath = '';
-
-  SCS_PathDelim = '/';
-
-  SCS_PredefinedPaths: array[0..17] of String = (
-  {
-    modifications stuff
-  }
-    'manifest.sii','mod_description.txt',
-  {
-    untracked files from ETS2 base.scs
-  }
-    'version.txt','autoexec.cfg',
-  {
-    some folders from ETS2
-  }
-    'automat','def','effect','map','material','model','model2',
-    'prefab','prefab2','sound','system','ui','unit','vehicle');
+  WinSyncObjs,
+  DART_ProcessingSettings, DART_Format_SCS, DART_Repairer;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -173,7 +74,7 @@ implementation
 
 uses
   SysUtils, Classes,
-  BitOps, CITY,
+  BitOps, CITY, CRC32, 
   DART_MemoryBuffer, DART_AnsiStringList;
 
 {==============================================================================}
@@ -655,7 +556,7 @@ fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Offset :=
   fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Offset +
   fProgressStages[PROCSTAGEIDX_SCS_EntriesLoading].Range;
 fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range := 0.05 * AvailableRange;
-If fFileProcessingSettings.Common.RepairMethod = rmRebuild then
+If fFileProcessingSettings.Common.RepairMethod in [rmRebuild,rmConvert] then
   DirsRectRange := 0.2 * fProgressStages[PROCSTAGEIDX_SCS_PathsLoading].Range
 else
   DirsRectRange := 0.0;  

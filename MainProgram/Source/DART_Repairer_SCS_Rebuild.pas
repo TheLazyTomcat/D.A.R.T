@@ -39,7 +39,7 @@ implementation
 uses
   SysUtils, Classes,
   BitOps, CRC32,
-  DART_MemoryBuffer, DART_PathDeconstructor, DART_Repairer
+  DART_MemoryBuffer, DART_PathDeconstructor, DART_Format_SCS, DART_Repairer
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
   , LazFileUtils
 {$ENDIF};

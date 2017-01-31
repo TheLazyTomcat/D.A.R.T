@@ -40,6 +40,7 @@ type
     vblGeneralHorSplit_File: TBevel;
     rbRebuild: TRadioButton;
     rbExtract: TRadioButton;
+    rbConvert: TRadioButton;
     lbleTarget: TLabeledEdit;
     btnBrowse: TButton;
     bvlGeneralhorSplit: TBevel;
@@ -209,6 +210,7 @@ else cmbForcedFileType.ItemIndex := 0;
 case fFileProcessingSettings.Common.RepairMethod of
   rmRebuild:  rbRebuild.Checked := True;
   rmExtract:  rbExtract.Checked := True;
+  rmConvert:  rbConvert.Checked := True;  
 end;
 lbleTarget.Text := fFileProcessingSettings.Common.TargetPath;
 cbIgnoreFileSignature.Checked := fFileProcessingSettings.Common.IgnoreFileSignature;
@@ -223,9 +225,12 @@ end;
 
 procedure TfPrcsSettingsForm.FormToSettings;
 begin
-If rbRebuild.Checked then
+If rbRebuild.Checked or rbConvert.Checked then
   begin
-    fFileProcessingSettings.Common.RepairMethod := rmRebuild;
+    If rbRebuild.Checked then
+      fFileProcessingSettings.Common.RepairMethod := rmRebuild
+    else
+      fFileProcessingSettings.Common.RepairMethod := rmConvert;
   {$IFDEF FPC_NonUnicode_NoUTF8RTL}
     fFileProcessingSettings.Common.TargetPath := ExpandFileNameUTF8(lbleTarget.Text);
   {$ELSE}
@@ -285,7 +290,15 @@ If Sender is TRadioButton then
           end;
       6:  begin   // rbExtract
             lbleTarget.EditLabel.Caption := 'Extract into:';
-            fFileProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(ChangeFileExt(fFileProcessingSettings.Common.FilePath,''));
+            If not AnsiSameText(ExtractFileName(fFileProcessingSettings.Common.FilePath),ExtractFileExt(fFileProcessingSettings.Common.FilePath)) then
+              fFileProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(ChangeFileExt(fFileProcessingSettings.Common.FilePath,''))
+            else
+              fFileProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(ExtractFilePath(fFileProcessingSettings.Common.FilePath) + 'repaired');
+          end;
+      7:  begin   // rbConvert
+            lbleTarget.EditLabel.Caption := 'Output file:';
+            fFileProcessingSettings.Common.TargetPath := ChangeFileExt(ExtractFilePath(fFileProcessingSettings.Common.FilePath) + 'repaired_' +
+                                                         ExtractFileName(fFileProcessingSettings.Common.FilePath),'.zip');
           end;
     end;
     lbleTarget.Text := fFileProcessingSettings.Common.TargetPath;
@@ -393,7 +406,7 @@ var
   TempStr:  String;
 begin
 case btnBrowse.Tag of
-  5:  begin   // rebuild -> browse for file
+  5,7:begin   // rebuild or convert -> browse for file
       {$IFDEF FPC_NonUnicode_NoUTF8RTL}
         TempStr := ExpandFileNameUTF8(lbleTarget.Text);
         If DirectoryExistsUTF8(ExtractFileDir(TempStr)) then
@@ -483,7 +496,7 @@ If lbleTarget.Text <> '' then
   end
 else
   begin
-    If rbRebuild.Checked then MsgStr := 'No output file selected.'
+    If rbRebuild.Checked or rbConvert.Checked then MsgStr := 'No output file selected.'
       else If rbExtract.Checked then MsgStr := 'No folder for extraction selected.'
         else MsgStr := 'No output selected.';
     MessageDlg(MsgStr,mtInformation,[mbOK],0);

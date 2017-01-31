@@ -20,13 +20,18 @@ uses
   DART_PathDeconstructor,
   DART_ProcessingSettings,
 
+  DART_Format_ZIP,
+  DART_Format_SCS,
+
   DART_Repairer,
   DART_Repairer_ZIP,
   DART_Repairer_ZIP_Rebuild,
   DART_Repairer_ZIP_Extract,
+  DART_Repairer_ZIP_Convert,
   DART_Repairer_SCS,
   DART_Repairer_SCS_Rebuild,
   DART_Repairer_SCS_Extract,
+  DART_Repairer_SCS_Convert,
 
   DART_RepairerThread,
   DART_FileManager,

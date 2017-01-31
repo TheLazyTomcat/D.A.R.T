@@ -10,6 +10,8 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
   Font.Name = 'Tahoma'
   ParentFont = False
   TabOrder = 0
+  DesignLeft = 684
+  DesignTop = 244
   object pnlBackground: TPanel
     Left = 0
     Height = 473
@@ -159,6 +161,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Top = 370
         Width = 111
         Caption = 'Brute-force resolve'
+        Enabled = False
         OnClick = CheckBoxClick
         OnMouseMove = SettingsMouseMove
         TabOrder = 6

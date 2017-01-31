@@ -37,7 +37,7 @@ implementation
 uses
   SysUtils, Classes,
   AuxTypes, CRC32, 
-  DART_MemoryBuffer, DART_Repairer
+  DART_MemoryBuffer, DART_Format_ZIP, DART_Repairer
 {$IFDEF FPC}
   , LazUTF8
   {$IFDEF FPC_NonUnicode_NoUTF8RTL}

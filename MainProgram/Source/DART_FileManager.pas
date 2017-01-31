@@ -107,7 +107,7 @@ implementation
 uses
   Windows, SysUtils,
   WinFileInfo,
-  DART_Auxiliary, DART_Repairer_ZIP, DART_Repairer_SCS;
+  DART_Auxiliary, DART_Format_SCS, DART_Format_ZIP;
 
 {==============================================================================}
 {   TFileManager - class implementation                                        }

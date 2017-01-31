@@ -251,11 +251,11 @@ end;
 *)
 {$IFDEF FPC}
   {$IFDEF FPC_Internal_ZLib}
-    {$IF zlib_dll = True}
+    {$IF zlib_dll}
       {$MESSAGE FATAL 'laz_zlib must not be in a DLL mode.'}
     {$IFEND}
   {$ELSE}
-    {$IF zlib_dll <> True}
+    {$IF not zlib_dll}
       {$MESSAGE FATAL 'laz_zlib is not in a DLL mode.'}
     {$IFEND}
   {$ENDIF}
@@ -287,7 +287,8 @@ fProgressStages[PROCSTAGEIDX_Default].Range := 1.0;
 If fFileProcessingSettings.Common.InMemoryProcessing then
   begin
     case fFileProcessingSettings.Common.RepairMethod of
-      rmRebuild: begin
+      rmRebuild,
+      rmConvert: begin
                    fProgressStages[PROCSTAGEIDX_Loading].Range := 0.3;
                    fProgressStages[PROCSTAGEIDX_Saving].Range := 0.3;
                  end;

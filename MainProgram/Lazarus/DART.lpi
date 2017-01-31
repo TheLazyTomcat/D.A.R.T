@@ -19,9 +19,9 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
       <MinorVersionNr Value="2"/>
-      <BuildNr Value="53"/>
+      <BuildNr Value="54"/>
       <Language Value="0405"/>
-      <StringTable Comments="Tool for repairing damaged ZIP and SCS# archives" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2016 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.2.0"/>
+      <StringTable Comments="Tool for repairing of damaged ZIP and SCS# archives" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2017 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.2.0"/>
     </VersionInfo>
     <BuildModes Count="4">
       <Item1 Name="Debug_win_x86" Default="True"/>
@@ -163,7 +163,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="20">
+    <Units Count="24">
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -259,6 +259,22 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit19>
+      <Unit20>
+        <Filename Value="..\Source\DART_Format_ZIP.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\Source\DART_Format_SCS.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\Source\DART_Repairer_SCS_Convert.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\Source\DART_Repairer_ZIP_Convert.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit23>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

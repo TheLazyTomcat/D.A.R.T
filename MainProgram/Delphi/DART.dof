@@ -111,7 +111,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=2
 Release=0
-Build=78
+Build=79
 Debug=0
 PreRelease=0
 Special=0
@@ -122,14 +122,14 @@ CodePage=1250
 [Version Info Keys]
 CompanyName=František Milt
 FileDescription=D.A.R.T - Damaged Archives Repair Tool
-FileVersion=1.2.0.78
+FileVersion=1.2.0.79
 InternalName=D.A.R.T 1.x
-LegalCopyright=© 2015 - 2016 František Milt
+LegalCopyright=© 2015 - 2017 František Milt
 LegalTrademarks=D.A.R.T
 OriginalFilename=DART.exe
 ProductName=D.A.R.T
 ProductVersion=1.2.0
-Comments=Tool for repairing damaged ZIP and SCS# archives
+Comments=Tool for repairing of damaged ZIP and SCS# archives
 [HistoryLists\hlConditionals]
 Count=1
 Item0=Windows;x86;Delphi
