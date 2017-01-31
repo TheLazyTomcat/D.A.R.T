@@ -312,7 +312,7 @@ try
     begin
       Signature := FileSignature_SCS;
       Unknown := 1;
-      Hash := SCS_HASH_City;
+      HashType := SCS_HASH_City;
       Entries := 0;
       For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
         If not fArchiveStructure.Entries[i].UtilityData.Erroneous then Inc(Entries);

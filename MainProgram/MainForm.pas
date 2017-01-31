@@ -48,7 +48,7 @@ type
     mfResultInfo: TMenuItem;
     N2: TMenuItem;
     mfClearCompleted: TMenuItem;
-    diaOpenDialog: TOpenDialog;
+    diaOpenDialog: TOpenDialog;    
     tmrAnimTimer: TTimer;
     imlFileIcons: TImageList;
     procedure FormCreate(Sender: TObject);
@@ -77,7 +77,7 @@ type
     FileManager:  TFileManager;
     procedure LoadCopyrightInfo;
     procedure LoadFilesFromParams;
-    procedure SetDropAccept(AcceptDrop: Boolean);    
+    procedure SetDropAccept(AcceptDrop: Boolean);
     procedure OnFileProgress(Sender: TObject; FileIndex: Integer);
     procedure OnFileStatus(Sender: TObject; FileIndex: Integer);
     procedure OnManagerStatus(Sender: TObject);
@@ -171,17 +171,19 @@ var
 begin
 If ParamCount > 0 then
   For i := 1 to ParamCount do
-    begin
-    {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-      FileName := SysToUTF8(ParamStr(i));
-      If FileExistsUTF8(FileName) then
-        FileManager.Add(ExpandFileNameUTF8(FileName));
-    {$ELSE}
-      FileName := ParamStr(i);
-      If FileExists(FileName) then
-        FileManager.Add(ExpandFileName(FileName));
-    {$ENDIF}
-    end;
+    If Length(ParamStr(i)) > 0 then
+      If ParamStr(i)[1] <> '-' then // - (dash) is reserved for control parameters
+        begin
+        {$IFDEF FPC_NonUnicode_NoUTF8RTL}
+          FileName := SysToUTF8(ParamStr(i));
+          If FileExistsUTF8(FileName) then
+            FileManager.Add(ExpandFileNameUTF8(FileName));
+        {$ELSE}
+          FileName := ParamStr(i);
+          If FileExists(FileName) then
+            FileManager.Add(ExpandFileName(FileName));
+        {$ENDIF}
+        end;
 end;
 
 //------------------------------------------------------------------------------

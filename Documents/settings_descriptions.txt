@@ -190,7 +190,7 @@ Actual state of compression is determined from stored sizes. If compressed and u
 #141
 Algorithm used for hashing entry file name is assumed to be CityHash.
 
-Also field "Hash" in archive header is ignored and set to CITY (0x59544943).
+Also field "HashType" in archive header is ignored and set to CITY (0x59544943).
 #142
 A set of predefined paths is used when resolving entry file names.
 #143

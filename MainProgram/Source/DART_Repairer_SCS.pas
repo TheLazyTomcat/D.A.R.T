@@ -47,7 +47,7 @@ type
   TSCS_ArchiveHeader = packed record
     Signature:      UInt32;
     Unknown:        UInt32;
-    Hash:           UInt32;
+    HashType:       UInt32;
     Entries:        UInt32;
     EntriesOffset:  UInt64;
     UnknownOffset:  UInt64;
@@ -193,10 +193,10 @@ uses
 Function TRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
 begin
 Result := 0;
-case fArchiveStructure.ArchiveHeader.Hash of
+case fArchiveStructure.ArchiveHeader.HashType of
   SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
 else
-  DoError(100,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
+  DoError(100,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.HashType]);
 end;
 end;
 
@@ -204,7 +204,7 @@ end;
 
 Function TRepairer_SCS.SCS_HashName: String;
 begin
-case fArchiveStructure.ArchiveHeader.Hash of
+case fArchiveStructure.ArchiveHeader.HashType of
   SCS_HASH_City:  Result := 'CITY';
 else
   Result := 'UNKN';
@@ -303,10 +303,10 @@ If fArchiveStream.Size >= SizeOf(TSCS_ArchiveHeader) then
     If fFileProcessingSettings.Common.IgnoreFileSignature then
       fArchiveStructure.ArchiveHeader.Signature := FileSignature_SCS;
     If fFileProcessingSettings.SCSSettings.PathResolve.AssumeCityHash then
-      fArchiveStructure.ArchiveHeader.Hash := SCS_HASH_City
+      fArchiveStructure.ArchiveHeader.HashType := SCS_HASH_City
     else
-      If fArchiveStructure.ArchiveHeader.Hash <> SCS_HASH_City then
-        DoError(101,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.Hash]);
+      If fArchiveStructure.ArchiveHeader.HashType <> SCS_HASH_City then
+        DoError(101,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.HashType]);
   end
 else DoError(101,'File is too small (%d bytes) to contain a valid archive header.',[fArchiveStream.Size]);
 DoProgress(PROCSTAGEIDX_SCS_ArchiveHeaderLoading,1.0);
