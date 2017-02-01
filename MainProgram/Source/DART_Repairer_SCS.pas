@@ -75,7 +75,8 @@ implementation
 uses
   SysUtils, Classes,
   BitOps, CITY, CRC32, 
-  DART_MemoryBuffer, DART_AnsiStringList;
+  DART_Auxiliary, DART_MemoryBuffer, DART_AnsiStringList, DART_Format_ZIP,
+  DART_Repairer_ZIP;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -202,7 +203,7 @@ If fArchiveStream.Size >= SizeOf(TSCS_ArchiveHeader) then
     fArchiveStream.Seek(0,soFromBeginning);
     fArchiveStream.ReadBuffer(fArchiveStructure.ArchiveHeader,SizeOf(TSCS_ArchiveHeader));
     If fFileProcessingSettings.Common.IgnoreFileSignature then
-      fArchiveStructure.ArchiveHeader.Signature := FileSignature_SCS;
+      fArchiveStructure.ArchiveHeader.Signature := SCS_FileSignature;
     If fFileProcessingSettings.SCSSettings.PathResolve.AssumeCityHash then
       fArchiveStructure.ArchiveHeader.HashType := SCS_HASH_City
     else
@@ -342,31 +343,67 @@ var
   procedure LoadHelpFile(const FileName: String);
   var
     HelpFileProcSettings: TFileProcessingSettings;
-    HelpFileRepairer:     TRepairer_SCS;
+    ArchiveSignature:     UInt32;
+    HelpFileRepairer:     TRepairer;
     ii:                   Integer;
   begin
   {
-    Creates local SCS# basic repairer that will load all possible paths from
-    a help file without extracting or rebuilding it. Also, all paths found to
-    this moment are passed as custom paths to the repairer.
+    Creates local basic repairer that will load all possible paths from a help
+    file without doing anything with it.
+    Also, for SCS# archives, all paths found to this moment are passed as custom
+    paths to the repairer.
+    What repairer should be used is discerned by a file signature, when it
+    matches signature of SCS# archive, then SCS repairer is used, otherwise ZIP
+    repairer is used.
   }
+    // discern what type the input archive is
+    ArchiveSignature := GetFileSignature(FileName);
+    // init processing settings for local repairer
     HelpFileProcSettings := DefaultFileProcessingSettings;
     HelpFileProcSettings.Common.FilePath := FileName;
     // file signature must be checked because we assume it is in SCS# format
     HelpFileProcSettings.Common.IgnoreFileSignature := False;
-    // turn off in-memory processing, as we do not know size of the file
+    // explicitly turn off in-memory processing, as we do not know size of the file
     HelpFileProcSettings.Common.InMemoryProcessing := False;
-    SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
-    For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
-      HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
-    HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings,False);
-    try
-      HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
-      HelpFileRepairer.Run;
-      For ii := Low(HelpFileRepairer.ArchiveStructure.KnownPaths) to High(HelpFileRepairer.ArchiveStructure.KnownPaths) do
-        AddKnownPath(HelpFileRepairer.ArchiveStructure.KnownPaths[ii].Path);
-    finally
-      HelpFileRepairer.Free;
+    // do archive-type-specific processing
+    case ArchiveSignature of
+      SCS_FileSignature:  // - - - - - - - - - - - - - - - - - - - - - - - - - -
+        begin
+          // SCS# archive
+          SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
+          For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
+            HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
+          HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings,False);
+          try
+            HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
+            HelpFileRepairer.Run;
+            For ii := Low(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths) to
+                      High(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths) do
+              AddKnownPath(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths[ii].Path);
+          finally
+            HelpFileRepairer.Free;
+          end;
+        end;
+    else
+     {ZIP_FileSignature:} // - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // other archive types (ZIP)
+      HelpFileRepairer := TRepairer_ZIP.Create(fFlowControlObject,HelpFileProcSettings,False);
+      try
+        HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
+        HelpFileRepairer.Run;
+        For ii := Low(TRepairer_ZIP(HelpFileRepairer).ArchiveStructure.Entries) to
+                  High(TRepairer_ZIP(HelpFileRepairer).ArchiveStructure.Entries) do
+          with TRepairer_ZIP(HelpFileRepairer).ArchiveStructure.Entries[ii].CentralDirectoryHeader do
+            If Length(FileName) > 0 then
+              begin
+                If FileName[Length(FileName)] = ZIP_PathDelim then
+                  AddKnownPath(Copy(FileName,1,Length(FileName) - 1))
+                else
+                  AddKnownPath(FileName);
+              end;
+      finally
+        HelpFileRepairer.Free;
+      end;
     end;
   end;
 
@@ -650,7 +687,7 @@ end;
 constructor TRepairer_SCS.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
 inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
-fExpectedSignature := FileSignature_SCS;
+fExpectedSignature := SCS_FileSignature;
 fEntriesSorted := False;
 end;
 

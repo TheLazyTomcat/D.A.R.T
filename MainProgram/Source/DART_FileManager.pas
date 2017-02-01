@@ -313,8 +313,8 @@ If fManagerStatus = mstReady then
             ProcessingSettings := DefaultFileProcessingSettings;
             ProcessingSettings.Common.FilePath := Path;
             case GetFileSignature(Path) of
-              FileSignature_SCS: ProcessingSettings.Common.FileType := atSCS_sig;
-              FileSignature_ZIP: ProcessingSettings.Common.FileType := atZIP_sig;
+              SCS_FileSignature: ProcessingSettings.Common.FileType := atSCS_sig;
+              ZIP_FileSignature: ProcessingSettings.Common.FileType := atZIP_sig;
             else
               ProcessingSettings.Common.FileType := atZIP_dft;
             end;

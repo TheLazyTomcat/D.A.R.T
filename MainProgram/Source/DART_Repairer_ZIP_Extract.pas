@@ -115,12 +115,12 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
                          {$IFDEF FPC}
                            {$IFDEF Unicode}
-                           AnsiReplaceStr(UTF8Decode(WinCPToUTF8(LocalHeader.FileName)),'/','\');
+                           AnsiReplaceStr(UTF8Decode(WinCPToUTF8(LocalHeader.FileName)),ZIP_PathDelim,PathDelim);
                            {$ELSE}
-                           AnsiReplaceStr(WinCPToUTF8(LocalHeader.FileName),'/','\');
+                           AnsiReplaceStr(WinCPToUTF8(LocalHeader.FileName),ZIP_PathDelim,PathDelim);
                            {$ENDIF}
                          {$ELSE}
-                           AnsiReplaceStr(String(LocalHeader.FileName),'/','\');
+                           AnsiReplaceStr(String(LocalHeader.FileName),ZIP_PathDelim,PathDelim);
                          {$ENDIF}
       // create necessary directory structure for the entry output file
     {$IFDEF FPC_NonUnicode_NoUTF8RTL}

@@ -23,7 +23,7 @@ uses
 //--- SCS# archive signature ---------------------------------------------------
 
 const
-  FileSignature_SCS = UInt32($23534353);  // SCS#
+  SCS_FileSignature = UInt32($23534353);  // SCS#
 
 //--- Known hash algorithms ----------------------------------------------------
 
@@ -94,9 +94,9 @@ type
 //--- Path constants, predefined paths -----------------------------------------
 
 const
-  SCS_RootPath = '';
-
   SCS_PathDelim = '/';
+  
+  SCS_RootPath = '';
 
   SCS_PredefinedPaths: array[0..20] of String = (
   {

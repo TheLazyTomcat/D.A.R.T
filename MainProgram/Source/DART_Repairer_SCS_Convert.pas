@@ -42,6 +42,20 @@ uses
   AuxTypes, CRC32, BitOps,
   DART_MemoryBuffer, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
 
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                             TRepairer_SCS_Convert                            }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+{==============================================================================}
+{   TRepairer_SCS_Convert - class implementation                               }
+{==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   TRepairer_SCS_Rebuild - protected methods                                  }
+{------------------------------------------------------------------------------}
+
 procedure TRepairer_SCS_Convert.SCS_SortConvertEntries;
 
   procedure QuickSort(LeftIdx,RightIdx: Integer);
@@ -163,8 +177,8 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           end;        
         FileName := fArchiveStructure.Entries[i].FileName;
         If GetFlagState(fArchiveStructure.Entries[i].Bin.Flags,SCS_FLAG_Directory) and (Length(FileName) > 0) then
-          If FileName[Length(FileName)] <> '/' then
-            FileName := FileName + '/';
+          If FileName[Length(FileName)] <> ZIP_PathDelim then
+            FileName := FileName + ZIP_PathDelim;
         BinPart.FileNameLength := Length(FileName);
         SetLength(ExtraField,0);
         SetLength(FileComment,0);

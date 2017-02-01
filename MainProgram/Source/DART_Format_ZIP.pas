@@ -23,7 +23,7 @@ uses
 //--- ZIP archive signature ----------------------------------------------------
 
 const
-  FileSignature_ZIP = UInt32($04034b50);
+  ZIP_FileSignature = UInt32($04034b50);
 
 //--- Bit flags ----------------------------------------------------------------
 
@@ -144,6 +144,11 @@ type
     Entries:                array of TZIP_Entry;
     EndOfCentralDirectory:  TZIP_EndOfCentralDirectory;
   end;
+
+//--- Other ZIP constants ------------------------------------------------------
+
+const
+  ZIP_PathDelim = '/';  
 
 implementation
 

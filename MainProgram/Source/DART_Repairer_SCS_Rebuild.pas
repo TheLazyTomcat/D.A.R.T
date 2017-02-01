@@ -371,7 +371,7 @@ try
   // fill archive header and write it
   with fArchiveStructure.ArchiveHeader do
     begin
-      Signature := FileSignature_SCS;
+      Signature := SCS_FileSignature;
       Unknown := 1;
       HashType := SCS_HASH_City;
       Entries := 0;

@@ -226,7 +226,7 @@ var
           BinPart.InternalFileAttributes := 0;
         If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
           begin
-            If ExtractFileName(AnsiReplaceStr(FileName,'/','\')) <> '' then
+            If ExtractFileName(AnsiReplaceStr(FileName,ZIP_PathDelim,PathDelim)) <> '' then
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
             else
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
@@ -752,7 +752,7 @@ end;
 constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
 inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
-fExpectedSignature := FileSignature_ZIP;
+fExpectedSignature := ZIP_FileSignature;
 end;
 
 end.
