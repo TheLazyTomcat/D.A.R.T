@@ -446,6 +446,7 @@ try
       FileStream.Write(fIO_Buffer.Memory^,BytesRead);
       DoProgress(ProgressStage,Stream.Position / Stream.Size);
     until BytesRead <= 0;
+  FileStream.Size := FileStream.Position;  
 finally
   FileStream.Free;
 end;

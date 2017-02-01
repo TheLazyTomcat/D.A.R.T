@@ -12,7 +12,29 @@ unit DART_Repairer_SCS_Rebuild;
 interface
 
 uses
+  AuxTypes,
   DART_Repairer_SCS;
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                          TRepairer_SCS_FileProcBase                          }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+{==============================================================================}
+{   TRepairer_SCS_FileProcBase - class declaration                             }
+{==============================================================================}
+type
+  // common ancestor for SCS repairers working with an output file
+  TRepairer_SCS_FileProcBase = class(TRepairer_SCS)
+  protected
+    procedure SCS_DiscardDirectories; virtual;
+    procedure SCS_ReconstructDirectories; virtual;
+    procedure SCS_SaveUnresolvedEntry(EntryIdx: Integer; Data: Pointer; DataSize: TMemSize); virtual;
+    procedure ArchiveProcessing; override;
+  public
+    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
+  end;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -24,14 +46,10 @@ uses
 {   TRepairer_SCS_Rebuild - class declaration                                  }
 {==============================================================================}
 type
-  TRepairer_SCS_Rebuild = class(TRepairer_SCS)
+  TRepairer_SCS_Rebuild = class(TRepairer_SCS_FileProcBase)
   protected
-    procedure SCS_DiscardDirectories; virtual;
-    procedure SCS_ReconstructDirectories; virtual;
     procedure SCS_RebuildArchive; virtual;
     procedure ArchiveProcessing; override;
-  public
-    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;      
   end;
 
 implementation
@@ -46,29 +64,19 @@ uses
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
-{                             TRepairer_SCS_Rebuild                            }
+{                          TRepairer_SCS_FileProcBase                          }
 {------------------------------------------------------------------------------}
 {==============================================================================}
 
-const
-(*
-  Maximum size of a directory entry that will not be compressed, in bytes.
-  If the entry is larger, it will be compressed in the output, otherwise it will
-  be stored with no compression.
-
-  When set to 0, all directory entries will be compressed.
-*)
-  DirEntryUncompMaxSize = 32;
-
 {==============================================================================}
-{   TRepairer_SCS_Rebuild - class implementation                               }
+{   TRepairer_SCS_FileProcBase - class implementation                          }
 {==============================================================================}
 
 {------------------------------------------------------------------------------}
-{   TRepairer_SCS_Rebuild - protected methods                                  }
+{   TRepairer_SCS_FileProcBase - protected methods                             }
 {------------------------------------------------------------------------------}
 
-procedure TRepairer_SCS_Rebuild.SCS_DiscardDirectories;
+procedure TRepairer_SCS_FileProcBase.SCS_DiscardDirectories;
 var
   EntryCount: Integer;
   i:          Integer;
@@ -91,7 +99,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer_SCS_Rebuild.SCS_ReconstructDirectories;
+procedure TRepairer_SCS_FileProcBase.SCS_ReconstructDirectories;
 var
   PathDeconstructor:  TPathDeconstructor;
   i,j:                Integer;
@@ -133,6 +141,96 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TRepairer_SCS_FileProcBase.SCS_SaveUnresolvedEntry(EntryIdx: Integer; Data: Pointer; DataSize: TMemSize);
+var
+  EntryExtractFile: TFileStream;
+  EntryFileName:    String;
+begin
+with fArchiveStructure.Entries[EntryIdx] do
+  If not UtilityData.Resolved then
+    begin
+      If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
+        begin
+          // raw data will be saved to a file
+          DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',[EntryIdx,Bin.Hash,Bin.UncompressedSize]));
+          EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fFileProcessingSettings.Common.TargetPath) + 'unresolved_' +
+                           ChangeFileExt(ExtractFileName(fFileProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,Bin.Hash]);
+          If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
+            EntryFileName := EntryFileName + 'D'
+          else
+            EntryFileName := EntryFileName + 'F';
+        {$IFDEF FPC_NonUnicode_NoUTF8RTL}
+          ForceDirectoriesUTF8(ExtractFileDir(EntryFileName));
+        {$ELSE}
+          ForceDirectories(ExtractFileDir(EntryFileName));
+        {$ENDIF}
+          EntryExtractFile := CreateFileStream(EntryFileName,fmCreate or fmShareDenyWrite);
+          try
+            EntryExtractFile.WriteBuffer(Data^,DataSize);
+            EntryExtractFile.Size := EntryExtractFile.Position;
+          finally
+            EntryExtractFile.Free;
+          end;
+        end
+      // data will not be extracted...
+      else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved.',[EntryIdx,Bin.Hash]));
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer_SCS_FileProcBase.ArchiveProcessing;
+begin
+// check if target <> source
+If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.Common.TargetPath) then
+  DoError(200,'Output is directed into an input file, cannot proceed.');
+inherited;
+// reconstruct all directory entries from file names
+fEntriesSorted := False;
+SCS_DiscardDirectories;
+SCS_ReconstructDirectories;
+SCS_SortEntries;
+DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
+end;
+
+{------------------------------------------------------------------------------}
+{   TRepairer_SCS_FileProcBase - public methods                                }
+{------------------------------------------------------------------------------}
+
+class Function TRepairer_SCS_FileProcBase.GetMethodNameFromIndex(MethodIndex: Integer): String;
+begin
+case MethodIndex of
+  200:  Result := 'ArchiveProcessing';
+else
+  Result := inherited GetMethodNameFromIndex(MethodIndex);
+end;
+end;
+
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                             TRepairer_SCS_Rebuild                            }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+
+const
+(*
+  Maximum size of a directory entry that will not be compressed, in bytes.
+  If the entry is larger, it will be compressed in the output, otherwise it will
+  be stored with no compression.
+
+  When set to 0, all directory entries will be compressed.
+*)
+  DirEntryUncompMaxSize = 32;
+
+{==============================================================================}
+{   TRepairer_SCS_Rebuild - class implementation                               }
+{==============================================================================}
+
+{------------------------------------------------------------------------------}
+{   TRepairer_SCS_Rebuild - protected methods                                  }
+{------------------------------------------------------------------------------}
+
 procedure TRepairer_SCS_Rebuild.SCS_RebuildArchive;
 var
   ProcessedBytes:       UInt64;
@@ -144,43 +242,6 @@ var
   DecompressedBuff:     Pointer;
   DecompressedSize:     Integer;
   DirEntryStr:          AnsiString;
-
-  // manages unresolved entries extraction
-  procedure ExtractUnresolvedEntry(EntryIdx: Integer; Data: Pointer; DataSize: Integer);
-  var
-    EntryExtractFile: TFileStream;
-    EntryFileName:    String;
-  begin
-    with fArchiveStructure.Entries[EntryIdx] do
-      If not UtilityData.Resolved then
-        begin
-          If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
-            begin
-              // raw data will be saved to a file
-              DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',[i,Bin.Hash,Bin.UncompressedSize]));
-              EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fFileProcessingSettings.Common.TargetPath) + 'unresolved_' +
-                               ChangeFileExt(ExtractFileName(fFileProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,Bin.Hash]);
-              If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
-                EntryFileName := EntryFileName + 'D'
-              else
-                EntryFileName := EntryFileName + 'F';
-            {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-              ForceDirectoriesUTF8(ExtractFileDir(EntryFileName));
-            {$ELSE}
-              ForceDirectories(ExtractFileDir(EntryFileName));
-            {$ENDIF}
-              EntryExtractFile := CreateFileStream(EntryFileName,fmCreate or fmShareDenyWrite);
-              try
-                EntryExtractFile.WriteBuffer(Data^,DataSize);
-              finally
-                EntryExtractFile.Free;
-              end;
-            end
-          // data will not be extracted...
-          else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved.',[i,Bin.Hash]));
-        end;
-  end;
-
 begin
 DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
 // create directory for the rebuild file
@@ -198,7 +259,7 @@ try
   // prepare output stream
   If fFileProcessingSettings.Common.InMemoryProcessing then
     RebuildArchiveStream.Size := Trunc(fArchiveStream.Size * 1.1);
-  RebuildArchiveStream.Seek(0,soFromBeginning);   
+  RebuildArchiveStream.Seek(0,soFromBeginning);
   ProcessedBytes := 0;
   // set stream position at the start of data, header and entries table will be
   // written later (for now fill the area with zeroes)
@@ -273,7 +334,7 @@ try
                       {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
                     {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
                     try
-                      ExtractUnresolvedEntry(i,DecompressedBuff,DecompressedSize);
+                      SCS_SaveUnresolvedEntry(i,DecompressedBuff,DecompressedSize);
                       If (Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0) then
                         Bin.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
                     finally
@@ -282,7 +343,7 @@ try
                   end
                 else
                   begin
-                    ExtractUnresolvedEntry(i,fCED_Buffer.Memory,Bin.CompressedSize);
+                    SCS_SaveUnresolvedEntry(i,fCED_Buffer.Memory,Bin.CompressedSize);
                     If (Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0) then
                       Bin.CRC32 := BufferCRC32(fCED_Buffer.Memory^,Bin.CompressedSize);
                   end;
@@ -343,30 +404,8 @@ end;
 
 procedure TRepairer_SCS_Rebuild.ArchiveProcessing;
 begin
-// check if target <> source
-If AnsiSameText(fFileProcessingSettings.Common.FilePath,fFileProcessingSettings.Common.TargetPath) then
-  DoError(200,'Output is directed into an input file, cannot proceed.');
 inherited;
-// reconstruct all directory entries from file names
-fEntriesSorted := False;
-SCS_DiscardDirectories;
-SCS_ReconstructDirectories;
-SCS_SortEntries;
-DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
 SCS_RebuildArchive;
-end;
-
-{------------------------------------------------------------------------------}
-{   TRepairer_SCS_Rebuild - public methods                                     }
-{------------------------------------------------------------------------------}
-
-class Function TRepairer_SCS_Rebuild.GetMethodNameFromIndex(MethodIndex: Integer): String;
-begin
-case MethodIndex of
-  200:  Result := 'ArchiveProcessing';
-else
-  Result := inherited GetMethodNameFromIndex(MethodIndex);
-end;
 end;
 
 end.

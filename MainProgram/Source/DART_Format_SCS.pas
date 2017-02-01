@@ -98,11 +98,12 @@ const
 
   SCS_PathDelim = '/';
 
-  SCS_PredefinedPaths: array[0..18] of String = (
+  SCS_PredefinedPaths: array[0..20] of String = (
   {
     modifications stuff
   }
-    'manifest.sii','mod_description.txt','sample_mod.jpg',
+    'manifest.sii','mod_description.txt',
+    'sample_mod.jpg','mod_icon.jpg','icon.jpg',
   {
     untracked files from ETS2 base.scs
   }

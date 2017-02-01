@@ -95,8 +95,8 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
             begin
               // data will be saved to a special file, its name consits only of the hash
-              FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath) +
-                                   Format('_unresolved_\%s(%.16x)',[SCS_HashName,Bin.Hash]);
+              FullEntryFileName := IncludeTrailingPathDelimiter(fFileProcessingSettings.Common.TargetPath + '_unresolved_') +
+                                   Format('%s(%.16x)',[SCS_HashName,Bin.Hash]);
               If GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
                 FullEntryFileName := FullEntryFileName + 'D'
               else

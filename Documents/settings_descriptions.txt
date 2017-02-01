@@ -201,11 +201,11 @@ A set of predefined paths is used when resolving entry file names.
 Data of entries whose file names could not be resolved will be extracted.
 Names of individual files to which the entries are extracted are constructed from stored hashes.
 
-- Rebuilding -
+- Rebuilding, converting -
 
 The files are stored in the same folder as the output file, into subfolder "unresolved_filename", where filename is the name of output file without the extension.
 
-Note - unresolved entries are copied into output file.
+Note - when rebuilding, unresolved entries are copied into output file.
 
 - Extracting -
 
