@@ -92,7 +92,7 @@ uses
   Windows, ShellAPI,
   WinFileInfo, TaskbarProgress,
   DART_ProcessingSettings, DART_Repairer,
-  ResultInfoForm, PrcsSettingsForm
+  ResultInfoForm, ProcSettingsForm
 {$IFDEF FPC_NonUnicode}
   , LazUTF8
   {$IFDEF FPC_NonUnicode_NoUTF8RTL}
@@ -404,7 +404,7 @@ procedure TfMainForm.mfSettingsClick(Sender: TObject);
 begin
 If (FileManager.ManagerStatus = mstReady) and (lvFiles.SelCount = 1) then
   begin
-    fPrcsSettingsForm.ShowProcessingSettings(FileManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+    fProcSettingsForm.ShowProcessingSettings(FileManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
     lvFiles.Items[lvFiles.ItemIndex].SubItems[List_TypeColumn] :=
       FileTypeStrArr[FileManager[lvFiles.ItemIndex].ProcessingSettings.Common.FileType];
     lvFiles.Items[lvFiles.ItemIndex].SubItems[List_MethodColumn] :=

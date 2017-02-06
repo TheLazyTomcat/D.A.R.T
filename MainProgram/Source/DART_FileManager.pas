@@ -312,6 +312,7 @@ If fManagerStatus = mstReady then
             ProcessingStatus := fstReady;
             ProcessingSettings := DefaultFileProcessingSettings;
             ProcessingSettings.Common.FilePath := Path;
+            // get probable file type from signature
             case GetFileSignature(Path) of
               SCS_FileSignature: ProcessingSettings.Common.FileType := atSCS_sig;
               ZIP_FileSignature: ProcessingSettings.Common.FileType := atZIP_sig;
@@ -319,7 +320,18 @@ If fManagerStatus = mstReady then
               ProcessingSettings.Common.FileType := atZIP_dft;
             end;
             ProcessingSettings.Common.OriginalFileType := ProcessingSettings.Common.FileType;
-            ProcessingSettings.Common.TargetPath := ExtractFilePath(Path) + 'repaired_' + Name;
+            // set type-specific settings
+            case ProcessingSettings.Common.FileType of
+              atSCS_sig,atSCS_frc:
+                begin
+                  ProcessingSettings.Common.RepairMethod := rmConvert;
+                  ProcessingSettings.Common.TargetPath := ExtractFilePath(Path) + 'repaired_' + ChangeFileExt(Name,'.zip');
+                end;
+            else
+             {atUnknown,atZIP_sig,atZIP_frc,atZIP_dft, ...}
+              ProcessingSettings.Common.RepairMethod := rmRebuild;
+              ProcessingSettings.Common.TargetPath := ExtractFilePath(Path) + 'repaired_' + Name;
+            end;
             ProcessingSettings.Other.InMemoryProcessingAllowed := Size <= fMemoryLimit;
             GlobalProgressOffset := 0;
             GlobalProgressRange := 0;

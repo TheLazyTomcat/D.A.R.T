@@ -5,7 +5,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 -------------------------------------------------------------------------------}
-unit PrcsSettingsForm;
+unit ProcSettingsForm;
 
 {$INCLUDE 'Source\DART_defs.inc'}
 
@@ -26,9 +26,9 @@ type
   end;
 {$ENDIF}
 
-  { TfPrcsSettingsForm }
+  { TfProcSettingsForm }
 
-  TfPrcsSettingsForm = class(TForm)
+  TfProcSettingsForm = class(TForm)
     diaSaveDialog: TSaveDialog;
     grbCommonSettings: TGroupBox;
     lblFileCpt: TLabel;
@@ -85,7 +85,7 @@ type
   end;
 
 var
-  fPrcsSettingsForm: TfPrcsSettingsForm;
+  fProcSettingsForm: TfProcSettingsForm;
 
 implementation
 
@@ -105,7 +105,7 @@ uses
 
 //==============================================================================
 
-procedure TfPrcsSettingsForm.LoadSettingsDescriptions;
+procedure TfProcSettingsForm.LoadSettingsDescriptions;
 var
   ResourceStream: TResourceStream;
   TempStrList:    TStringList;
@@ -164,7 +164,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.FrameSettingsHintHandler(Sender: TObject; HintTag: Integer);
+procedure TfProcSettingsForm.FrameSettingsHintHandler(Sender: TObject; HintTag: Integer);
 begin
 If meSettingDescription.Tag <> HintTag then
   begin
@@ -178,7 +178,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.ShowProperFrame;
+procedure TfProcSettingsForm.ShowProperFrame;
 begin
 frmProcSettingsZIP.Visible := fFileProcessingSettings.Common.FileType in [atZIP_sig,atZIP_frc,atZIP_dft];
 frmProcSettingsSCS.Visible := fFileProcessingSettings.Common.FileType in [atSCS_sig,atSCS_frc];
@@ -192,7 +192,7 @@ end;
 
 //==============================================================================
 
-procedure TfPrcsSettingsForm.SettingsToForm;
+procedure TfProcSettingsForm.SettingsToForm;
 begin
 lblFile.Caption := MinimizeName(fFileProcessingSettings.Common.FilePath,lblFile.Canvas,lblFile.Constraints.MaxWidth);
 lblFile.ShowHint := not AnsiSameText(lblFile.Caption,fFileProcessingSettings.Common.FilePath) or
@@ -223,7 +223,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.FormToSettings;
+procedure TfProcSettingsForm.FormToSettings;
 begin
 If rbRebuild.Checked or rbConvert.Checked then
   begin
@@ -255,7 +255,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.ShowProcessingSettings(var FileProcessingSettings: TFileProcessingSettings);
+procedure TfProcSettingsForm.ShowProcessingSettings(var FileProcessingSettings: TFileProcessingSettings);
 begin
 fFileProcessingSettings := FileProcessingSettings;
 fLoading := True;
@@ -277,7 +277,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.RepairMethodClick(Sender: TObject);
+procedure TfProcSettingsForm.RepairMethodClick(Sender: TObject);
 begin
 If Sender is TRadioButton then
   begin
@@ -307,7 +307,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.CheckBoxClick(Sender: TObject);
+procedure TfProcSettingsForm.CheckBoxClick(Sender: TObject);
 begin
 If (Sender is TCheckBox) and not fLoading then
   case TCheckBox(Sender).Tag of
@@ -327,7 +327,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.SettingsMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TfProcSettingsForm.SettingsMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
 If Sender is TControl then
   If meSettingDescription.Tag <> TControl(Sender).Tag then
@@ -343,7 +343,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TfProcSettingsForm.GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   Control:  TControl;
 begin
@@ -357,7 +357,7 @@ end;
 
 //==============================================================================
 
-procedure TfPrcsSettingsForm.FormCreate(Sender: TObject);
+procedure TfProcSettingsForm.FormCreate(Sender: TObject);
 begin
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;
@@ -369,7 +369,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.FormShow(Sender: TObject);
+procedure TfProcSettingsForm.FormShow(Sender: TObject);
 begin
 meSettingDescription.Text := 'Move cursor over specific setting to see its description.';
 btnClose.SetFocus;
@@ -377,7 +377,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.cmbForcedFileTypeChange(Sender: TObject);
+procedure TfProcSettingsForm.cmbForcedFileTypeChange(Sender: TObject);
 begin
 If cbForceFileType.Checked then
   begin
@@ -392,7 +392,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.lbleTargetChange(Sender: TObject);
+procedure TfProcSettingsForm.lbleTargetChange(Sender: TObject);
 begin
 lbleTarget.ShowHint := Canvas.TextWidth(lbleTarget.Text) > (lbleTarget.Width - (2 * GetSystemMetrics(SM_CXEDGE)));
 If lbleTarget.ShowHint then
@@ -401,7 +401,7 @@ end;
   
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.btnBrowseClick(Sender: TObject);
+procedure TfProcSettingsForm.btnBrowseClick(Sender: TObject);
 var
   TempStr:  String;
 begin
@@ -453,7 +453,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.btnDefaultClick(Sender: TObject);
+procedure TfProcSettingsForm.btnDefaultClick(Sender: TObject);
 var
   OldProcessingSettings:  TFileProcessingSettings;
 begin
@@ -478,14 +478,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.btnCloseClick(Sender: TObject);
+procedure TfProcSettingsForm.btnCloseClick(Sender: TObject);
 begin
 Close;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TfPrcsSettingsForm.btnAcceptClick(Sender: TObject);
+procedure TfProcSettingsForm.btnAcceptClick(Sender: TObject);
 var
   MsgStr: String;
 begin

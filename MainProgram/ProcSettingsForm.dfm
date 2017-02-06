@@ -1,4 +1,4 @@
-object fPrcsSettingsForm: TfPrcsSettingsForm
+object fProcSettingsForm: TfProcSettingsForm
   Left = 242
   Top = 165
   BorderStyle = bsDialog

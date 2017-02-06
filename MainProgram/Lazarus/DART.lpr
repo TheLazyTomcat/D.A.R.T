@@ -40,7 +40,7 @@ uses
   ResultInfoForm,
   ProcSettingsZIPFrame,
   ProcSettingsSCSFrame,
-  PrcsSettingsForm;
+  ProcSettingsForm;
 
 {$R *.res}
 
@@ -55,7 +55,7 @@ begin
   Application.Initialize;
   Application.CreateForm(TfMainForm, fMainForm);
   Application.CreateForm(TfResultInfoForm, fResultInfoForm);
-  Application.CreateForm(TfPrcsSettingsForm, fPrcsSettingsForm);
+  Application.CreateForm(TfProcSettingsForm, fProcSettingsForm);
   Application.Run;
 end.
 

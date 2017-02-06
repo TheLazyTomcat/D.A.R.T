@@ -1,4 +1,4 @@
-object fPrcsSettingsForm: TfPrcsSettingsForm
+object fProcSettingsForm: TfProcSettingsForm
   Left = 255
   Height = 544
   Top = 165

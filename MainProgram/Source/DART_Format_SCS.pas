@@ -98,7 +98,7 @@ const
   
   SCS_RootPath = '';
 
-  SCS_PredefinedPaths: array[0..20] of String = (
+  SCS_PredefinedPaths: array[0..20] of AnsiString = (
   {
     modifications stuff
   }

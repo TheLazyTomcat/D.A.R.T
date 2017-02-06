@@ -37,7 +37,7 @@ uses
   ResultInfoForm       in '..\ResultInfoForm.pas' {fResultInfoForm},
   ProcSettingsZIPFrame in '..\ProcSettingsZIPFrame.pas' {frmProcSettingsZIP: TFrame},
   ProcSettingsSCSFrame in '..\ProcSettingsSCSFrame.pas' {frmProcSettingsSCS: TFrame},
-  PrcsSettingsForm     in '..\PrcsSettingsForm.pas' {fPrcsSettingsForm};
+  ProcSettingsForm     in '..\ProcSettingsForm.pas' {fProcSettingsForm};
 
 {$R *.res}
 
@@ -46,6 +46,6 @@ begin
   Application.Title := 'D.A.R.T';
   Application.CreateForm(TfMainForm, fMainForm);
   Application.CreateForm(TfResultInfoForm, fResultInfoForm);
-  Application.CreateForm(TfPrcsSettingsForm, fPrcsSettingsForm);
+  Application.CreateForm(TfProcSettingsForm, fProcSettingsForm);
   Application.Run;
 end.
