@@ -22,15 +22,15 @@ uses
 {==============================================================================}
 
 const
-  PROCSTAGEIDX_ZIP_EOCDLoading         = PROCSTAGEIDX_Max + 1;
-  PROCSTAGEIDX_ZIP_CDHeadersLoading    = PROCSTAGEIDX_Max + 2;
-  PROCSTAGEIDX_ZIP_LocalHeadersLoading = PROCSTAGEIDX_Max + 3;
-  PROCSTAGEIDX_ZIP_EntriesProcessing   = PROCSTAGEIDX_Max + 4;
-  PROCSTAGEIDX_ZIP_EntryProcessing     = PROCSTAGEIDX_Max + 5;
-  PROCSTAGEIDX_ZIP_EntryLoading        = PROCSTAGEIDX_Max + 6;
-  PROCSTAGEIDX_ZIP_EntryDecompressing  = PROCSTAGEIDX_Max + 7;
-  PROCSTAGEIDX_ZIP_EntrySaving         = PROCSTAGEIDX_Max + 8;
-  PROCSTAGEIDX_ZIP_Max                 = PROCSTAGEIDX_ZIP_EntrySaving;
+  PROGSTAGEIDX_ZIP_EOCDLoading         = PROGSTAGEIDX_Max + 1;
+  PROGSTAGEIDX_ZIP_CDHeadersLoading    = PROGSTAGEIDX_Max + 2;
+  PROGSTAGEIDX_ZIP_LocalHeadersLoading = PROGSTAGEIDX_Max + 3;
+  PROGSTAGEIDX_ZIP_EntriesProcessing   = PROGSTAGEIDX_Max + 4;
+  PROGSTAGEIDX_ZIP_EntryProcessing     = PROGSTAGEIDX_Max + 5;
+  PROGSTAGEIDX_ZIP_EntryLoading        = PROGSTAGEIDX_Max + 6;
+  PROGSTAGEIDX_ZIP_EntryDecompressing  = PROGSTAGEIDX_Max + 7;
+  PROGSTAGEIDX_ZIP_EntrySaving         = PROGSTAGEIDX_Max + 8;
+  PROGSTAGEIDX_ZIP_Max                 = PROGSTAGEIDX_ZIP_EntrySaving;
 
 
 {==============================================================================}
@@ -81,36 +81,49 @@ uses
 {------------------------------------------------------------------------------}
 
 procedure TRepairer_ZIP.ZIP_PrepareEntryProgressInfo(EntryIndex: Integer);
+var
+  CoefLoad,CoefSave,CoefDecomp: Single;
 begin
 with fArchiveStructure.Entries[EntryIndex] do
   begin
-    fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Offset :=
-      fProgressStages[PROCSTAGEIDX_ZIP_EntriesProcessing].Offset +
+    fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Offset :=
+      fProgressStages[PROGSTAGEIDX_ZIP_EntriesProcessing].Offset +
       (UtilityData.OriginalLocalHeaderOffset / fArchiveStream.Size) *
-      fProgressStages[PROCSTAGEIDX_ZIP_EntriesProcessing].Range;
-    fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Range :=
-      fProgressStages[PROCSTAGEIDX_ZIP_EntriesProcessing].Range *
+      fProgressStages[PROGSTAGEIDX_ZIP_EntriesProcessing].Range;
+    fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Range :=
+      fProgressStages[PROGSTAGEIDX_ZIP_EntriesProcessing].Range *
       ((LocalHeader.BinPart.CompressedSize + SizeOf(TZIP_LocalFileHeaderRecord) +
         LocalHeader.BinPart.FileNameLength + LocalHeader.BinPart.ExtraFieldLength +
         SizeOf(TZIP_CentralDirectoryFileHeaderRecord) +
         CentralDirectoryHeader.BinPart.FileNameLength +
         CentralDirectoryHeader.BinPart.ExtraFieldLength +
         CentralDirectoryHeader.BinPart.FileCommentLength) / fArchiveStream.Size);
+    If UtilityData.NeedsCRC32 or UtilityData.NeedsSizes then
+      begin
+        If LocalHeader.BinPart.CompressionMethod = 0 then
+          // no decompression
+          begin CoefLoad := 0.4;  CoefSave := 0.4;  CoefDecomp := 0.2;  end
+        else
+          // decompression is needed
+          begin CoefLoad := 0.3;  CoefSave := 0.3;  CoefDecomp := 0.4;  end;
+      end
+    // no decompression or other calculation
+    else  begin CoefLoad := 0.5;  CoefSave := 0.5;  CoefDecomp := 0.0;  end;
   end;
-fProgressStages[PROCSTAGEIDX_ZIP_EntryLoading].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Offset;
-fProgressStages[PROCSTAGEIDX_ZIP_EntryLoading].Range :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Range * 0.4;
-fProgressStages[PROCSTAGEIDX_ZIP_EntryDecompressing].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryLoading].Offset +
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryLoading].Range;
-fProgressStages[PROCSTAGEIDX_ZIP_EntryDecompressing].Range :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Range * 0.2;
-fProgressStages[PROCSTAGEIDX_ZIP_EntrySaving].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryDecompressing].Offset +
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryDecompressing].Range;
-fProgressStages[PROCSTAGEIDX_ZIP_EntrySaving].Range :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EntryProcessing].Range * 0.4;
+fProgressStages[PROGSTAGEIDX_ZIP_EntryLoading].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Offset;
+fProgressStages[PROGSTAGEIDX_ZIP_EntryLoading].Range :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Range * CoefLoad;
+fProgressStages[PROGSTAGEIDX_ZIP_EntryDecompressing].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryLoading].Offset +
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryLoading].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_EntryDecompressing].Range :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Range * CoefDecomp;
+fProgressStages[PROGSTAGEIDX_ZIP_EntrySaving].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryDecompressing].Offset +
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryDecompressing].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_EntrySaving].Range :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EntryProcessing].Range * CoefSave;
 end;
 
 //------------------------------------------------------------------------------
@@ -119,9 +132,9 @@ procedure TRepairer_ZIP.ZIP_LoadEndOfCentralDirectory;
 var
   EOCDPosition: Int64;
 begin
-DoProgress(PROCSTAGEIDX_ZIP_EOCDLoading,0.0);
+DoProgress(PROGSTAGEIDX_ZIP_EOCDLoading,0.0);
 EOCDPosition := FindSignature(ZIP_EndOfCentralDirectorySignature,-1,True,fProcessingSettings.EndOfCentralDirectory.LimitSearch);
-DoProgress(PROCSTAGEIDX_ZIP_EOCDLoading,0.5);
+DoProgress(PROGSTAGEIDX_ZIP_EOCDLoading,0.5);
 If EOCDPosition >= 0 then
   begin
     fArchiveStream.Seek(EOCDPosition,soFromBeginning);
@@ -130,7 +143,7 @@ If EOCDPosition >= 0 then
         with fArchiveStructure.EndOfCentralDirectory do
           begin
             fArchiveStream.ReadBuffer(BinPart,SizeOf(TZIP_EndOfCentralDirectoryRecord));
-            DoProgress(PROCSTAGEIDX_ZIP_EOCDLoading,0.9);
+            DoProgress(PROGSTAGEIDX_ZIP_EOCDLoading,0.9);
             If fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit then
               begin
                 BinPart.NumberOfThisDisk := 0;
@@ -163,7 +176,7 @@ If EOCDPosition >= 0 then
     else DoError(100,'Not enough data for end of central directory record.');
   end
 else DoError(100,'End of central directory signature not found in the input stream.');
-DoProgress(PROCSTAGEIDX_ZIP_EOCDLoading,1.0);
+DoProgress(PROGSTAGEIDX_ZIP_EOCDLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -257,7 +270,7 @@ var
   end;
 
 begin
-DoProgress(PROCSTAGEIDX_ZIP_CDHeadersLoading,0.0);
+DoProgress(PROGSTAGEIDX_ZIP_CDHeadersLoading,0.0);
 If fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset or
   fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
@@ -279,7 +292,7 @@ If fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries or
         SetLength(fArchiveStructure.Entries,Length(fArchiveStructure.Entries) + 1024);
       fArchiveStream.Seek(WorkingOffset,soFromBeginning);
       with fArchiveStructure.EndOfCentralDirectory.BinPart do
-        DoProgress(PROCSTAGEIDX_ZIP_CDHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fArchiveStream.Size - CentralDirectoryOffset));
+        DoProgress(PROGSTAGEIDX_ZIP_CDHeadersLoading,(WorkingOffset - CentralDirectoryOffset) / (fArchiveStream.Size - CentralDirectoryOffset));
       LoadCentralDirectoryHeader(i);
       WorkingOffset := FindSignature(ZIP_CentralDirectoryFileHeaderSignature,fArchiveStream.Position,False);
       Inc(i);
@@ -296,10 +309,10 @@ else
     For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       begin
         LoadCentralDirectoryHeader(i);
-        DoProgress(PROCSTAGEIDX_ZIP_CDHeadersLoading,(i + 1) / Length(fArchiveStructure.Entries));
+        DoProgress(PROGSTAGEIDX_ZIP_CDHeadersLoading,(i + 1) / Length(fArchiveStructure.Entries));
       end;
   end;
-DoProgress(PROCSTAGEIDX_ZIP_CDHeadersLoading,1.0);
+DoProgress(PROGSTAGEIDX_ZIP_CDHeadersLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -446,7 +459,7 @@ var
   end;
 
 begin
-DoProgress(PROCSTAGEIDX_ZIP_LocalHeadersLoading,0.0);
+DoProgress(PROGSTAGEIDX_ZIP_LocalHeadersLoading,0.0);
 If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
   begin
     // local headers are not loaded from the file, they are instead constructed from data
@@ -479,7 +492,7 @@ else
                 end
               else fArchiveStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soFromBeginning);
               LoadLocalHeader(i);
-              DoProgress(PROCSTAGEIDX_ZIP_LocalHeadersLoading,(i + 1) / Length(fArchiveStructure.Entries));
+              DoProgress(PROGSTAGEIDX_ZIP_LocalHeadersLoading,(i + 1) / Length(fArchiveStructure.Entries));
               If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
                 If not AnsiSameText(FileName,fArchiveStructure.Entries[i].LocalHeader.FileName) then
                   DoError(103,'Mismatch in local and central directory file name for entry #%d (%s; %s).',
@@ -505,7 +518,7 @@ else
               SetLength(fArchiveStructure.Entries,Length(fArchiveStructure.Entries) + 1024);
             fArchiveStructure.Entries[i].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
             fArchiveStream.Seek(WorkingOffset,soFromBeginning);
-            DoProgress(PROCSTAGEIDX_ZIP_LocalHeadersLoading,WorkingOffset / fArchiveStream.Size);
+            DoProgress(PROGSTAGEIDX_ZIP_LocalHeadersLoading,WorkingOffset / fArchiveStream.Size);
             LoadLocalHeader(i);
             WorkingOffset := FindSignature(ZIP_LocalFileHeaderSignature,fArchiveStream.Position,False);
             Inc(i);
@@ -513,7 +526,7 @@ else
         SetLength(fArchiveStructure.Entries,i);
       end;
   end;
-DoProgress(PROCSTAGEIDX_ZIP_LocalHeadersLoading,1.0);
+DoProgress(PROGSTAGEIDX_ZIP_LocalHeadersLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -548,7 +561,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      DoProgress(PROGSTAGEIDX_NoProgress,0.0);
     end;
 end;
 
@@ -602,7 +615,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       fArchiveStructure.Entries[i].UtilityData.NeedsSizes :=
         (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);  
+      DoProgress(PROGSTAGEIDX_NoProgress,0.0);  
     end;
 end;
 
@@ -675,37 +688,38 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TRepairer_ZIP.InitializeProgress;
-var
-  AvailableRange: Single;
 begin
 inherited;
-SetLength(fProgressStages,Succ(PROCSTAGEIDX_ZIP_Max));
-AvailableRange := 1.0 - (fProgressStages[PROCSTAGEIDX_Loading].Range +
-                  fProgressStages[PROCSTAGEIDX_Saving].Range);
+SetLength(fProgressStages,Succ(PROGSTAGEIDX_ZIP_Max));
 // set progress info for loading of EOCD
-fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Offset := fProgressStages[PROCSTAGEIDX_Loading].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_EOCDLoading].Offset :=
+  fProgressStages[PROGSTAGEIDX_Processing].Offset;
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
-  fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Range := 0.01 * AvailableRange;
+  fProgressStages[PROGSTAGEIDX_ZIP_EOCDLoading].Range :=
+    fProgressStages[PROGSTAGEIDX_Processing].Range * 0.01;
 // ... loading of central directory
-fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Offset +
-  fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_CDHeadersLoading].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_EOCDLoading].Offset +
+  fProgressStages[PROGSTAGEIDX_ZIP_EOCDLoading].Range;
 If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range := 0.1 * AvailableRange;
+  fProgressStages[PROGSTAGEIDX_ZIP_CDHeadersLoading].Range :=
+    fProgressStages[PROGSTAGEIDX_Processing].Range * 0.1;
 // ... loading of local headers
-fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Offset +
-  fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_LocalHeadersLoading].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_CDHeadersLoading].Offset +
+  fProgressStages[PROGSTAGEIDX_ZIP_CDHeadersLoading].Range;
 If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
-  fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Range := 0.1 * AvailableRange;
+  fProgressStages[PROGSTAGEIDX_ZIP_LocalHeadersLoading].Range :=
+    fProgressStages[PROGSTAGEIDX_Processing].Range * 0.1;
 // ... processing of entries
-fProgressStages[PROCSTAGEIDX_ZIP_EntriesProcessing].Offset :=
-  fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Offset +
-  fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Range;
-fProgressStages[PROCSTAGEIDX_ZIP_EntriesProcessing].Range := AvailableRange -
-  (fProgressStages[PROCSTAGEIDX_ZIP_EOCDLoading].Range +
-   fProgressStages[PROCSTAGEIDX_ZIP_CDHeadersLoading].Range +
-   fProgressStages[PROCSTAGEIDX_ZIP_LocalHeadersLoading].Range);
+fProgressStages[PROGSTAGEIDX_ZIP_EntriesProcessing].Offset :=
+  fProgressStages[PROGSTAGEIDX_ZIP_LocalHeadersLoading].Offset +
+  fProgressStages[PROGSTAGEIDX_ZIP_LocalHeadersLoading].Range;
+fProgressStages[PROGSTAGEIDX_ZIP_EntriesProcessing].Range :=
+  fProgressStages[PROGSTAGEIDX_Processing].Range -
+   (fProgressStages[PROGSTAGEIDX_ZIP_EOCDLoading].Range +
+    fProgressStages[PROGSTAGEIDX_ZIP_CDHeadersLoading].Range +
+    fProgressStages[PROGSTAGEIDX_ZIP_LocalHeadersLoading].Range);
 end;
 
 //------------------------------------------------------------------------------

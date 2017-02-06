@@ -57,7 +57,7 @@ case FileInfo.ResultInfo.ResultState of
   rsWarning:  with FileInfo.ResultInfo.WarningInfo do
                 begin
                   lblResultCaption.Caption := 'Processing completed with warnings';
-                  meResultInfoText.Lines.Add(sLineBreak + StringOfChar('-',60) + sLineBreak);
+                  meResultInfoText.Lines.Add(sLineBreak + StringOfChar('-',80) + sLineBreak);
                   meResultInfoText.Lines.Add(Format('Warnings(%d): ',[Length(Warnings)]));
                   meResultInfoText.Lines.Add('');
                   For i := Low(Warnings) to High(Warnings) do
@@ -66,7 +66,7 @@ case FileInfo.ResultInfo.ResultState of
   rsError:    with FileInfo.ResultInfo.ErrorInfo do
                 begin
                   lblResultCaption.Caption := 'An error occured during the processing';
-                  meResultInfoText.Lines.Add(sLineBreak + StringOfChar('-',60) + sLineBreak);
+                  meResultInfoText.Lines.Add(sLineBreak + StringOfChar('-',80) + sLineBreak);
                   If (ErrorSourceObjectClass <> '') and Assigned(ErrorSourceObject) then
                     meResultInfoText.Lines.Add(Format('       Function: %s(0x%p).%s [%d]',[ErrorSourceObjectClass,Pointer(ErrorSourceObject),
                                                                                            ErrorSourceFunctionName,ErrorSourceFunctionIndex]))

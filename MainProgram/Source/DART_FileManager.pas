@@ -206,7 +206,7 @@ begin
 If fManagerStatus in [mstProcessing,mstTerminating] then
   begin
     If (Progress >= 0.0) and (Progress <= 1.0) then
-      begin
+      begin // normal progress
         fFileList[FileIndex].Progress := Progress;
         fGlobalProgress := fFileList[FileIndex].GlobalProgressOffset +
           fFileList[FileIndex].GlobalProgressRange * Progress;

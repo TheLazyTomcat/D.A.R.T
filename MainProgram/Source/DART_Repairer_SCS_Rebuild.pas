@@ -92,7 +92,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           fArchiveStructure.Entries[EntryCount] := fArchiveStructure.Entries[i];
         Inc(EntryCount);
       end;
-    DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    DoProgress(PROGSTAGEIDX_NoProgress,0.0);
   end;
 SetLength(fArchiveStructure.Entries,EntryCount);
 end;
@@ -112,7 +112,7 @@ try
       If fArchiveStructure.Entries[i].UtilityData.Resolved then
         PathDeconstructor.DeconstructFilePath(fArchiveStructure.Entries[i].FileName);
       // this is the slowest part of path reconstruction, so progress is done here
-      DoProgress(PROCSTAGEIDX_SCS_PathsLoading_DirsRect,(i + 1) / Length(fArchiveStructure.Entries));
+      DoProgress(PROGSTAGEIDX_SCS_PathsLoading_DirsRect,(i + 1) / Length(fArchiveStructure.Entries));
     end;
   PathDeconstructor.Sort;
   // store deconstructed paths into entries
@@ -132,7 +132,7 @@ try
           UtilityData.SubEntries[j] := '*' + PathDeconstructor[i].SubNodes[j].Name;
         For j := 0 to Pred(PathDeconstructor[i].FileCount) do
           UtilityData.SubEntries[PathDeconstructor[i].SubNodeCount + j] := PathDeconstructor[i].Files[j];
-        DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+        DoProgress(PROGSTAGEIDX_NoProgress,0.0);
       end;
 finally
   PathDeconstructor.Free;
@@ -190,7 +190,7 @@ fEntriesSorted := False;
 SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
-DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
+DoProgress(PROGSTAGEIDX_SCS_PathsLoading,1.0);
 end;
 
 {------------------------------------------------------------------------------}
@@ -243,7 +243,7 @@ var
   DecompressedSize:     Integer;
   DirEntryStr:          AnsiString;
 begin
-DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
+DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,0.0);
 // create directory for the rebuild file
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
@@ -274,7 +274,7 @@ try
       try
         // calculate entry processing progress info
         SCS_PrepareEntryProgressInfo(i,ProcessedBytes);
-        DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,0.0);
+        DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,0.0);
         If GetFlagState(Bin.Flags,SCS_FLAG_Directory) and UtilityData.Resolved then
           begin
             // entry is a resolved directory
@@ -292,7 +292,7 @@ try
             If Bin.UncompressedSize > DirEntryUncompMaxSize then
               begin
                 ProgressedCompressBuffer(PChar(DirEntryStr),Length(DirEntryStr),
-                  CompressedBuff,CompressedSize,PROCSTAGEIDX_NoProgress,
+                  CompressedBuff,CompressedSize,PROGSTAGEIDX_NoProgress,
                 {$IFDEF FPC}
                   {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
                 {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
@@ -310,7 +310,7 @@ try
                 ResetFlagValue(Bin.Flags,SCS_FLAG_Compressed);
                 RebuildArchiveStream.WriteBuffer(PChar(DirEntryStr)^,Length(DirEntryStr));
               end;
-            DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+            DoProgress(PROGSTAGEIDX_NoProgress,0.0);
           end
         else
           begin
@@ -321,7 +321,7 @@ try
             ReallocateMemoryBuffer(fCED_Buffer,Bin.CompressedSize);
             // load compressed data from input file
             fArchiveStream.Seek(Bin.DataOffset,soFromBeginning);
-            ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntryLoading);
+            ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROGSTAGEIDX_SCS_EntryLoading);
             If ((Bin.UncompressedSize <> 0) and SameCRC32(Bin.CRC32,0)) or not UtilityData.Resolved then
               begin
                 // a new CRC32 checksum is required or the entry is not resolved (might need extraction)
@@ -329,7 +329,7 @@ try
                   begin
                     // data needs to be decompressed for CRC32 calculation
                     ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
-                      DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
+                      DecompressedBuff,DecompressedSize,PROGSTAGEIDX_SCS_EntryDecompressing,
                     {$IFDEF FPC}
                       {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
                     {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
@@ -351,10 +351,10 @@ try
             // data offset is set to current position in output stream
             Bin.DataOffset := UInt64(RebuildArchiveStream.Position);
             // bin part does not need any more changes, save the data to output
-            ProgressedStreamWrite(RebuildArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntrySaving);
+            ProgressedStreamWrite(RebuildArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROGSTAGEIDX_SCS_EntrySaving);
             Inc(ProcessedBytes,Bin.CompressedSize);
           end;
-        DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
+        DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,1.0);
       except
         on E: Exception do
           begin
@@ -389,12 +389,12 @@ try
       begin
         If not UtilityData.Erroneous then
           RebuildArchiveStream.WriteBuffer(Bin,SizeOf(TSCS_EntryRecord));
-        DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+        DoProgress(PROGSTAGEIDX_NoProgress,0.0);
       end;
   // finalize
-  DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,1.0);
+  DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,1.0);
   If fFileProcessingSettings.Common.InMemoryProcessing then
-    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,RebuildArchiveStream,PROCSTAGEIDX_Saving);
+    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,RebuildArchiveStream,PROGSTAGEIDX_Saving);
 finally
   RebuildArchiveStream.Free;
 end;

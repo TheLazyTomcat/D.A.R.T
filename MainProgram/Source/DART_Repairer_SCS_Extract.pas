@@ -64,7 +64,7 @@ var
   DecompressedBuff:   Pointer;
   DecompressedSize:   Integer;
 begin
-DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
+DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,0.0);
 ProcessedBytes := 0;
 // traverse all entries and extract them                    
 For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
@@ -73,7 +73,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
       // calculate entry processing progress info
       SCS_PrepareEntryProgressInfo(i,ProcessedBytes);
       Inc(ProcessedBytes,Bin.CompressedSize);
-      DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,0.0);
+      DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,0.0);
       ForceExtract := False;
       If UtilityData.Resolved then
         begin
@@ -108,7 +108,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
             begin
               // data will not be saved...
               DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, it will be skipped.',[i,Bin.Hash]));
-              DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
+              DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,1.0);
               // ...skip to the next entry
               Continue{For i};
             end;
@@ -131,33 +131,33 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
             ReallocateMemoryBuffer(fCED_Buffer,Bin.CompressedSize);
             // read (compressed) data from the archive
             fArchiveStream.Seek(Bin.DataOffset,soFromBeginning);
-            ProgressedStreamRead(fARchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntryLoading);
+            ProgressedStreamRead(fARchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROGSTAGEIDX_SCS_EntryLoading);
             // process input data according to compression flag
             If GetFlagState(Bin.Flags,SCS_FLAG_Compressed) then
               begin
                 // entry data are compressed using ZLib (full zlib stream with header)
                 ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
-                  DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
+                  DecompressedBuff,DecompressedSize,PROGSTAGEIDX_SCS_EntryDecompressing,
                 {$IFDEF FPC}
                   {$IFDEF Unicode}UTF8Decode(FileName),{$ELSE}FileName,{$ENDIF}
                 {$ELSE}String(UTF8ToAnsi(FileName)),{$ENDIF}WINDOWBITS_ZLib);
                 try
                   // write decompressed data into entry output file
-                  ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntrySaving);
+                  ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROGSTAGEIDX_SCS_EntrySaving);
                 finally
                   FreeMem(DecompressedBuff,DecompressedSize);
                 end;
               end
             // entry data are not compressed, write data directly to entry output
-            else ProgressedStreamWrite(EntryFileStream,fCED_Buffer.Memory,Bin.CompressedSize,PROCSTAGEIDX_SCS_EntrySaving);
+            else ProgressedStreamWrite(EntryFileStream,fCED_Buffer.Memory,Bin.CompressedSize,PROGSTAGEIDX_SCS_EntrySaving);
             EntryFileStream.Size := EntryFileStream.Position;
             // make progress
-            DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
+            DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,1.0);
           finally
             EntryFileStream.Free;
           end;
         end;
-      DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
+      DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,1.0);
     except
       on E: Exception do
         begin
@@ -170,7 +170,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           else raise;
         end;
     end;
-DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,1.0);
+DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ end;
 procedure TRepairer_SCS_Extract.ArchiveProcessing;
 begin
 inherited;
-DoProgress(PROCSTAGEIDX_SCS_PathsLoading,1.0);
+DoProgress(PROGSTAGEIDX_SCS_PathsLoading,1.0);
 SCS_ExtractArchive;
 end;
 

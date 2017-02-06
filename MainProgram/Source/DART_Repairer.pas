@@ -98,13 +98,14 @@ type
   end;
 
 const
-  PROCSTAGEIDX_NoProgress = -100;
-  PROCSTAGEIDX_Direct     = -1;
-  PROCSTAGEIDX_Default    = 0;
-  PROCSTAGEIDX_Custom     = 1;
-  PROCSTAGEIDX_Loading    = 2;
-  PROCSTAGEIDX_Saving     = 3;
-  PROCSTAGEIDX_Max        = PROCSTAGEIDX_Saving;
+  PROGSTAGEIDX_NoProgress = -100;
+  PROGSTAGEIDX_Direct     = -1;
+  PROGSTAGEIDX_Default    = 0;
+  PROGSTAGEIDX_Custom     = 1;
+  PROGSTAGEIDX_Loading    = 2;
+  PROGSTAGEIDX_Processing = 3;
+  PROGSTAGEIDX_Saving     = 4;
+  PROGSTAGEIDX_Max        = PROGSTAGEIDX_Saving;
 
 {==============================================================================}
 {   TRepairer - class declaration                                              }
@@ -113,7 +114,8 @@ type
   TRepairer = class(TObject)
   private
     fCatchExceptions:         Boolean;
-    fTerminatedFlag:          Integer;  // 0 = continue, +x = internal error, -x = terminated
+    fTerminatedFlag:          Integer;  // 0 = continue, <>0 = terminated
+    fLastProgressData:        Single;
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
   protected
@@ -141,14 +143,16 @@ type
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
     // common processing functions
     procedure CheckArchiveSignature; virtual;
-    Function FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROCSTAGEIDX_NoProgress): Int64; virtual;
+    Function FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROGSTAGEIDX_NoProgress): Int64; virtual;
     procedure ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
     procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
     procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
-  (*procedure ParseContentForPaths; virtual; abstract;*)
+    // content parsing for paths resolving
+    //procedure ParseContentForPaths; virtual; abstract;
+    //Function GetEntryData(const EntryPath: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; virtual; abstract;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
@@ -284,21 +288,25 @@ const
 
 procedure TRepairer.InitializeProgress;
 begin
-SetLength(fProgressStages,Succ(PROCSTAGEIDX_Max));
+SetLength(fProgressStages,Succ(PROGSTAGEIDX_Max));
 // all values that are not explicitly set are equal to 0.0
-fProgressStages[PROCSTAGEIDX_Default].Range := 1.0;
+fProgressStages[PROGSTAGEIDX_Default].Range := 1.0;
 If fFileProcessingSettings.Common.InMemoryProcessing then
   begin
     case fFileProcessingSettings.Common.RepairMethod of
       rmRebuild,
       rmConvert: begin
-                   fProgressStages[PROCSTAGEIDX_Loading].Range := 0.3;
-                   fProgressStages[PROCSTAGEIDX_Saving].Range := 0.3;
+                   fProgressStages[PROGSTAGEIDX_Loading].Range := 0.3;
+                   fProgressStages[PROGSTAGEIDX_Saving].Range := 0.3;
                  end;
-      rmExtract: fProgressStages[PROCSTAGEIDX_Loading].Range := 0.4;
+      rmExtract: fProgressStages[PROGSTAGEIDX_Loading].Range := 0.4;
     end;
-    fProgressStages[PROCSTAGEIDX_Saving].Offset := 1.0 - fProgressStages[PROCSTAGEIDX_Saving].Range;
+    fProgressStages[PROGSTAGEIDX_Saving].Offset := 1.0 - fProgressStages[PROGSTAGEIDX_Saving].Range;
   end;
+fProgressStages[PROGSTAGEIDX_Processing].Offset := fProgressStages[PROGSTAGEIDX_Loading].Range;
+fProgressStages[PROGSTAGEIDX_Processing].Range := 1.0 -
+  fProgressStages[PROGSTAGEIDX_Loading].Range -
+  fProgressStages[PROGSTAGEIDX_Saving].Range;
 end;
 
 //------------------------------------------------------------------------------
@@ -317,11 +325,16 @@ If (ProgressStageIdx >= Low(fProgressStages)) and (ProgressStageIdx <= High(fPro
   begin
     If Data > 1.0 then Data := 1.0;
     Data := fProgressStages[ProgressStageIdx].Offset + (fProgressStages[ProgressStageIdx].Range * Data);
-    If Assigned(fOnProgress) then fOnProgress(Self,Data);
+    // make sure progress goes only up, not down
+    If Data >= fLastProgressData then
+      begin
+        If Assigned(fOnProgress) then fOnProgress(Self,Data);
+        fLastProgressData := Data;
+      end;
   end
 else
   begin
-    If ProgressStageIdx <> PROCSTAGEIDX_NoProgress then
+    If ProgressStageIdx <> PROGSTAGEIDX_NoProgress then
       If Assigned(fOnProgress) then fOnProgress(Self,Data);
   end;
 end;
@@ -370,7 +383,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TRepairer.FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROCSTAGEIDX_NoProgress): Int64;
+Function TRepairer.FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = PROGSTAGEIDX_NoProgress): Int64;
 const
   BufferOverlap = SizeOf(Signature) - 1;
 var
@@ -660,7 +673,7 @@ begin
 fResultInfo.ResultState := rsError;
 fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
 fResultInfo.ErrorInfo.ExceptionText := E.Message;
-DoProgress(PROCSTAGEIDX_Direct,-1.0);
+DoProgress(PROGSTAGEIDX_Direct,-1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -669,7 +682,7 @@ procedure TRepairer.MainProcessing;
 begin
 fResultInfo.ResultState := rsNormal;
 try
-  DoProgress(PROCSTAGEIDX_Direct,0.0);
+  DoProgress(PROGSTAGEIDX_Direct,0.0);
   AllocateMemoryBuffers;
   try
     If fFileProcessingSettings.Common.InMemoryProcessing then
@@ -678,20 +691,20 @@ try
       fArchiveStream := CreateFileStream(fFileProcessingSettings.Common.FilePath,fmOpenRead or fmShareDenyWrite);
     try
       If fFileProcessingSettings.Common.InMemoryProcessing then
-        ProgressedLoadFile(fFileProcessingSettings.Common.FilePath,fArchiveStream,PROCSTAGEIDX_Loading);
+        ProgressedLoadFile(fFileProcessingSettings.Common.FilePath,fArchiveStream,PROGSTAGEIDX_Loading);
       If fArchiveStream.Size <= 0 then
         DoError(1,'Input file does not contain any data.');
       If not fFileProcessingSettings.Common.IgnoreFileSignature then
         CheckArchiveSignature;
       ArchiveProcessing;  // <- processing happens here
-      DoProgress(PROCSTAGEIDX_Direct,1.0);
+      DoProgress(PROGSTAGEIDX_Direct,1.0);
     finally
       fArchiveStream.Free;
     end;
   finally
     FreeMemoryBuffers;
   end;
-  DoProgress(PROCSTAGEIDX_Direct,2.0);
+  DoProgress(PROGSTAGEIDX_Direct,2.0);
 except
   on E: ERepairerException do
     If fCatchExceptions then
@@ -751,6 +764,7 @@ begin
 inherited Create;
 fCatchExceptions := CatchExceptions;
 fTerminatedFlag := 0;
+fLastProgressData := 0.0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
 fPauseControlObject := PauseControlObject;

@@ -67,7 +67,7 @@ var
   DecompressedBuff:         Pointer;
   DecompressedSize:         Integer;
 begin
-DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,0.0);
+DoProgress(PROGSTAGEIDX_ZIP_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
@@ -130,18 +130,18 @@ try
           end;
         // calculating progress info for processing of current entry
         ZIP_PrepareEntryProgressInfo(i);
-        DoProgress(PROCSTAGEIDX_ZIP_EntryProcessing,0.0);
+        DoProgress(PROGSTAGEIDX_ZIP_EntryProcessing,0.0);
         // prepare buffer that will hold compressed data
         ReallocateMemoryBuffer(fCED_Buffer,LocalHeader.BinPart.CompressedSize);
         // load compressed data
         fArchiveStream.Seek(UtilityData.DataOffset,soFromBeginning);
-        ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_ZIP_EntryLoading);
+        ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_ZIP_EntryLoading);
         // deciding whether entry data needs to be decompressed for further processing
         If (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0) then
           begin
             // data needs to be decompressed for further processing
             ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
-              DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntryDecompressing,
+              DecompressedBuff,DecompressedSize,PROGSTAGEIDX_ZIP_EntryDecompressing,
             {$IFDEF FPC}
               {$IFDEF Unicode}
                 UTF8Decode(WinCPToUTF8(CentralDirectoryHeader.FileName)),
@@ -190,11 +190,11 @@ try
         RebuildArchiveStream.WriteBuffer(PAnsiChar(LocalHeader.FileName)^,LocalHeader.BinPart.FileNameLength);
         RebuildArchiveStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
         // write entry data
-        ProgressedStreamWrite(RebuildArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_ZIP_EntrySaving);
+        ProgressedStreamWrite(RebuildArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_ZIP_EntrySaving);
         // write data descriptor
         If (LocalHeader.BinPart.GeneralPurposeBitFlag and ZBF_DataDescriptor) <> 0 then
           RebuildArchiveStream.WriteBuffer(DataDescriptor,SizeOf(TZIP_DataDescriptorRecord));
-        DoProgress(PROCSTAGEIDX_ZIP_EntryProcessing,1.0);
+        DoProgress(PROGSTAGEIDX_ZIP_EntryProcessing,1.0);
         // if we are here, then there was no error during processing
         UtilityData.Erroneous := False;
       except
@@ -234,7 +234,7 @@ try
             RebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
             RebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
           end;
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      DoProgress(PROGSTAGEIDX_NoProgress,0.0);
     end;
   // write end of central directory
   with fArchiveStructure.EndOfCentralDirectory do
@@ -244,9 +244,9 @@ try
     end;
   // finalize
   RebuildArchiveStream.Size := RebuildArchiveStream.Position;
-  DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,1.0);
+  DoProgress(PROGSTAGEIDX_ZIP_EntriesProcessing,1.0);
   If fFileProcessingSettings.Common.InMemoryProcessing then
-    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,RebuildArchiveStream,PROCSTAGEIDX_Saving);
+    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,RebuildArchiveStream,PROGSTAGEIDX_Saving);
 finally
   RebuildArchiveStream.Free;
 end;

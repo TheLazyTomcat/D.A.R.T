@@ -231,7 +231,9 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
     end
   end
   object diaHelpFilesOpen: TOpenDialog
-    Filter = 'SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    Filter = 
+      'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zi' +
+      'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 496
     Top = 256

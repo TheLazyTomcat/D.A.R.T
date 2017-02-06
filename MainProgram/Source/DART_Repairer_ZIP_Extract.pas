@@ -107,7 +107,7 @@ var
   end;
 
 begin
-DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,0.0);
+DoProgress(PROGSTAGEIDX_ZIP_EntriesProcessing,0.0);
 For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
   with fArchiveStructure.Entries[i] do
     try
@@ -172,18 +172,18 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
             UtilityData.OriginalLocalHeaderOffset := CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader;
             // calculating progress info for processing of current entry
             ZIP_PrepareEntryProgressInfo(i);
-            DoProgress(PROCSTAGEIDX_ZIP_EntryProcessing,0.0);
+            DoProgress(PROGSTAGEIDX_ZIP_EntryProcessing,0.0);
             // prepare buffer for compressed data
             ReallocateMemoryBuffer(fCED_Buffer,LocalHeader.BinPart.CompressedSize);
             // read data from input archive
             fArchiveStream.Seek(UtilityData.DataOffset,soFromBeginning);
-            ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_ZIP_EntryLoading);
+            ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_ZIP_EntryLoading);
             // process input data according to compression method
             case LocalHeader.BinPart.CompressionMethod of
               8:  begin // deflate
                     // decompressing data
                     ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
-                      DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntryDecompressing,
+                      DecompressedBuff,DecompressedSize,PROGSTAGEIDX_ZIP_EntryDecompressing,
                     {$IFDEF FPC}
                       {$IFDEF Unicode}
                         UTF8Decode(WinCPToUTF8(CentralDirectoryHeader.FileName)),
@@ -193,19 +193,19 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
                     {$ELSE}String(CentralDirectoryHeader.FileName),{$ENDIF}WINDOWBITS_Raw);
                     try
                       // write decompressed data into entry output file
-                      ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROCSTAGEIDX_ZIP_EntrySaving);
+                      ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,PROGSTAGEIDX_ZIP_EntrySaving);
                     finally
                       FreeMem(DecompressedBuff,DecompressedSize);
                     end;
                   end;
             else
               // no compression, write input data directly to output
-              ProgressedStreamWrite(EntryFileStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_ZIP_EntrySaving);
+              ProgressedStreamWrite(EntryFileStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_ZIP_EntrySaving);
             end;
             EntryFileStream.Size := EntryFileStream.Position;
             // write file times and make progress
             WriteFileTime(FullEntryFileName,LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate);
-            DoProgress(PROCSTAGEIDX_ZIP_EntryProcessing,1.0);
+            DoProgress(PROGSTAGEIDX_ZIP_EntryProcessing,1.0);
           finally
             EntryFileStream.Free;
           end;
@@ -222,7 +222,7 @@ For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
           else raise;
         end;
     end;
-DoProgress(PROCSTAGEIDX_ZIP_EntriesProcessing,1.0);
+DoProgress(PROGSTAGEIDX_ZIP_EntriesProcessing,1.0);
 end;
 
 //------------------------------------------------------------------------------

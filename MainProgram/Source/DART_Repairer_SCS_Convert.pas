@@ -40,7 +40,10 @@ implementation
 uses
   Windows, SysUtils, Classes,
   AuxTypes, CRC32, BitOps,
-  DART_MemoryBuffer, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
+  DART_MemoryBuffer, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+  , LazFileUtils
+{$ENDIF};
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -80,7 +83,7 @@ procedure TRepairer_SCS_Convert.SCS_SortConvertEntries;
     end;
 
   begin
-    DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    DoProgress(PROGSTAGEIDX_NoProgress,0.0);
     If LeftIdx < RightIdx then
       begin
         ExchangeEntries((LeftIdx + RightIdx) shr 1,RightIdx);
@@ -134,7 +137,7 @@ begin
 SetLength(fZIPArchiveStructure.Entries,Length(fArchiveStructure.Entries));
 For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
   begin
-    DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+    DoProgress(PROGSTAGEIDX_NoProgress,0.0);
     {
       DataOffset in utility data is used to store original index.
       It is done because entries gets sorted which will break their index
@@ -211,7 +214,7 @@ var
   DecompressedBuff:     Pointer;
   DecompressedSize:     Integer;
 begin
-DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,0.0);
+DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,0.0);
 // create directory for the convert file
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
 ForceDirectoriesUTF8(ExtractFileDir(fFileProcessingSettings.Common.TargetPath));
@@ -236,12 +239,12 @@ try
         SCS_Index := Integer(UtilityData.DataOffset);
         // calculate entry processing progress info
         SCS_PrepareEntryProgressInfo(SCS_Index,ProcessedBytes);
-        DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,0.0);
+        DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,0.0);
         // prepare buffer that will hold compressed data
         ReallocateMemoryBuffer(fCED_Buffer,LocalHeader.BinPart.CompressedSize);
         // load compressed data from input file
         fArchiveStream.Seek(fArchiveStructure.Entries[SCS_Index].Bin.DataOffset,soFromBeginning);
-        ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_SCS_EntryLoading);
+        ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_SCS_EntryLoading);
         If fArchiveStructure.Entries[SCS_Index].UtilityData.Resolved then
           begin
             // save only entries that have name
@@ -255,7 +258,7 @@ try
                       begin
                         // entry is compressed, decompress data
                         ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
-                          DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
+                          DecompressedBuff,DecompressedSize,PROGSTAGEIDX_SCS_EntryDecompressing,
                         {$IFDEF FPC}
                           {$IFDEF Unicode}
                             UTF8Decode(fArchiveStructure.Entries[SCS_Index].FileName),
@@ -301,11 +304,11 @@ try
                           ProgressedStreamWrite(ConvertArchiveStream,
                             {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + 2),
                             LocalHeader.BinPart.CompressedSize - 6,
-                            PROCSTAGEIDX_SCS_EntrySaving)
+                            PROGSTAGEIDX_SCS_EntrySaving)
                         else
                           DoError(301,'Entry is too small (%d) to be valid.',[LocalHeader.BinPart.CompressedSize]);
                       end
-                    else ProgressedStreamWrite(ConvertArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROCSTAGEIDX_SCS_EntrySaving)
+                    else ProgressedStreamWrite(ConvertArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_SCS_EntrySaving)
                   end;
                 // if we are here, the entry can be assumed to be ok
                 UtilityData.Erroneous := False;
@@ -323,7 +326,7 @@ try
                   begin
                     // entry is compressed, decompress data
                     ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
-                      DecompressedBuff,DecompressedSize,PROCSTAGEIDX_SCS_EntryDecompressing,
+                      DecompressedBuff,DecompressedSize,PROGSTAGEIDX_SCS_EntryDecompressing,
                     {$IFDEF FPC}
                       {$IFDEF Unicode}
                         UTF8Decode(fArchiveStructure.Entries[SCS_Index].FileName),
@@ -347,7 +350,7 @@ try
           end;
         If not GetFlagState(fArchiveStructure.Entries[SCS_Index].Bin.Flags,SCS_FLAG_Directory) then
           Inc(ProcessedBytes,LocalHeader.BinPart.CompressedSize);
-        DoProgress(PROCSTAGEIDX_SCS_EntryProcessing,1.0);
+        DoProgress(PROGSTAGEIDX_SCS_EntryProcessing,1.0);
       except
         on E: Exception do
           begin
@@ -376,7 +379,7 @@ try
             end;
           Inc(fZIPArchiveStructure.EndOfCentralDirectory.BinPart.Entries);
         end;
-      DoProgress(PROCSTAGEIDX_NoProgress,0.0);
+      DoProgress(PROGSTAGEIDX_NoProgress,0.0);
     end;
   // write end of central directory
   with fZIPArchiveStructure.EndOfCentralDirectory do
@@ -389,9 +392,9 @@ try
     end;
   // finalize
   ConvertArchiveStream.Size := ConvertArchiveStream.Position;
-  DoProgress(PROCSTAGEIDX_SCS_EntriesProcessing,1.0);
+  DoProgress(PROGSTAGEIDX_SCS_EntriesProcessing,1.0);
   If fFileProcessingSettings.Common.InMemoryProcessing then
-    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,ConvertArchiveStream,PROCSTAGEIDX_Saving);
+    ProgressedSaveFile(fFileProcessingSettings.Common.TargetPath,ConvertArchiveStream,PROGSTAGEIDX_Saving);
 finally
   ConvertArchiveStream.Free;
 end;
