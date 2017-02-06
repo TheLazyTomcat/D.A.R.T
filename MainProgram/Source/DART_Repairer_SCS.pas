@@ -66,7 +66,7 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
+    constructor Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
     property ArchiveStructure: TSCS_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -373,7 +373,7 @@ var
           SetLength(HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths,Length(fArchiveStructure.KnownPaths));
           For ii := Low(fArchiveStructure.KnownPaths) to Pred(KnownPathsCount) do
             HelpFileProcSettings.SCSSettings.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths[ii].Path;
-          HelpFileRepairer := TRepairer_SCS.Create(fFlowControlObject,HelpFileProcSettings,False);
+          HelpFileRepairer := TRepairer_SCS.Create(fPauseControlObject,HelpFileProcSettings,False);
           try
             HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
             HelpFileRepairer.Run;
@@ -387,7 +387,7 @@ var
     else
      {ZIP_FileSignature:} // - - - - - - - - - - - - - - - - - - - - - - - - - -
       // other archive types (ZIP)
-      HelpFileRepairer := TRepairer_ZIP.Create(fFlowControlObject,HelpFileProcSettings,False);
+      HelpFileRepairer := TRepairer_ZIP.Create(fPauseControlObject,HelpFileProcSettings,False);
       try
         HelpFileRepairer.OnProgress := SCS_ForwardedProgressHandler;
         HelpFileRepairer.Run;
@@ -649,8 +649,8 @@ var
 begin
 SCS_LoadArchiveHeader;
 SCS_LoadEntries;
-SCS_SortEntries;  // <- this step is optional at this point
-DoProgress(PROCSTAGEIDX_SCS_PathsLoading,0.0);
+SCS_SortEntries;  // <- this step is optional at this point, but provides better performance
+DoProgress(PROCSTAGEIDX_SCS_PathsLoading,0.0);  // 1.0 is passed in descendants as there is specific path processing for each repair method 
 SCS_LoadPaths;
 SCS_AssignPaths;
 //SCS_ParseContent;
@@ -684,9 +684,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer_SCS.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
+constructor TRepairer_SCS.Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
-inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
+inherited Create(PauseControlObject,FileProcessingSettings,CatchExceptions);
 fExpectedSignature := SCS_FileSignature;
 fEntriesSorted := False;
 end;

@@ -34,7 +34,7 @@ type
     sync_Progress:            Single;
     fFileIndex:               Integer;
     fFileProcessingSettings:  TFileProcessingSettings;
-    fFlowControlObject:       TEvent;
+    fPauseControlObject:      TEvent;
     fRepairer:                TRepairer;
     fResultInfo:              TResultInfo;
     fOnFileProgress:          TFileProgressEvent;
@@ -110,22 +110,22 @@ FreeOnTerminate := False;
 fFileIndex := FileIndex;
 // the settings cannot be changed after this point, so thread safety is not an issue
 fFileProcessingSettings := FileProcessingSettings;
-fFlowControlObject := TEvent.Create;
+fPauseControlObject := TEvent.Create;
 // select proper repairer according to file type and required operation
 case fFileProcessingSettings.Common.FileType of
   atSCS_sig,atSCS_frc:
     case fFileProcessingSettings.Common.RepairMethod of
-      rmRebuild:  fRepairer := TRepairer_SCS_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
-      rmExtract:  fRepairer := TRepairer_SCS_Extract.Create(fFlowControlObject,fFileProcessingSettings);
-      rmConvert:  fRepairer := TRepairer_SCS_Convert.Create(fFlowControlObject,fFileProcessingSettings);
+      rmRebuild:  fRepairer := TRepairer_SCS_Rebuild.Create(fPauseControlObject,fFileProcessingSettings);
+      rmExtract:  fRepairer := TRepairer_SCS_Extract.Create(fPauseControlObject,fFileProcessingSettings);
+      rmConvert:  fRepairer := TRepairer_SCS_Convert.Create(fPauseControlObject,fFileProcessingSettings);
     else
       raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
     end;
   atZIP_sig,atZIP_frc,atZIP_dft:
     case fFileProcessingSettings.Common.RepairMethod of
-      rmRebuild:  fRepairer := TRepairer_ZIP_Rebuild.Create(fFlowControlObject,fFileProcessingSettings);
-      rmExtract:  fRepairer := TRepairer_ZIP_Extract.Create(fFlowControlObject,fFileProcessingSettings);
-      rmConvert:  fRepairer := TRepairer_ZIP_Convert.Create(fFlowControlObject,fFileProcessingSettings);
+      rmRebuild:  fRepairer := TRepairer_ZIP_Rebuild.Create(fPauseControlObject,fFileProcessingSettings);
+      rmExtract:  fRepairer := TRepairer_ZIP_Extract.Create(fPauseControlObject,fFileProcessingSettings);
+      rmConvert:  fRepairer := TRepairer_ZIP_Convert.Create(fPauseControlObject,fFileProcessingSettings);
     else
       raise Exception.CreateFmt('TRepairerThread.Create: Unknown repair method (%d).',[Ord(fFileProcessingSettings.Common.RepairMethod)]);
     end;
@@ -140,7 +140,7 @@ end;
 destructor TRepairerThread.Destroy;
 begin
 fRepairer.Free;
-fFlowControlObject.Free;
+fPauseControlObject.Free;
 inherited;
 end;
 
@@ -148,7 +148,7 @@ end;
 
 procedure TRepairerThread.StartProcessing;
 begin
-fFlowControlObject.SetEvent;
+fPauseControlObject.SetEvent;
 {$IF Defined(FPC) or (CompilerVersion >= 21)} // Delphi 2010+
 Start;
 {$ELSE}
@@ -160,14 +160,14 @@ end;
 
 procedure TRepairerThread.PauseProcessing;
 begin
-fFlowControlObject.ResetEvent;
+fPauseControlObject.ResetEvent;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TRepairerThread.ResumeProcessing;
 begin
-fFlowControlObject.SetEvent;
+fPauseControlObject.SetEvent;
 end;
 
 //------------------------------------------------------------------------------

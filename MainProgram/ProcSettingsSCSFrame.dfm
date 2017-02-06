@@ -128,6 +128,12 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Top = 224
         Width = 545
         Height = 137
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Style = []
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 5
         WordWrap = False
@@ -139,6 +145,12 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Top = 64
         Width = 545
         Height = 137
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Style = []
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 3
         WordWrap = False

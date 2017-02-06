@@ -54,7 +54,7 @@ type
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
+    constructor Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
     property ArchiveStructure: TZIP_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -749,9 +749,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer_ZIP.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
+constructor TRepairer_ZIP.Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean = True);
 begin
-inherited Create(FlowControlObject,FileProcessingSettings,CatchExceptions);
+inherited Create(PauseControlObject,FileProcessingSettings,CatchExceptions);
 fExpectedSignature := ZIP_FileSignature;
 end;
 

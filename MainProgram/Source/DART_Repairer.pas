@@ -117,7 +117,7 @@ type
     fResultInfo:              TResultInfo;
     fOnProgress:              TProgressEvent;
   protected
-    fFlowControlObject:       TEvent;
+    fPauseControlObject:      TEvent;
     fExpectedSignature:       UInt32;
     fTerminating:             Boolean;
     fArchiveStream:           TStream;
@@ -128,6 +128,8 @@ type
     fIO_Buffer:               TMemoryBuffer;
     fCED_Buffer:              TMemoryBuffer;
     fUED_BUffer:              TMemoryBuffer;
+    // event called when the processing is terminated
+    fOnTerminate:             TNotifyEvent;
     // initialization methods
     procedure RectifyFileProcessingSettings; virtual; abstract;
     procedure InitializeData; virtual; abstract;
@@ -146,6 +148,7 @@ type
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
+  (*procedure ParseContentForPaths; virtual; abstract;*)
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
@@ -160,7 +163,7 @@ type
     // helper methods
     class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual;
-    constructor Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
+    constructor Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
@@ -302,11 +305,12 @@ end;
 
 procedure TRepairer.DoProgress(ProgressStageIdx: Integer; Data: Single);
 begin
-fFlowControlObject.WaitFor;
+fPauseControlObject.WaitFor;
 If Terminated then
   begin
     fTerminating := True;
-    Resume;  
+    Resume;
+    If Assigned(fOnTerminate) then fOnTerminate(Self);
     DoError(0,'Processing terminated. Data can be in inconsistent state.');
   end;
 If (ProgressStageIdx >= Low(fProgressStages)) and (ProgressStageIdx <= High(fProgressStages)) then
@@ -742,14 +746,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TRepairer.Create(FlowControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
+constructor TRepairer.Create(PauseControlObject: TEvent; FileProcessingSettings: TFileProcessingSettings; CatchExceptions: Boolean);
 begin
 inherited Create;
 fCatchExceptions := CatchExceptions;
 fTerminatedFlag := 0;
 fResultInfo := DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
-fFlowControlObject := FlowControlObject;
+fPauseControlObject := PauseControlObject;
 fExpectedSignature := 0;
 fTerminating := False;
 {$WARN SYMBOL_PLATFORM OFF}

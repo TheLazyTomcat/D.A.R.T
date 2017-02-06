@@ -138,7 +138,11 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Height = 137
         Top = 210
         Width = 545
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
         OnMouseMove = SettingsMouseMove
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 5
         WordWrap = False
@@ -149,7 +153,11 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Height = 137
         Top = 50
         Width = 545
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
         OnMouseMove = SettingsMouseMove
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 3
         WordWrap = False
