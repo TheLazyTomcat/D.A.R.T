@@ -90,6 +90,8 @@ const
       ExceptionText:            ''));
 
 type
+  TPathsArray = array of AnsiString; // used to return paths obtained by content parsing
+
   TProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
 
   TProgressStage = record
@@ -151,7 +153,7 @@ type
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     // content parsing for paths resolving
-    //procedure ParseContentForPaths; virtual; abstract;
+    //procedure ParseContentForPaths(out Paths: TPathsArray; DirsTrailingDelimiter: Boolean); virtual; abstract;
     //Function GetEntryData(const EntryPath: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; virtual; abstract;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;

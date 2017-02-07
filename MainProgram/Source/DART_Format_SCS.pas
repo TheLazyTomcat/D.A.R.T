@@ -84,10 +84,15 @@ type
     Hash: TCRC32;
   end;
 
+  TSCS_KnownPaths = record
+    Paths:  array of TSCS_KnownPathItem;
+    Count:  Integer;
+  end;
+
   TSCS_ArchiveStructure = record
     ArchiveHeader:  TSCS_ArchiveHeader;
     Entries:        array of TSCS_Entry;
-    KnownPaths:     array of TSCS_KnownPathItem;
+    KnownPaths:     TSCS_KnownPaths;
     DataBytes:      UInt64;
   end;
 

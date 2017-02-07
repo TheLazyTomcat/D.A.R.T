@@ -104,8 +104,13 @@ type
     CustomPaths:                array of AnsiString;
     HelpFiles:                  array of String;
     BruteForceResolve:          Boolean;
+    BruteForceMultiSearch:      Boolean;
+    BruteForceMultithread:      Boolean;
     BruteForceLimitedAlphabet:  Boolean;
     BruteForceLengthLimit:      Word;
+    ParseContent:               Boolean;
+    ParseEverything:            Boolean;
+    ParseContentInHelpFiles:    Boolean;
   end;
 
   TSCS_Settings = record
@@ -185,8 +190,13 @@ const
         CustomPaths:                nil;
         HelpFiles:                  nil;
         BruteForceResolve:          False;
+        BruteForceMultiSearch:      True;
+        BruteForceMultithread:      True;
         BruteForceLimitedAlphabet:  True;
-        BruteForceLengthLimit:      32)));
+        BruteForceLengthLimit:      32;
+        ParseContent:               False;
+        ParseEverything:            False;
+        ParseContentInHelpFiles:    False)));
 
 implementation
 

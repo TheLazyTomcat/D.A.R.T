@@ -9,7 +9,8 @@ When activated, the file's initial type (determined from a file signature) will 
 #4
 Archive type to be forced (select one).
 #5
-Processed archive will be completely rebuild into an output file without changing the file format.
+Processed archive will be completely rebuild into an output file.
+Format of the file is not changed.
 #6
 All entries from input archive will be extracted into a selected folder.
 #7
