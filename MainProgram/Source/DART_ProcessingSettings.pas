@@ -95,6 +95,7 @@ type
   TSCS_EntrySettings = record
     IgnoreCRC32:            Boolean;
     IgnoreCompressionFlag:  Boolean;
+    IgnoreDictionaryID:     Boolean;
   end;
 
   TSCS_PathResolveSettings = record
@@ -103,14 +104,14 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpFiles:                  array of String;
+    ParseContent:               Boolean;
+    ParseEverything:            Boolean;
+    ParseHelpFiles:             Boolean;
     BruteForceResolve:          Boolean;
     BruteForceMultiSearch:      Boolean;
     BruteForceMultithread:      Boolean;
     BruteForceLimitedAlphabet:  Boolean;
     BruteForceLengthLimit:      Word;
-    ParseContent:               Boolean;
-    ParseEverything:            Boolean;
-    ParseContentInHelpFiles:    Boolean;
   end;
 
   TSCS_Settings = record
@@ -182,21 +183,22 @@ const
     SCSSettings: (
       Entry: (
         IgnoreCRC32:                False;
-        IgnoreCompressionFlag:      False);
+        IgnoreCompressionFlag:      False;
+        IgnoreDictionaryID:         False);
       PathResolve:(
         AssumeCityHash:             False;
         UsePredefinedPaths:         True;
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpFiles:                  nil;
+        ParseContent:               False;
+        ParseEverything:            False;
+        ParseHelpFiles:             False;
         BruteForceResolve:          False;
         BruteForceMultiSearch:      True;
         BruteForceMultithread:      True;
         BruteForceLimitedAlphabet:  True;
-        BruteForceLengthLimit:      32;
-        ParseContent:               False;
-        ParseEverything:            False;
-        ParseContentInHelpFiles:    False)));
+        BruteForceLengthLimit:      32)));
 
 implementation
 

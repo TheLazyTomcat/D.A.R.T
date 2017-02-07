@@ -274,12 +274,13 @@ object fProcSettingsForm: TfProcSettingsForm
       VertScrollBar.Smooth = True
       VertScrollBar.Tracking = True
       BorderStyle = bsNone
+      ParentBackground = True
       TabOrder = 0
       inline frmProcSettingsSCS: TfrmProcSettingsSCS
         Left = 0
         Top = 0
         Width = 561
-        Height = 473
+        Height = 569
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -11

@@ -298,15 +298,37 @@ try
                         Entry is a compressed ZLib stream.                        
                         Header (2 bytes) and footer (4 bytes) of ZLib stream is
                         removed to create pure deflate stream.
-                        We are assuming there is no dictionary ID stored.
                       }
                         If LocalHeader.BinPart.CompressedSize >= 6 then
-                          ProgressedStreamWrite(ConvertArchiveStream,
-                            {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + 2),
-                            LocalHeader.BinPart.CompressedSize - 6,
-                            PROGSTAGEIDX_SCS_EntrySaving)
-                        else
-                          DoError(301,'Entry is too small (%d) to be valid.',[LocalHeader.BinPart.CompressedSize]);
+                          begin
+                            // check FDICT flag
+                            If BT(PUInt16(fCED_Buffer.Memory)^,13) then
+                              begin
+                                If LocalHeader.BinPart.CompressedSize >= 10 then
+                                  begin
+                                    // dictionary ID is stored in the compressed stream
+                                    If fProcessingSettings.Entry.IgnoreDictionaryID then
+                                      begin
+                                        DoWarning(Format('Entry #%d compressed data stream contains a dictionary ID (0x%.8x).',
+                                                         [{%H-}PUInt32({%H-}PtrUInt(fCED_Buffer.Memory) + 2)^]));
+                                        ProgressedStreamWrite(ConvertArchiveStream,
+                                          {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + 6),
+                                          LocalHeader.BinPart.CompressedSize - 10,
+                                          PROGSTAGEIDX_SCS_EntrySaving);
+                                      end
+                                    else DoError(301,'Entry #%d compressed data stream contains a dictionary ID (0x%.8x).',
+                                                 [i,{%H-}PUInt32({%H-}PtrUInt(fCED_Buffer.Memory) + 2)^]);
+                                  end
+                                else DoError(301,'Entry #%d is too small (%d) to be valid and contain a dictionary ID.',
+                                             [i,LocalHeader.BinPart.CompressedSize]);
+                              end
+                            // dictionary ID is not present
+                            else ProgressedStreamWrite(ConvertArchiveStream,
+                                   {%H-}Pointer({%H-}PtrUInt(fCED_Buffer.Memory) + 2),
+                                   LocalHeader.BinPart.CompressedSize - 6,
+                                   PROGSTAGEIDX_SCS_EntrySaving);
+                          end
+                        else DoError(301,'Entry #%d is too small (%d) to be valid.',[i,LocalHeader.BinPart.CompressedSize]);
                       end
                     else ProgressedStreamWrite(ConvertArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_SCS_EntrySaving)
                   end;

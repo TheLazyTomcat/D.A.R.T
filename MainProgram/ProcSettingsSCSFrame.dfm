@@ -2,7 +2,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 473
+  Height = 569
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,7 +14,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 473
+    Height = 569
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
@@ -50,13 +50,24 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         OnClick = CheckBoxClick
         OnMouseMove = SettingsMouseMove
       end
+      object cbIgnoreDictID: TCheckBox
+        Tag = 123
+        Left = 376
+        Top = 24
+        Width = 121
+        Height = 17
+        Caption = 'Ignore dictionary ID'
+        TabOrder = 2
+        OnClick = CheckBoxClick
+        OnMouseMove = SettingsMouseMove
+      end
     end
     object gbPathResolve: TGroupBox
       Tag = 140
       Left = 0
       Top = 56
       Width = 561
-      Height = 417
+      Height = 513
       Caption = 'Path resolve'
       TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
@@ -73,21 +84,6 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Width = 162
         Height = 13
         Caption = 'Custom paths (one path per line):'
-      end
-      object bvlHorSplit: TBevel
-        Left = 8
-        Top = 370
-        Width = 545
-        Height = 9
-        Shape = bsTopLine
-      end
-      object lblLengthLimit: TLabel
-        Left = 401
-        Top = 386
-        Width = 80
-        Height = 13
-        Alignment = taRightJustify
-        Caption = 'Path length limit:'
       end
       object cbAssumeCityHash: TCheckBox
         Tag = 141
@@ -123,7 +119,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         OnMouseMove = SettingsMouseMove
       end
       object meHelpFiles: TMemo
-        Tag = 145
+        Tag = 152
         Left = 8
         Top = 224
         Width = 545
@@ -140,7 +136,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         OnMouseMove = SettingsMouseMove
       end
       object meCustomPaths: TMemo
-        Tag = 144
+        Tag = 151
         Left = 8
         Top = 64
         Width = 545
@@ -154,41 +150,6 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         ScrollBars = ssBoth
         TabOrder = 3
         WordWrap = False
-        OnMouseMove = SettingsMouseMove
-      end
-      object cbBruteForceResolve: TCheckBox
-        Tag = 146
-        Left = 8
-        Top = 384
-        Width = 121
-        Height = 17
-        Caption = 'Brute-force resolve'
-        Enabled = False
-        TabOrder = 6
-        OnClick = CheckBoxClick
-        OnMouseMove = SettingsMouseMove
-      end
-      object cbLimitedAlphabet: TCheckBox
-        Tag = 147
-        Left = 192
-        Top = 384
-        Width = 105
-        Height = 17
-        Caption = 'Limited alphabet'
-        TabOrder = 7
-        OnClick = CheckBoxClick
-        OnMouseMove = SettingsMouseMove
-      end
-      object seLengthLimit: TSpinEdit
-        Tag = 148
-        Left = 488
-        Top = 382
-        Width = 65
-        Height = 22
-        MaxValue = 0
-        MinValue = 0
-        TabOrder = 8
-        Value = 0
         OnMouseMove = SettingsMouseMove
       end
       object btnBrowseHelpFiles: TButton
@@ -205,6 +166,123 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         ParentFont = False
         TabOrder = 4
         OnClick = btnBrowseHelpFilesClick
+      end
+      object gbContentParsing: TGroupBox
+        Tag = 160
+        Left = 8
+        Top = 368
+        Width = 545
+        Height = 49
+        Caption = 'Content parsing'
+        TabOrder = 6
+        OnMouseMove = GroupBoxMouseMove
+        object cbParseHelpFiles: TCheckBox
+          Tag = 163
+          Left = 384
+          Top = 24
+          Width = 153
+          Height = 17
+          Caption = 'Parse content of help files'
+          TabOrder = 2
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbParseContent: TCheckBox
+          Tag = 161
+          Left = 8
+          Top = 24
+          Width = 129
+          Height = 17
+          Caption = 'Parse archive content'
+          TabOrder = 0
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbParseEverything: TCheckBox
+          Tag = 162
+          Left = 192
+          Top = 24
+          Width = 105
+          Height = 17
+          Caption = 'Parse everything'
+          TabOrder = 1
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+      end
+      object gbBruteForce: TGroupBox
+        Tag = 170
+        Left = 8
+        Top = 424
+        Width = 545
+        Height = 81
+        Caption = 'Brute-force resolve'
+        TabOrder = 7
+        OnMouseMove = GroupBoxMouseMove
+        object lblLengthLimit: TLabel
+          Left = 385
+          Top = 50
+          Width = 80
+          Height = 13
+          Alignment = taRightJustify
+          Caption = 'Path length limit:'
+        end
+        object cbMultithread: TCheckBox
+          Tag = 173
+          Left = 384
+          Top = 24
+          Width = 137
+          Height = 17
+          Caption = 'Multithreaded operation'
+          TabOrder = 2
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbAllowBruteForce: TCheckBox
+          Tag = 171
+          Left = 8
+          Top = 24
+          Width = 145
+          Height = 17
+          Caption = 'Allow brute-force resolve'
+          TabOrder = 0
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbLimitedAlphabet: TCheckBox
+          Tag = 174
+          Left = 8
+          Top = 48
+          Width = 105
+          Height = 17
+          Caption = 'Limited alphabet'
+          TabOrder = 3
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbMultiSearch: TCheckBox
+          Tag = 172
+          Left = 192
+          Top = 24
+          Width = 129
+          Height = 17
+          Caption = 'Multiple entries search'
+          TabOrder = 1
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object seLengthLimit: TSpinEdit
+          Tag = 175
+          Left = 472
+          Top = 47
+          Width = 65
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+          OnMouseMove = SettingsMouseMove
+        end
       end
     end
   end

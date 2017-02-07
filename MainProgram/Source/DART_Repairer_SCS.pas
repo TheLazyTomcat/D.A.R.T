@@ -407,7 +407,8 @@ begin
 DoProgress(PROGSTAGEIDX_SCS_PathsLoading_HelpFiles,0.0);
 For i := Low(fProcessingSettings.PathResolve.HelpFiles) to High(fProcessingSettings.PathResolve.HelpFiles) do
   begin
-    LoadHelpFile(fProcessingSettings.PathResolve.HelpFiles[i]);
+    If Length(fProcessingSettings.PathResolve.HelpFiles[i]) > 0 then
+      LoadHelpFile(fProcessingSettings.PathResolve.HelpFiles[i]);
     DoProgress(PROGSTAGEIDX_SCS_PathsLoading_HelpFiles,(i + 1) / Length(fProcessingSettings.PathResolve.HelpFiles));
   end;
 DoProgress(PROGSTAGEIDX_SCS_PathsLoading_HelpFiles,1.0);
@@ -574,6 +575,7 @@ end;
 
 procedure TRepairer_SCS.SCS_BruteForceResolve;
 begin
+{$message 'implement'}
 DoProgress(PROGSTAGEIDX_SCS_PathsLoading_BruteForce,0.0);
 DoError(-1,'Brute-force resolve is not implemented in this build.');
 DoProgress(PROGSTAGEIDX_SCS_PathsLoading_BruteForce,1.0);

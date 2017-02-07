@@ -58,7 +58,7 @@ type
     btnClose: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure cmbForcedFileTypeChange(Sender: TObject);    
+    procedure cmbForcedFileTypeChange(Sender: TObject);
     procedure lbleTargetChange(Sender: TObject);
     procedure btnBrowseClick(Sender: TObject);
     procedure btnDefaultClick(Sender: TObject);
@@ -66,7 +66,7 @@ type
     procedure btnAcceptClick(Sender: TObject);
   private
     fFileProcessingSettings:  TFileProcessingSettings;
-    fSettingsDescriptions:    array[0..148] of String;
+    fSettingsDescriptions:    array[0..175] of String;
     fLoading:                 Boolean;
     fAccepted:                Boolean;    
   protected
@@ -183,8 +183,14 @@ begin
 frmProcSettingsZIP.Visible := fFileProcessingSettings.Common.FileType in [atZIP_sig,atZIP_frc,atZIP_dft];
 frmProcSettingsSCS.Visible := fFileProcessingSettings.Common.FileType in [atSCS_sig,atSCS_frc];
 case fFileProcessingSettings.Common.FileType of
-  atZIP_sig,atZIP_frc,atZIP_dft: grbArchiveSettings.Caption := 'ZIP archive settings';
-  atSCS_sig,atSCS_frc:           grbArchiveSettings.Caption := 'SCS# archive settings';
+  atZIP_sig,atZIP_frc,atZIP_dft:  begin
+                                    grbArchiveSettings.Caption := 'ZIP archive settings';
+                                    scbArchiveSettings.ScrollInView(frmProcSettingsZIP);
+                                  end;
+  atSCS_sig,atSCS_frc:            begin
+                                    grbArchiveSettings.Caption := 'SCS# archive settings';
+                                    scbArchiveSettings.ScrollInView(frmProcSettingsSCS);
+                                  end;
 else
   grbArchiveSettings.Caption := 'Archive settings';
 end;
@@ -358,13 +364,19 @@ end;
 //==============================================================================
 
 procedure TfProcSettingsForm.FormCreate(Sender: TObject);
+var
+  i:  Integer;
 begin
+scbArchiveSettings.DoubleBuffered := True;
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;
 frmProcSettingsZIP.Initialize;
 frmProcSettingsSCS.OnSettingsHint := FrameSettingsHintHandler;
 frmProcSettingsSCS.Initialize;
 cmbForcedFileType.OnMouseMove := SettingsMouseMove;
+For i := 0 to Pred(scbArchiveSettings.ControlCount) do
+  If scbArchiveSettings.Controls[i] is TFrame then
+    scbArchiveSettings.Controls[i].Visible := False;
 end;
 
 //------------------------------------------------------------------------------

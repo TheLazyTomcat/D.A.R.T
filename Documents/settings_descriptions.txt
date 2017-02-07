@@ -211,12 +211,12 @@ Note - when rebuilding, unresolved entries are copied into output file.
 - Extracting -
 
 Files are stored into the output folder, subfolder "_unresolved_".
-#144
+#151
 Set of paths that will be used to resolve enries file names.
 
 One path on each line.
 Path delimiter is forward slash (/). Paths do not contain leading and/or trailing delimited.
-#145
+#152
 Set of files whose file/directory structure (entries they contain) will be loaded and used in resolving entries file names in currently processed archive.
 
 Note that when resolving these help files, all previously resolved paths are used, so ordering does matter.
@@ -225,9 +225,3 @@ One file on each line, full absolute paths.
 Only SCS# files are allowed - if you use file of different type, an error will be raised.
 
 Also note that processing these files is not included into progress, so when very large file is loaded, the program might seemingly stop - just be patient and give it a time.
-#146
-Not implemented. Do not use.
-#147
-Not implemented.
-#148
-Not implemented.

@@ -25,6 +25,7 @@ type
     gbEntries: TGroupBox;
     cbIgnoreCRC32: TCheckBox;
     cbIgnoreCompressionFlag: TCheckBox;
+    cbIgnoreDictID: TCheckBox;
     gbPathResolve: TGroupBox;
     cbAssumeCityHash: TCheckBox;
     cbUsePredefinedPaths: TCheckBox;
@@ -37,14 +38,20 @@ type
     diaHelpFilesOpen: TOpenDialog;
     btnBrowseHelpFiles: TButton;    
     meHelpFiles: TMemo;
-    bvlHorSplit: TBevel;
-    cbBruteForceResolve: TCheckBox;
-    cbLimitedAlphabet: TCheckBox;
-    lblLengthLimit: TLabel;
-    seLengthLimit: TSpinEdit;
     miHelpFiles_N1: TMenuItem;
     miHelpFiles_ETS2: TMenuItem;
     miHelpFiles_ATS: TMenuItem;
+    gbContentParsing: TGroupBox;
+    cbParseContent: TCheckBox;
+    cbParseEverything: TCheckBox;
+    cbParseHelpFiles: TCheckBox;
+    gbBruteForce: TGroupBox;
+    cbAllowBruteForce: TCheckBox;
+    cbMultiSearch: TCheckBox;
+    cbMultithread: TCheckBox;
+    cbLimitedAlphabet: TCheckBox;
+    lblLengthLimit: TLabel;
+    seLengthLimit: TSpinEdit;
     procedure btnBrowseHelpFilesClick(Sender: TObject);
     procedure miHelpFiles_BrowseClick(Sender: TObject);
   private
@@ -175,18 +182,12 @@ begin
 // entry
 cbIgnoreCRC32.Checked := fProcessingSettings.Entry.IgnoreCRC32;
 cbIgnoreCompressionFlag.Checked := fProcessingSettings.Entry.IgnoreCompressionFlag;
+cbIgnoreDictID.Checked := fProcessingSettings.Entry.IgnoreDictionaryID;
 // path resolve
 cbAssumeCityHash.Checked := fProcessingSettings.PathResolve.AssumeCityHash;
 cbUsePredefinedPaths.Checked := fProcessingSettings.PathResolve.UsePredefinedPaths;
 cbExtractUnresolvedEntries.Checked := fProcessingSettings.PathResolve.ExtractedUnresolvedEntries;
-meHelpFiles.Lines.BeginUpdate;
-try
-  meHelpFiles.Clear;
-  For i := Low(fProcessingSettings.PathResolve.HelpFiles) to High(fProcessingSettings.PathResolve.HelpFiles) do
-    meHelpFiles.Lines.Add(fProcessingSettings.PathResolve.HelpFiles[i]);
-finally
-  meHelpFiles.Lines.EndUpdate;
-end;
+// custom paths
 meCustomPaths.Lines.BeginUpdate;
 try
   meCustomPaths.Clear;
@@ -195,7 +196,23 @@ try
 finally
   meCustomPaths.Lines.EndUpdate;
 end;
-cbBruteForceResolve.Checked := fProcessingSettings.PathResolve.BruteForceResolve;
+// help files
+meHelpFiles.Lines.BeginUpdate;
+try
+  meHelpFiles.Clear;
+  For i := Low(fProcessingSettings.PathResolve.HelpFiles) to High(fProcessingSettings.PathResolve.HelpFiles) do
+    meHelpFiles.Lines.Add(fProcessingSettings.PathResolve.HelpFiles[i]);
+finally
+  meHelpFiles.Lines.EndUpdate;
+end;
+// content parsing
+cbParseContent.Checked := fProcessingSettings.PathResolve.ParseContent;
+cbParseEverything.Checked := fProcessingSettings.PathResolve.ParseEverything;
+cbParseHelpFiles.Checked := fProcessingSettings.PathResolve.ParseHelpFiles;
+// brute force
+cbAllowBruteForce.Checked := fProcessingSettings.PathResolve.BruteForceResolve;
+cbMultiSearch.Checked := fProcessingSettings.PathResolve.BruteForceMultiSearch;
+cbMultithread.Checked := fProcessingSettings.PathResolve.BruteForceMultithread;
 cbLimitedAlphabet.Checked := fProcessingSettings.PathResolve.BruteForceLimitedAlphabet;
 seLengthLimit.Value := fProcessingSettings.PathResolve.BruteForceLengthLimit;
 end;
@@ -204,22 +221,44 @@ end;
 
 procedure TfrmProcSettingsSCS.FrameToSettings;
 var
-  i:  Integer;
+  i,Count:  Integer;
 begin
 // entry
 fProcessingSettings.Entry.IgnoreCRC32 := cbIgnoreCRC32.Checked;
 fProcessingSettings.Entry.IgnoreCompressionFlag := cbIgnoreCompressionFlag.Checked;
+fProcessingSettings.Entry.IgnoreDictionaryID := cbIgnoreDictID.Checked;
 // path resolve
 fProcessingSettings.PathResolve.AssumeCityHash := cbAssumeCityHash.Checked;
 fProcessingSettings.PathResolve.UsePredefinedPaths := cbUsePredefinedPaths.Checked;
 fProcessingSettings.PathResolve.ExtractedUnresolvedEntries := cbExtractUnresolvedEntries.Checked;
-SetLength(fProcessingSettings.PathResolve.HelpFiles,meHelpFiles.Lines.Count);
-For i := 0 to Pred(meHelpFiles.Lines.Count) do
-   fProcessingSettings.PathResolve.HelpFiles[i] := meHelpFiles.Lines[i];
+// custom paths
+Count := 0;
 SetLength(fProcessingSettings.PathResolve.CustomPaths,meCustomPaths.Lines.Count);
 For i := 0 to Pred(meCustomPaths.Lines.Count) do
-   fProcessingSettings.PathResolve.CustomPaths[i] := meCustomPaths.Lines[i];
-fProcessingSettings.PathResolve.BruteForceResolve := cbBruteForceResolve.Checked;
+  If Length(meCustomPaths.Lines[i]) > 0 then
+    begin
+      fProcessingSettings.PathResolve.CustomPaths[Count] := meCustomPaths.Lines[i];
+      Inc(Count);
+    end;
+SetLength(fProcessingSettings.PathResolve.CustomPaths,Count);
+// help files
+Count := 0;
+SetLength(fProcessingSettings.PathResolve.HelpFiles,meHelpFiles.Lines.Count);
+For i := 0 to Pred(meHelpFiles.Lines.Count) do
+  If Length(meHelpFiles.Lines[i]) > 0 then
+    begin
+      fProcessingSettings.PathResolve.HelpFiles[Count] := meHelpFiles.Lines[i];
+      Inc(Count);
+    end;
+SetLength(fProcessingSettings.PathResolve.HelpFiles,Count);
+// content parsing
+fProcessingSettings.PathResolve.ParseContent := cbParseContent.Checked;
+fProcessingSettings.PathResolve.ParseEverything := cbParseEverything.Checked;
+fProcessingSettings.PathResolve.ParseHelpFiles := cbParseHelpFiles.Checked;
+// brute force
+fProcessingSettings.PathResolve.BruteForceResolve := cbAllowBruteForce.Checked;
+fProcessingSettings.PathResolve.BruteForceMultiSearch := cbMultiSearch.Checked;
+fProcessingSettings.PathResolve.BruteForceMultithread := cbMultithread.Checked;
 fProcessingSettings.PathResolve.BruteForceLimitedAlphabet := cbLimitedAlphabet.Checked;
 fProcessingSettings.PathResolve.BruteForceLengthLimit := seLengthLimit.Value;
 end;
@@ -237,7 +276,8 @@ finally
   fLoading := False;
 end;
 // enable/disable
-cbBruteForceResolve.OnClick(cbBruteForceResolve);
+cbParseContent.OnClick(cbParseContent);
+cbAllowBruteForce.OnClick(cbAllowBruteForce);
 end;
  
 //------------------------------------------------------------------------------
@@ -254,7 +294,12 @@ procedure TfrmProcSettingsSCS.CheckBoxClick(Sender: TObject);
 begin
 If (Sender is TCheckBox) and not fLoading then
   case TCheckBox(Sender).Tag of
-    146:  begin   // cbBruteForceResolve
+    161:  begin   // cbParseContent
+            cbParseEverything.Enabled := TCheckBox(Sender).Checked;
+          end;
+    171:  begin   // cbBruteForceResolve
+            cbMultiSearch.Enabled := TCheckBox(Sender).Checked;
+            cbMultithread.Enabled := TCheckBox(Sender).Checked;
             cbLimitedAlphabet.Enabled := TCheckBox(Sender).Checked;
             lblLengthLimit.Enabled := TCheckBox(Sender).Checked;
             seLengthLimit.Enabled := TCheckBox(Sender).Checked;
