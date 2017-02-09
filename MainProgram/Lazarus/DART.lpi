@@ -163,7 +163,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="24">
+    <Units Count="26">
       <Unit0>
         <Filename Value="DART.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -275,6 +275,14 @@
         <Filename Value="..\Source\DART_Repairer_ZIP_Convert.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit23>
+      <Unit24>
+        <Filename Value="..\Source\DART_ContentParser.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\Source\DART_BruteForceResolver.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit25>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

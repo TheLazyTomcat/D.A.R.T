@@ -16,6 +16,8 @@ uses
   DART_AnsiStringList     in '..\Source\DART_AnsiStringList.pas',
   DART_PathDeconstructor  in '..\Source\DART_PathDeconstructor.pas',
   DART_ProcessingSettings in '..\Source\DART_ProcessingSettings.pas',
+  DART_ContentParser      in '..\Source\DART_ContentParser.pas',
+  DART_BruteForceResolver in '..\Source\DART_BruteForceResolver.pas',
 
   DART_Format_SCS in '..\Source\DART_Format_SCS.pas',
   DART_Format_ZIP in '..\Source\DART_Format_ZIP.pas',

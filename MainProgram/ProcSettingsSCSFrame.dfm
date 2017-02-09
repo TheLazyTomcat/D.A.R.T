@@ -2,7 +2,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 569
+  Height = 601
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,7 +14,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 569
+    Height = 601
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
@@ -67,7 +67,7 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
       Left = 0
       Top = 56
       Width = 561
-      Height = 513
+      Height = 545
       Caption = 'Path resolve'
       TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
@@ -172,10 +172,18 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
         Left = 8
         Top = 368
         Width = 545
-        Height = 49
+        Height = 81
         Caption = 'Content parsing'
         TabOrder = 6
         OnMouseMove = GroupBoxMouseMove
+        object lblBinaryThreshold: TLabel
+          Left = 383
+          Top = 50
+          Width = 82
+          Height = 13
+          Alignment = taRightJustify
+          Caption = 'Binary threshold:'
+        end
         object cbParseHelpFiles: TCheckBox
           Tag = 163
           Left = 384
@@ -209,11 +217,45 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
           OnClick = CheckBoxClick
           OnMouseMove = SettingsMouseMove
         end
+        object cbParseHelpFilesEverything: TCheckBox
+          Tag = 164
+          Left = 8
+          Top = 48
+          Width = 161
+          Height = 17
+          Caption = 'Parse everything in help files'
+          TabOrder = 3
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbLimitedCharSet: TCheckBox
+          Tag = 165
+          Left = 192
+          Top = 48
+          Width = 129
+          Height = 17
+          Caption = 'Limited character set'
+          TabOrder = 4
+          OnClick = CheckBoxClick
+          OnMouseMove = SettingsMouseMove
+        end
+        object seBinaryThreshold: TSpinEdit
+          Tag = 166
+          Left = 472
+          Top = 47
+          Width = 65
+          Height = 22
+          MaxValue = 100
+          MinValue = 1
+          TabOrder = 5
+          Value = 5
+          OnMouseMove = SettingsMouseMove
+        end
       end
       object gbBruteForce: TGroupBox
         Tag = 170
         Left = 8
-        Top = 424
+        Top = 456
         Width = 545
         Height = 81
         Caption = 'Brute-force resolve'
@@ -250,13 +292,13 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
           OnMouseMove = SettingsMouseMove
         end
         object cbLimitedAlphabet: TCheckBox
-          Tag = 174
-          Left = 8
+          Tag = 175
+          Left = 192
           Top = 48
           Width = 105
           Height = 17
           Caption = 'Limited alphabet'
-          TabOrder = 3
+          TabOrder = 4
           OnClick = CheckBoxClick
           OnMouseMove = SettingsMouseMove
         end
@@ -272,15 +314,26 @@ object frmProcSettingsSCS: TfrmProcSettingsSCS
           OnMouseMove = SettingsMouseMove
         end
         object seLengthLimit: TSpinEdit
-          Tag = 175
+          Tag = 176
           Left = 472
           Top = 47
           Width = 65
           Height = 22
           MaxValue = 0
           MinValue = 0
-          TabOrder = 4
+          TabOrder = 5
           Value = 0
+          OnMouseMove = SettingsMouseMove
+        end
+        object cbPrintableASCII: TCheckBox
+          Tag = 174
+          Left = 8
+          Top = 48
+          Width = 177
+          Height = 17
+          Caption = 'Printable ASCII characters only'
+          TabOrder = 3
+          OnClick = CheckBoxClick
           OnMouseMove = SettingsMouseMove
         end
       end

@@ -104,12 +104,18 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpFiles:                  array of String;
+    // content parsing -----------------------------
     ParseContent:               Boolean;
     ParseEverything:            Boolean;
     ParseHelpFiles:             Boolean;
+    ParseHelpFilesEverything:   Boolean;
+    ParseLimitedCharacterSet:   Boolean;
+    ParseBinaryThreshold:       Integer;
+    // brute force resolving -----------------------
     BruteForceResolve:          Boolean;
     BruteForceMultiSearch:      Boolean;
     BruteForceMultithread:      Boolean;
+    BruteForcePrintableASCII:   Boolean;
     BruteForceLimitedAlphabet:  Boolean;
     BruteForceLengthLimit:      Word;
   end;
@@ -194,9 +200,13 @@ const
         ParseContent:               False;
         ParseEverything:            False;
         ParseHelpFiles:             False;
+        ParseHelpFilesEverything:   False;
+        ParseLimitedCharacterSet:   True;
+        ParseBinaryThreshold:       5;
         BruteForceResolve:          False;
         BruteForceMultiSearch:      True;
         BruteForceMultithread:      True;
+        BruteForcePrintableASCII:   True;
         BruteForceLimitedAlphabet:  True;
         BruteForceLengthLimit:      32)));
 

@@ -51,6 +51,8 @@ type
     procedure RectifyFileProcessingSettings; override;
     procedure InitializeData; override;
     procedure InitializeProgress; override;
+    Function GetEntryData(const EntryFileName: AnsiString; out EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; override;
+    Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; override;
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
@@ -61,7 +63,8 @@ type
 implementation
 
 uses
-  Windows, SysUtils, Classes, StrUtils
+  Windows, SysUtils, Classes, StrUtils,
+  DART_MemoryBuffer
 {$IFDEF FPC}
   , LazUTF8
 {$ENDIF};
@@ -724,6 +727,69 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TRepairer_ZIP.GetEntryData(const EntryFileName: AnsiString; out EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
+var
+  i:  Integer;
+begin
+Result := False;
+For i := Low(fArchiveStructure.Entries) to High(fArchiveStructure.Entries) do
+  If AnsiSameText(fArchiveStructure.Entries[i].CentralDirectoryHeader.FileName,EntryFileName) then
+    begin
+      EntryIndex := i;
+      Result := GetEntryData(i,Data,Size);
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TRepairer_ZIP.GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
+var
+  DecompressedBuff: Pointer;
+  DecompressedSize: Integer;
+begin
+Result := False;
+If (EntryIndex >= Low(fArchiveStructure.Entries)) and (EntryIndex <= High(fArchiveStructure.Entries)) then
+  begin
+    with fArchiveStructure.Entries[EntryIndex] do
+      begin
+      {
+        This method is called only when parsing content of the archive for paths, which,
+        for ZIP archive, occurs only when processing it as help file - therefore we will assume
+        the archive is not corrupted and stored compressed size and compression method are
+        both correct and does not need to be rectified.
+        If archive is corrupted, it should first be repaired and only then used as a help file.
+      }
+        // prepare buffer for entry data
+        ReallocateMemoryBuffer(fCED_Buffer,LocalHeader.BinPart.CompressedSize);
+        // load entry data
+        fArchiveStream.Seek(UtilityData.DataOffset,soFromBeginning);
+        ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,PROGSTAGEIDX_NoProgress);
+        If LocalHeader.BinPart.CompressionMethod = 0 then
+          begin
+            // entry data are not compressed, copy them out of CED buffer
+            GetMem(Data,LocalHeader.BinPart.CompressedSize);
+            Size := TMemSize(LocalHeader.BinPart.CompressedSize);
+            Move(fCED_Buffer.Memory^,Data^,Size);
+          end
+        else
+          begin
+            // entry data are compressed, decompress them
+            ProgressedDecompressBuffer(fCED_Buffer.Memory,LocalHeader.BinPart.CompressedSize,
+              DecompressedBuff,DecompressedSize,PROGSTAGEIDX_NoProgress,
+              Format('#%d @ GetEntryData',[EntryIndex]),WINDOWBITS_Raw);
+            Data := DecompressedBuff;
+            Size := TMemSize(DecompressedSize);
+          end;
+        // if we are here, everything should be fine
+        Result := True;
+      end;
+  end
+else DoError(106,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TRepairer_ZIP.ArchiveProcessing;
 begin
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
@@ -756,6 +822,7 @@ case MethodIndex of
   103:  Result := 'ZIP_LoadLocalHeaders';
   104:  Result := 'ZIP_LoadLocalHeaders.LoadLocalHeader';
   105:  Result := 'ArchiveProcessing';
+  106:  Result := 'GetEntryData(Index)';
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;

@@ -152,9 +152,9 @@ type
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: Integer; out OutBuff: Pointer; out OutSize: Integer; ProgressStage: Integer; EntryName: String; WindowBits: Integer); virtual;
-    // content parsing for paths resolving
-    //procedure ParseContentForPaths(out Paths: TPathsArray; DirsTrailingDelimiter: Boolean); virtual; abstract;
-    //Function GetEntryData(const EntryPath: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; virtual; abstract;
+    // methods used in content parsing for paths resolving
+    Function GetEntryData(const EntryFileName: AnsiString; out EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
+    Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
@@ -174,6 +174,7 @@ type
     procedure Run; virtual;
     procedure Stop; virtual;
     Function Terminated: Boolean; virtual;
+    procedure ParseContentForPaths(EntryCount: Integer; ParseEverything: Boolean; out ParsedPaths: TPathsArray); virtual;
     property ResultInfo: TResultInfo read fResultInfo;
   published
     property ExpectedSignature: UInt32 read fExpectedSignature;
@@ -810,6 +811,13 @@ end;
 Function TRepairer.Terminated: Boolean;
 begin
 Result := InterlockedExchangeAdd(fTerminatedFlag,0) <> 0;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TRepairer.ParseContentForPaths(EntryCount: Integer; ParseEverything: Boolean; out ParsedPaths: TPathsArray);
+begin
+{$message 'implement'}
 end;
 
 //==============================================================================

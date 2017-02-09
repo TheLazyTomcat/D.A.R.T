@@ -66,13 +66,13 @@ type
     procedure btnAcceptClick(Sender: TObject);
   private
     fFileProcessingSettings:  TFileProcessingSettings;
-    fSettingsDescriptions:    array[0..175] of String;
+    fSettingsDescriptions:    array[0..200] of String;
     fLoading:                 Boolean;
-    fAccepted:                Boolean;    
+    fAccepted:                Boolean;
   protected
     procedure LoadSettingsDescriptions;
     procedure FrameSettingsHintHandler(Sender: TObject; HintTag: Integer);
-    procedure ShowProperFrame;
+    procedure ShowProperFrame(ForceRecalc: Boolean = False);
   public
     procedure SettingsToForm;
     procedure FormToSettings;
@@ -178,22 +178,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfProcSettingsForm.ShowProperFrame;
+procedure TfProcSettingsForm.ShowProperFrame(ForceRecalc: Boolean = False);
 begin
 frmProcSettingsZIP.Visible := fFileProcessingSettings.Common.FileType in [atZIP_sig,atZIP_frc,atZIP_dft];
 frmProcSettingsSCS.Visible := fFileProcessingSettings.Common.FileType in [atSCS_sig,atSCS_frc];
 case fFileProcessingSettings.Common.FileType of
-  atZIP_sig,atZIP_frc,atZIP_dft:  begin
-                                    grbArchiveSettings.Caption := 'ZIP archive settings';
-                                    scbArchiveSettings.ScrollInView(frmProcSettingsZIP);
-                                  end;
-  atSCS_sig,atSCS_frc:            begin
-                                    grbArchiveSettings.Caption := 'SCS# archive settings';
-                                    scbArchiveSettings.ScrollInView(frmProcSettingsSCS);
-                                  end;
+  atZIP_sig,atZIP_frc,atZIP_dft:  grbArchiveSettings.Caption := 'ZIP archive settings';
+  atSCS_sig,atSCS_frc:            grbArchiveSettings.Caption := 'SCS# archive settings';
 else
   grbArchiveSettings.Caption := 'Archive settings';
 end;
+{$IFDEF FPC}
+{
+  Force recalculation of scrollbar, otherwise there are glitches when compiled
+  in Lazarus (wrong range and page size).
+}
+If ForceRecalc then
+  scbArchiveSettings.VertScrollBar.Position := 1;
+{$ENDIF}
+scbArchiveSettings.VertScrollBar.Position := 0;
 end;
 
 //==============================================================================
@@ -271,8 +274,8 @@ finally
   fLoading := False;
 end;
 cbForceFileType.OnClick(cbForceFileType);
+ShowProperFrame(True);
 fAccepted := False;
-ShowProperFrame;
 ShowModal;
 If fAccepted then
   begin
@@ -367,6 +370,7 @@ procedure TfProcSettingsForm.FormCreate(Sender: TObject);
 var
   i:  Integer;
 begin
+grbArchiveSettings.DoubleBuffered := True;
 scbArchiveSettings.DoubleBuffered := True;
 LoadSettingsDescriptions;
 frmProcSettingsZIP.OnSettingsHint := FrameSettingsHintHandler;

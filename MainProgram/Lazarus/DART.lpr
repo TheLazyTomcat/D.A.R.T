@@ -19,6 +19,8 @@ uses
   DART_AnsiStringList,
   DART_PathDeconstructor,
   DART_ProcessingSettings,
+  DART_ContentParser,
+  DART_BruteForceResolver,
 
   DART_Format_ZIP,
   DART_Format_SCS,

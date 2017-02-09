@@ -59,7 +59,7 @@ type
     Function SCS_IndexOfKnownPath(const Path: AnsiString): Integer; virtual;
     Function SCS_AddKnownPath(const Path: AnsiString): Integer; virtual;
     procedure SCS_LoadPaths_HelpFiles; virtual;
-    procedure SCS_LoadPaths_ParseContent; virtual;
+    procedure SCS_LoadPaths_ParseContent(ArchiveRepairer: TRepairer; ParseEverything: Boolean); virtual;
     procedure SCS_LoadPaths_Internal; virtual;
     procedure SCS_LoadPaths; virtual;
     procedure SCS_AssignPaths; virtual;
@@ -67,6 +67,8 @@ type
     procedure RectifyFileProcessingSettings; override;
     procedure InitializeData; override;
     procedure InitializeProgress; override;
+    Function GetEntryData(const EntryFileName: AnsiString; out EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; override;
+    Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; override;
     procedure ArchiveProcessing; override;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
@@ -376,6 +378,8 @@ var
             For ii := Low(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths.Paths) to
                       High(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths.Paths) do
               SCS_AddKnownPath(TRepairer_SCS(HelpFileRepairer).ArchiveStructure.KnownPaths.Paths[ii].Path);
+            If fProcessingSettings.PathResolve.ParseHelpFiles then
+              SCS_LoadPaths_ParseContent(HelpFileRepairer,fProcessingSettings.PathResolve.ParseHelpFilesEverything);
           finally
             HelpFileRepairer.Free;
           end;
@@ -397,6 +401,8 @@ var
                 else
                   SCS_AddKnownPath(FileName);
               end;
+        If fProcessingSettings.PathResolve.ParseHelpFiles then
+          SCS_LoadPaths_ParseContent(HelpFileRepairer,fProcessingSettings.PathResolve.ParseHelpFilesEverything);
       finally
         HelpFileRepairer.Free;
       end;
@@ -520,9 +526,17 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TRepairer_SCS.SCS_LoadPaths_ParseContent;
+procedure TRepairer_SCS.SCS_LoadPaths_ParseContent(ArchiveRepairer: TRepairer; ParseEverything: Boolean);
+var
+  ParsedPaths:  TPathsArray;
+  i:            Integer;
 begin
-{$message 'implement'}
+ArchiveRepairer.ParseContentForPaths(Length(fArchiveStructure.Entries),ParseEverything,ParsedPaths);
+with fArchiveStructure do
+  If (KnownPaths.Count + Length(ParsedPaths)) > Length(KnownPaths.Paths) then
+    SetLength(KnownPaths.Paths,KnownPaths.Count + Length(ParsedPaths));
+For i := Low(ParsedPaths) to High(ParsedPaths) do
+  SCS_AddKnownPath(ParsedPaths[i]);
 end;
 
 //------------------------------------------------------------------------------
@@ -545,8 +559,8 @@ with fProcessingSettings.PathResolve do
 // load paths from help files
 SCS_LoadPaths_HelpFiles;
 // parse content of processed archive
-If self.fProcessingSettings.PathResolve.ParseContent then
-  SCS_LoadPaths_ParseContent;
+If fProcessingSettings.PathResolve.ParseContent then
+  SCS_LoadPaths_ParseContent(Self,fProcessingSettings.PathResolve.ParseEverything);
 // load all paths stored in the archive
 SCS_LoadPaths_Internal;
 SetLength(fArchiveStructure.KnownPaths.Paths,fArchiveStructure.KnownPaths.Count);
@@ -688,6 +702,61 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TRepairer_SCS.GetEntryData(const EntryFileName: AnsiString; out EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
+begin
+EntryIndex := SCS_IndexOfEntry(SCS_EntryFileNameHash(EntryFileName));
+If EntryIndex >= 0 then
+  Result := GetEntryData(EntryIndex,Data,Size)
+else
+  Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TRepairer_SCS.GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
+var
+  DecompressedBuff: Pointer;
+  DecompressedSize: Integer;
+begin
+Result := False;
+If (EntryIndex >= Low(fArchiveStructure.Entries)) and (EntryIndex <= High(fArchiveStructure.Entries)) then
+  begin
+    with fArchiveStructure.Entries[EntryIndex] do
+      If not GetFlagState(Bin.Flags,SCS_FLAG_Directory) then
+        begin
+          // entry is a file
+          // prepare buffer that will hold entry data
+          ReallocateMemoryBuffer(fCED_Buffer,Bin.CompressedSize);
+          // load data from input file
+          fArchiveStream.Seek(Bin.DataOffset,soFromBeginning);
+          ProgressedStreamRead(fArchiveStream,fCED_Buffer.Memory,Bin.CompressedSize,PROGSTAGEIDX_NoProgress);
+          If GetFlagState(Bin.Flags,SCS_FLAG_Compressed) then
+            begin
+              // data are compressed, decompress them
+              ProgressedDecompressBuffer(fCED_Buffer.Memory,Bin.CompressedSize,
+                DecompressedBuff,DecompressedSize,PROGSTAGEIDX_NoProgress,
+                Format('#%d @ GetEntryData',[EntryIndex]),WINDOWBITS_ZLib);
+              Data := DecompressedBuff;
+              Size := TMemSize(DecompressedSize);
+            end
+          else
+            begin
+              // data are not compressed, copy them out of CED buffer
+              GetMem(Data,Bin.CompressedSize);
+              Size := TMemSize(Bin.CompressedSize);
+              Move(fCED_Buffer.Memory^,Data^,Size);
+            end;
+          // if we are here, everything should be fine
+          Result := True;
+        end
+    // entry is a directory
+    else Result := False;
+  end
+else DoError(105,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
 (*
   order of paths loading/resolving:
 
@@ -734,6 +803,7 @@ case MethodIndex of
   102:  Result := 'ArchiveProcessing';
   103:  Result := 'SCS_SortEntries.QuickSort.ExchangeEntries';
   104:  Result := 'SCS_LoadPaths_Internal.LoadPath';
+  105:  Result := 'GetEntryData(Index)';
 else
   Result := inherited GetMethodNameFromIndex(MethodIndex);
 end;

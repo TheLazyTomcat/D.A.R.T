@@ -45,10 +45,15 @@ type
     cbParseContent: TCheckBox;
     cbParseEverything: TCheckBox;
     cbParseHelpFiles: TCheckBox;
+    cbParseHelpFilesEverything: TCheckBox;
+    cbLimitedCharSet: TCheckBox;
+    seBinaryThreshold: TSpinEdit;
+    lblBinaryThreshold: TLabel;
     gbBruteForce: TGroupBox;
     cbAllowBruteForce: TCheckBox;
     cbMultiSearch: TCheckBox;
     cbMultithread: TCheckBox;
+    cbPrintableASCII: TCheckBox;
     cbLimitedAlphabet: TCheckBox;
     lblLengthLimit: TLabel;
     seLengthLimit: TSpinEdit;
@@ -209,10 +214,14 @@ end;
 cbParseContent.Checked := fProcessingSettings.PathResolve.ParseContent;
 cbParseEverything.Checked := fProcessingSettings.PathResolve.ParseEverything;
 cbParseHelpFiles.Checked := fProcessingSettings.PathResolve.ParseHelpFiles;
+cbParseHelpFilesEverything.Checked := fProcessingSettings.PathResolve.ParseHelpFilesEverything;
+cbLimitedCharSet.Checked := fProcessingSettings.PathResolve.ParseLimitedCharacterSet;
+seBinaryThreshold.Value := fProcessingSettings.PathResolve.ParseBinaryThreshold;
 // brute force
 cbAllowBruteForce.Checked := fProcessingSettings.PathResolve.BruteForceResolve;
 cbMultiSearch.Checked := fProcessingSettings.PathResolve.BruteForceMultiSearch;
 cbMultithread.Checked := fProcessingSettings.PathResolve.BruteForceMultithread;
+cbPrintableASCII.Checked := fProcessingSettings.PathResolve.BruteForcePrintableASCII;
 cbLimitedAlphabet.Checked := fProcessingSettings.PathResolve.BruteForceLimitedAlphabet;
 seLengthLimit.Value := fProcessingSettings.PathResolve.BruteForceLengthLimit;
 end;
@@ -255,10 +264,14 @@ SetLength(fProcessingSettings.PathResolve.HelpFiles,Count);
 fProcessingSettings.PathResolve.ParseContent := cbParseContent.Checked;
 fProcessingSettings.PathResolve.ParseEverything := cbParseEverything.Checked;
 fProcessingSettings.PathResolve.ParseHelpFiles := cbParseHelpFiles.Checked;
+fProcessingSettings.PathResolve.ParseHelpFilesEverything := cbParseHelpFilesEverything.Checked;
+fProcessingSettings.PathResolve.ParseLimitedCharacterSet := cbLimitedCharSet.Checked;
+fProcessingSettings.PathResolve.ParseBinaryThreshold := seBinaryThreshold.Value;
 // brute force
 fProcessingSettings.PathResolve.BruteForceResolve := cbAllowBruteForce.Checked;
 fProcessingSettings.PathResolve.BruteForceMultiSearch := cbMultiSearch.Checked;
 fProcessingSettings.PathResolve.BruteForceMultithread := cbMultithread.Checked;
+fProcessingSettings.PathResolve.BruteForcePrintableASCII := cbPrintableASCII.Checked;
 fProcessingSettings.PathResolve.BruteForceLimitedAlphabet := cbLimitedAlphabet.Checked;
 fProcessingSettings.PathResolve.BruteForceLengthLimit := seLengthLimit.Value;
 end;
@@ -277,6 +290,7 @@ finally
 end;
 // enable/disable
 cbParseContent.OnClick(cbParseContent);
+cbParseHelpFiles.OnClick(cbParseHelpFiles);
 cbAllowBruteForce.OnClick(cbAllowBruteForce);
 end;
  
@@ -294,12 +308,22 @@ procedure TfrmProcSettingsSCS.CheckBoxClick(Sender: TObject);
 begin
 If (Sender is TCheckBox) and not fLoading then
   case TCheckBox(Sender).Tag of
-    161:  begin   // cbParseContent
+    161:  begin // cbParseContent
             cbParseEverything.Enabled := TCheckBox(Sender).Checked;
+            cbLimitedCharSet.Enabled := TCheckBox(Sender).Checked or cbParseHelpFiles.Checked;
+            lblBinaryThreshold.Enabled := cbLimitedCharSet.Enabled;
+            seBinaryThreshold.Enabled := cbLimitedCharSet.Enabled;
           end;
-    171:  begin   // cbBruteForceResolve
+    163:  begin // cbParseHelpFiles
+            cbParseHelpFilesEverything.Enabled := TCheckBox(Sender).Checked;
+            cbLimitedCharSet.Enabled := TCheckBox(Sender).Checked or cbParseContent.Checked;
+            lblBinaryThreshold.Enabled := cbLimitedCharSet.Enabled;
+            seBinaryThreshold.Enabled := cbLimitedCharSet.Enabled;
+          end;      
+    171:  begin // cbBruteForceResolve
             cbMultiSearch.Enabled := TCheckBox(Sender).Checked;
             cbMultithread.Enabled := TCheckBox(Sender).Checked;
+            cbPrintableASCII.Enabled := TCheckBox(Sender).Checked;
             cbLimitedAlphabet.Enabled := TCheckBox(Sender).Checked;
             lblLengthLimit.Enabled := TCheckBox(Sender).Checked;
             seLengthLimit.Enabled := TCheckBox(Sender).Checked;
