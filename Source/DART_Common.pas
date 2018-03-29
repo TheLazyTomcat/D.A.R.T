@@ -52,10 +52,16 @@ type
 --------------------------------------------------------------------------------
 ===============================================================================}
 
+const
+   // progress stages
+   DART_PROGSTAGE_ID_NoProgress     = -100;
+   DART_PROGSTAGE_ID_Direct         = -1;
+   DART_PROGSTAGE_ID_Default        = 0;
+
 {===============================================================================
     TDARTProcessingObject - class declaration
 ===============================================================================}
-
+type
   TDARTProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
 
   TDARTProcessingObject = class(TObject)
