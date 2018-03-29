@@ -1,1 +1,0 @@
-brcc32 -fo SettDescr.res    SettDescr.rc 
