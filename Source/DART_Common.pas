@@ -64,10 +64,13 @@ type
     fProgressTracker:             TProgressTracker;
     fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
     fOnProgress:                  TDARTProgressEvent;
-    // initialization methods
+    // initialization and finalization methods
     procedure InitializeProcessingSettings; virtual; abstract;
     procedure InitializeData; virtual; abstract;
     procedure InitializeProgress; virtual; abstract;
+    procedure FinalizeProcessingSettings; virtual; abstract;
+    procedure FinalizeData; virtual; abstract;
+    procedure FinalizeProgress; virtual; abstract;
     // flow control and progress report methods
     procedure DoProgress(StageID: Integer; Data: Single); virtual;
     procedure DoWarning(const WarningText: String); virtual; abstract;
@@ -75,7 +78,7 @@ type
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual; abstract;
-    constructor Create;
+    constructor Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
     destructor Destroy; override;
     property OnProgress: TDARTProgressEvent read fOnProgress write fOnProgress;
   end;
@@ -147,20 +150,29 @@ end;
     TDARTProcessingObject - public methods
 -------------------------------------------------------------------------------}
 
-constructor TDARTProcessingObject.Create;
+constructor TDARTProcessingObject.Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
-inherited;
+inherited Create;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}
 fProgressTracker := TProgressTracker.Create;
 fProgressTracker.ConsecutiveStages := True;
+fProgressTracker.GrowOnly := True;
+fArchiveProcessingSettings := ArchiveProcessingSettings;
+fOnProgress := nil;
+InitializeProcessingSettings;
+InitializeProgress;
+InitializeData;
 end;
 
 //------------------------------------------------------------------------------
 
 destructor TDARTProcessingObject.Destroy;
 begin
+FinalizeData;
+FinalizeProgress;
+FinalizeProcessingSettings;
 fProgressTracker.Free;
 inherited;
 end;
