@@ -73,9 +73,12 @@ type
     procedure FinalizeProgress; virtual; abstract;
     // flow control and progress report methods
     procedure DoProgress(StageID: Integer; Data: Single); virtual;
-    procedure DoWarning(const WarningText: String); virtual; abstract;
+    procedure DoWarning(const WarningText: String); virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const); overload; virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
+    // memory buffers management
+    procedure AllocateMemoryBuffers; virtual;
+    procedure FreeMemoryBuffers; virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual; abstract;
     constructor Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
@@ -134,6 +137,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TDARTProcessingObject.DoWarning(const WarningText: String);
+begin
+// nothing to do here
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TDARTProcessingObject.DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const);
 begin
 raise EDARTProcessingException.Create(Format(ErrorText,Values,fLocalFormatSettings),Self,MethodIndex,GetMethodNameFromIndex(MethodIndex));
@@ -144,6 +154,20 @@ end;
 procedure TDARTProcessingObject.DoError(MethodIndex: Integer; const ErrorText: String);
 begin
 DoError(MethodIndex,ErrorText,[]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTProcessingObject.AllocateMemoryBuffers;
+begin
+// no buffer for allocation
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTProcessingObject.FreeMemoryBuffers;
+begin
+// no buffer to free
 end;
 
 {-------------------------------------------------------------------------------
@@ -161,6 +185,7 @@ fProgressTracker.ConsecutiveStages := True;
 fProgressTracker.GrowOnly := True;
 fArchiveProcessingSettings := ArchiveProcessingSettings;
 fOnProgress := nil;
+AllocateMemoryBuffers;
 InitializeProcessingSettings;
 InitializeProgress;
 InitializeData;
@@ -173,6 +198,7 @@ begin
 FinalizeData;
 FinalizeProgress;
 FinalizeProcessingSettings;
+FreeMemoryBuffers;
 fProgressTracker.Free;
 inherited;
 end;
