@@ -79,6 +79,8 @@ type
     // memory buffers management
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
+    // processing methods
+    procedure MainProcessing; virtual; abstract;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual; abstract;
     constructor Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
