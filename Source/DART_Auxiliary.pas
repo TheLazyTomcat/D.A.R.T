@@ -7,11 +7,15 @@ interface
 uses
   AuxTypes;
 
+// file information functions
 Function GetFileSize(const FilePath: String): Int64;
-
 Function GetFileSignature(const FilePath: String): UInt32;
 
+// system information functions
 Function GetAvailableMemory: UInt64;
+
+// interlocked functions
+// todo
 
 implementation
 

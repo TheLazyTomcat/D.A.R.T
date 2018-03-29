@@ -68,9 +68,9 @@ type
     procedure InitializeProcessingSettings; virtual; abstract;
     procedure InitializeData; virtual; abstract;
     procedure InitializeProgress; virtual; abstract;
-    procedure FinalizeProcessingSettings; virtual; abstract;
-    procedure FinalizeData; virtual; abstract;
     procedure FinalizeProgress; virtual; abstract;
+    procedure FinalizeData; virtual; abstract;    
+    procedure FinalizeProcessingSettings; virtual; abstract;
     // flow control and progress report methods
     procedure DoProgress(StageID: Integer; Data: Single); virtual;
     procedure DoWarning(const WarningText: String); virtual;
