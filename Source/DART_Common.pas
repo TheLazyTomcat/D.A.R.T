@@ -185,7 +185,6 @@ fProgressTracker.ConsecutiveStages := True;
 fProgressTracker.GrowOnly := True;
 fArchiveProcessingSettings := ArchiveProcessingSettings;
 fOnProgress := nil;
-AllocateMemoryBuffers;
 InitializeProcessingSettings;
 InitializeProgress;
 InitializeData;
@@ -198,7 +197,6 @@ begin
 FinalizeData;
 FinalizeProgress;
 FinalizeProcessingSettings;
-FreeMemoryBuffers;
 fProgressTracker.Free;
 inherited;
 end;
