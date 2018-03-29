@@ -6,19 +6,20 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs, ProgressTracker;
+  WinSyncObjs, ProgressTracker,
+  DART_ProcessingSettings;
 
 {===============================================================================
 --------------------------------------------------------------------------------
-                             EDARTRepairerException
+                            EDARTProcessingException
 --------------------------------------------------------------------------------
 ===============================================================================}
 
 {===============================================================================
-    EDARTRepairerException - class declaration
+    EDARTProcessingException - class declaration
 ===============================================================================}
 type
-  EDARTRepairerException = class(Exception)
+  EDARTProcessingException = class(Exception)
   private
     fFaultObjectRef:    TObject;
     fFaultObjectClass:  String;
@@ -59,9 +60,14 @@ type
 
   TDARTProcessingObject = class(TObject)
   protected
-    fLocalFormatSettings: TFormatSettings;
-    fProgressTracker:     TProgressTracker;
-    fOnProgress:          TDARTProgressEvent;
+    fLocalFormatSettings:         TFormatSettings;
+    fProgressTracker:             TProgressTracker;
+    fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
+    fOnProgress:                  TDARTProgressEvent;
+    // initialization methods
+    procedure InitializeProcessingSettings; virtual; abstract;
+    procedure InitializeData; virtual; abstract;
+    procedure InitializeProgress; virtual; abstract;
     // flow control and progress report methods
     procedure DoProgress(StageID: Integer; Data: Single); virtual;
     procedure DoWarning(const WarningText: String); virtual; abstract;
@@ -81,19 +87,19 @@ uses
 
 {===============================================================================
 --------------------------------------------------------------------------------
-                             EDARTRepairerException                             
+                            EDARTProcessingException
 --------------------------------------------------------------------------------
 ===============================================================================}
 
 {===============================================================================
-    EDARTRepairerException - class implementation
+    EDARTProcessingException - class implementation
 ===============================================================================}
 
 {-------------------------------------------------------------------------------
-    EDARTRepairerException - public methods
+    EDARTProcessingException - public methods
 -------------------------------------------------------------------------------}
 
-constructor EDARTRepairerException.Create(const Text: String; ObjectRef: TObject; FunctionIdx: Integer; const FunctionName: String);
+constructor EDARTProcessingException.Create(const Text: String; ObjectRef: TObject; FunctionIdx: Integer; const FunctionName: String);
 begin
 inherited Create(Text);
 fFaultObjectRef := ObjectRef;
@@ -127,7 +133,7 @@ end;
 
 procedure TDARTProcessingObject.DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const);
 begin
-raise EDARTRepairerException.Create(Format(ErrorText,Values,fLocalFormatSettings),Self,MethodIndex,GetMethodNameFromIndex(MethodIndex));
+raise EDARTProcessingException.Create(Format(ErrorText,Values,fLocalFormatSettings),Self,MethodIndex,GetMethodNameFromIndex(MethodIndex));
 end;
 
 //------------------------------------------------------------------------------
