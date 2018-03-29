@@ -161,6 +161,8 @@ procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettin
 procedure RectifyZIPProcessingSettings(var ZIP_PS: TDART_PS_ZIP);
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 
+procedure EnsureThreadSafety(var APS: TDARTArchiveProcessingSettings);
+
 implementation
 
 procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings);
@@ -196,6 +198,14 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
+end;
+
+//------------------------------------------------------------------------------
+
+procedure EnsureThreadSafety(var APS: TDARTArchiveProcessingSettings);
+begin
+UniqueString(APS.Common.ArchivePath);
+UniqueString(APS.Common.TargetPath);
 end;
 
 end.
