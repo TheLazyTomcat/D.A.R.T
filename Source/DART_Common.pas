@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs, ProgressTracker,
+  WinSyncObjs,
   DART_ProcessingSettings;
 
 {===============================================================================
@@ -46,54 +46,6 @@ type
 
   TDARTPauseObject = WinSyncObjs.TEvent;
 
-{===============================================================================
---------------------------------------------------------------------------------
-                              TDARTProcessingObject                             
---------------------------------------------------------------------------------
-===============================================================================}
-
-const
-   // progress stages
-   DART_PROGSTAGE_ID_NoProgress     = -100;
-   DART_PROGSTAGE_ID_Direct         = -1;
-   DART_PROGSTAGE_ID_Default        = 0;
-
-{===============================================================================
-    TDARTProcessingObject - class declaration
-===============================================================================}
-type
-  TDARTProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
-
-  TDARTProcessingObject = class(TObject)
-  protected
-    fLocalFormatSettings:         TFormatSettings;
-    fProgressTracker:             TProgressTracker;
-    fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
-    fOnProgress:                  TDARTProgressEvent;
-    // initialization and finalization methods
-    procedure InitializeProcessingSettings; virtual; abstract;
-    procedure InitializeData; virtual; abstract;
-    procedure InitializeProgress; virtual; abstract;
-    procedure FinalizeProgress; virtual; abstract;
-    procedure FinalizeData; virtual; abstract;    
-    procedure FinalizeProcessingSettings; virtual; abstract;
-    // flow control and progress report methods
-    procedure DoProgress(StageID: Integer; Data: Single); virtual;
-    procedure DoWarning(const WarningText: String); virtual;
-    procedure DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const); overload; virtual;
-    procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
-    // memory buffers management
-    procedure AllocateMemoryBuffers; virtual;
-    procedure FreeMemoryBuffers; virtual;
-    // processing methods
-    procedure MainProcessing; virtual; abstract;
-  public
-    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual; abstract;
-    constructor Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
-    destructor Destroy; override;
-    property OnProgress: TDARTProgressEvent read fOnProgress write fOnProgress;
-  end;
-
 implementation
 
 uses
@@ -120,93 +72,6 @@ fFaultObjectRef := ObjectRef;
 fFaultObjectClass := ObjectRef.ClassName;
 fFaultFunctionIdx := FunctionIdx;
 fFaultFunctionName := FunctionName;
-end;
-
-{===============================================================================
---------------------------------------------------------------------------------
-                              TDARTProcessingObject                             
---------------------------------------------------------------------------------
-===============================================================================}
-
-{===============================================================================
-    TDARTProcessingObject - class implementation
-===============================================================================}
-
-{-------------------------------------------------------------------------------
-    TDARTProcessingObject - protected methods
--------------------------------------------------------------------------------}
-
-procedure TDARTProcessingObject.DoProgress(StageID: Integer; Data: Single);
-begin
-fProgressTracker.SetStageProgress(StageID,Data);
-If Assigned(fOnProgress) then
-  fOnProgress(Self,fProgressTracker.Progress);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TDARTProcessingObject.DoWarning(const WarningText: String);
-begin
-// nothing to do here
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TDARTProcessingObject.DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const);
-begin
-raise EDARTProcessingException.Create(Format(ErrorText,Values,fLocalFormatSettings),Self,MethodIndex,GetMethodNameFromIndex(MethodIndex));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TDARTProcessingObject.DoError(MethodIndex: Integer; const ErrorText: String);
-begin
-DoError(MethodIndex,ErrorText,[]);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TDARTProcessingObject.AllocateMemoryBuffers;
-begin
-// no buffer for allocation
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TDARTProcessingObject.FreeMemoryBuffers;
-begin
-// no buffer to free
-end;
-
-{-------------------------------------------------------------------------------
-    TDARTProcessingObject - public methods
--------------------------------------------------------------------------------}
-
-constructor TDARTProcessingObject.Create(ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
-begin
-inherited Create;
-{$WARN SYMBOL_PLATFORM OFF}
-GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
-{$WARN SYMBOL_PLATFORM ON}
-fProgressTracker := TProgressTracker.Create;
-fProgressTracker.ConsecutiveStages := True;
-fProgressTracker.GrowOnly := True;
-fArchiveProcessingSettings := ArchiveProcessingSettings;
-fOnProgress := nil;
-InitializeProcessingSettings;
-InitializeProgress;
-InitializeData;
-end;
-
-//------------------------------------------------------------------------------
-
-destructor TDARTProcessingObject.Destroy;
-begin
-FinalizeData;
-FinalizeProgress;
-FinalizeProcessingSettings;
-fProgressTracker.Free;
-inherited;
 end;
 
 end.
