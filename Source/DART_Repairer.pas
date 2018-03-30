@@ -74,6 +74,7 @@ type
 
   TDARTRepairer = class(TObject)
   private
+    fHeartbeat:       PInteger;
     fTerminatedFlag:  Integer;  // 0 = continue, <>0 = terminated
     fResultInfo:      TDARTResultInfo;
     fOnProgress:      TDARTProgressEvent;
@@ -89,6 +90,9 @@ type
     fExpectedSignature:         UInt32;
     // preallocated buffers
     fBuffer_IO:                 TMemoryBuffer;
+    fBuffer_Comp:               TMemoryBuffer;
+    // for (de)compression
+    fCompProgressStage:         Integer;
     // initialization methods
     procedure InitializeProcessingSettings; virtual;
     procedure InitializeData; virtual; abstract;
@@ -111,6 +115,12 @@ type
     procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
     procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
+    procedure CompressorProgressHandler(Sender: TObject; Progress: Single); virtual;
+    procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: Integer); virtual;
+    // methods for content parsing
+    Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
+    Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
+    Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -120,6 +130,7 @@ type
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
+    property Heartbeat: PInteger read fHeartbeat write fHeartbeat;
     property ResultInfo: TDARTResultInfo read fResultInfo;
   published
     property Terminated: Boolean read GetTerminated write SetTerminated;
@@ -128,7 +139,7 @@ type
 implementation
 
 uses
-  Windows, Math;
+  Windows, Math, ZLibUtils;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -137,7 +148,8 @@ uses
 ===============================================================================}
 
 const
-  DART_BUFFERSIZE_IO = 1024 * 1024;   // 1MiB, used for I/O operations
+  DART_BUFFERSIZE_IO   = 1024 * 1024;       // 1MiB, used for I/O operations
+  DART_BUFFERSIZE_COMP = 1024 * 1024 * 16;  // 16MiB, used for (de)compression
 
   DART_METHOD_ID_STOP      = 0;
   DART_METHOD_ID_MAINPROC  = 1;
@@ -191,12 +203,14 @@ end;
 procedure TDARTRepairer.AllocateMemoryBuffers;
 begin
 AllocBuffer(fBuffer_IO,DART_BUFFERSIZE_IO);
+AllocBuffer(fBuffer_Comp,DART_BUFFERSIZE_COMP);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer.FreeMemoryBuffers;
 begin
+FreeBuffer(fBuffer_Comp);
 FreeBuffer(fBuffer_IO);
 end;
 
@@ -204,6 +218,7 @@ end;
 
 procedure TDARTRepairer.DoProgress(StageID: Integer; Data: Single);
 begin
+If Assigned(fHeartbeat) then InterlockedIncrement(fHeartbeat^);
 fPauseControlObject.WaitFor;
 If Terminated then
   begin
@@ -415,6 +430,30 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TDARTRepairer.CompressorProgressHandler(Sender: TObject; Progress: Single);
+begin
+DoProgress(fCompProgressStage,Progress);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: Integer);
+begin
+fCompProgressStage := ProgressStage;
+with TZDecompressionBuffer.Create(InBuff,InSize,WindowBits) do
+try
+  FreeResult := False;
+  OnProgress := CompressorProgressHandler;
+  Process;
+  OutBuff := ResultMemory;
+  OutSize := ResultSize;
+finally
+  Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TDARTRepairer.MainProcessing;
 begin
 inherited;
@@ -477,6 +516,7 @@ end;
 constructor TDARTRepairer.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
 inherited Create;
+fHeartbeat := nil;
 fTerminatedFlag := DART_TERMFLAG_CONTINUE;
 fResultInfo := DART_DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
@@ -491,6 +531,8 @@ fProgressTracker := TProgressTracker.Create;
 fProgressTracker.ConsecutiveStages := True;
 fProgressTracker.GrowOnly := True;
 fTerminating := False;
+fExpectedSignature := 0;
+fCompProgressStage := DART_PROGSTAGE_ID_NoProgress;
 InitializeProcessingSettings;
 InitializeProgress;
 InitializeData;

@@ -5,6 +5,7 @@ unit DART_Repairer_ZIP;
 interface
 
 uses
+  AuxTypes,
   DART_Common, DART_ProcessingSettings, DART_Format_ZIP, DART_Repairer;
 
 const
@@ -17,7 +18,7 @@ const
   DART_PROGSTAGE_ID_ZIP_EntryLoading        = DART_PROGSTAGE_ID_MAX + 6;
   DART_PROGSTAGE_ID_ZIP_EntryDecompressing  = DART_PROGSTAGE_ID_MAX + 7;
   DART_PROGSTAGE_ID_ZIP_EntrySaving         = DART_PROGSTAGE_ID_MAX + 8;
-  DART_PROGSTAGE_ID_ZIP_Max                 = DART_PROGSTAGE_ID_MAX;
+  DART_PROGSTAGE_ID_ZIP_Max                 = DART_PROGSTAGE_ID_MAX + 99;
 
 type
   TDARTRepairer_ZIP = class(TDARTRepairer)
@@ -28,15 +29,19 @@ type
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
     procedure InitializeProgress; override;
+    // methods for content parsing
+    Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
+    Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
+    Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; override;
     // processing methods
     procedure ArchiveProcessing; override;
     // zip specific routines
     procedure ZIP_LoadEndOfCentralDirectory; virtual;
     procedure ZIP_LoadCentralDirectory; virtual;
     procedure ZIP_LoadLocalHeaders; virtual;
-    procedure ZIP_ReconstructLocalHeaders; virtual; abstract;
-    procedure ZIP_ReconstructCentralDirectoryHeaders; virtual; abstract;
-    procedure ZIP_ReconstructEndOfCentralDirectory; virtual; abstract;
+    procedure ZIP_ReconstructLocalHeaders; virtual;
+    procedure ZIP_ReconstructCentralDirectoryHeaders; virtual;
+    procedure ZIP_ReconstructEndOfCentralDirectory; virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
@@ -47,15 +52,16 @@ implementation
 
 uses
   Windows, SysUtils, Classes, StrUtils,
-  AuxTypes, StrRect;
+  StrRect, MemoryBuffer, ZLibCommon;
 
 const
   DART_METHOD_ID_ZIP_ARCHPROC = 100;
-  DART_METHOD_ID_ZIP_ZLEOCD   = 101;
-  DART_METHOD_ID_ZIP_ZLCD     = 102;
-  DART_METHOD_ID_ZIP_ZLCDH    = 103;
-  DART_METHOD_ID_ZIP_ZLLH     = 104;
-  DART_METHOD_ID_ZIP_ZLLHH    = 105;
+  DART_METHOD_ID_ZIP_GETENTRY = 101;
+  DART_METHOD_ID_ZIP_ZLEOCD   = 110;
+  DART_METHOD_ID_ZIP_ZLCD     = 111;
+  DART_METHOD_ID_ZIP_ZLCDH    = 112;
+  DART_METHOD_ID_ZIP_ZLLH     = 113;
+  DART_METHOD_ID_ZIP_ZLLHH    = 114;
 
 procedure TDARTRepairer_ZIP.InitializeProcessingSettings;
 begin
@@ -77,6 +83,75 @@ end;
 
 procedure TDARTRepairer_ZIP.InitializeProgress;
 begin
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.IndexOfEntry(const EntryFileName: AnsiString): Integer;
+var
+  i:  Integer;
+begin
+Result := -1;
+For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+  If AnsiSameText(EntryFileName,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName) then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
+begin
+Result := False;
+If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchiveStructure.Entries.Count) then
+  begin
+    with fArchiveStructure.Entries.Arr[EntryIndex] do
+      begin
+      {
+        This method is called only when parsing content of the archive for paths, which,
+        for ZIP archive, occurs only when processing it as help file - therefore we will assume
+        the archive is not corrupted and stored compressed size and compression method are
+        both correct and do not need to be rectified.
+        If archive is corrupted, it should first be repaired and only then used as a help file.
+      }
+        // prepare buffer for entry data
+        ReallocBufferKeep(fBuffer_Comp,LocalHeader.BinPart.CompressedSize);
+        // load entry data
+        fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
+        ProgressedStreamRead(fInputArchiveStream,fBuffer_Comp.Memory,LocalHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_NoProgress);
+        If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
+          begin
+            // entry data are not compressed, copy them out of buffer
+            GetMem(Data,LocalHeader.BinPart.CompressedSize);
+            Size := TMemSize(LocalHeader.BinPart.CompressedSize);
+            Move(fBuffer_Comp.Memory^,Data^,Size);
+          end
+        else
+          begin
+            // entry data are compressed, decompress them
+            ProgressedDecompressBuffer(fBuffer_Comp.Memory,LocalHeader.BinPart.CompressedSize,
+                                       Data,Size,WBITS_RAW,DART_PROGSTAGE_ID_NoProgress);
+          end;
+        // if we are here, everything should be fine
+        Result := True;        
+      end;
+  end
+else DoError(DART_METHOD_ID_ZIP_GETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean;
+var
+  Index:  Integer;
+begin
+Index := IndexOfEntry(EntryFileName);
+If Index >= 0 then
+  Result := GetEntryData(Index,Data,Size)
+else
+  Result := False;
 end;
 
 //------------------------------------------------------------------------------
@@ -346,7 +421,7 @@ var
         // file name
         If fProcessingSettings.LocalHeader.IgnoreFileName then
           begin
-            fInputArchiveStream.Seek(BinPart.FileNameLength,soFromCurrent);
+            fInputArchiveStream.Seek(BinPart.FileNameLength,soCurrent);
             BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
             FileName := CentralDirectoryHeader.FileName;
           end
@@ -358,7 +433,7 @@ var
         // extra field
         If fProcessingSettings.LocalHeader.IgnoreExtraField then
           begin
-            fInputArchiveStream.Seek(BinPart.ExtraFieldLength,soFromCurrent);
+            fInputArchiveStream.Seek(BinPart.ExtraFieldLength,soCurrent);
             BinPart.ExtraFieldLength := 0;
           end
         else
@@ -499,12 +574,138 @@ else
 DoProgress(DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading,1.0);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_ZIP.ZIP_ReconstructLocalHeaders;
+var
+  i:  Integer;
+begin
+For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+  with fArchiveStructure.Entries.Arr[i] do
+    begin
+      If fProcessingSettings.LocalHeader.IgnoreVersions and not fProcessingSettings.CentralDirectory.IgnoreVersions then
+        begin
+          LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
+          LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
+        end;
+      If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
+        LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
+      If fProcessingSettings.LocalHeader.IgnoreModTime and not fProcessingSettings.CentralDirectory.IgnoreModTime then
+        LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
+      If fProcessingSettings.LocalHeader.IgnoreModDate and not fProcessingSettings.CentralDirectory.IgnoreModDate then
+        LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
+      If fProcessingSettings.LocalHeader.IgnoreCRC32 and not fProcessingSettings.CentralDirectory.IgnoreCRC32 then
+        begin
+          LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+          DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+        end;
+      If fProcessingSettings.LocalHeader.IgnoreSizes and not fProcessingSettings.CentralDirectory.IgnoreSizes then
+        begin
+          LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+          LocalHeader.BinPart.UncompressedSize:= CentralDirectoryHeader.BinPart.UncompressedSize;
+          DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+          DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+        end;
+      DoProgress(DART_PROGSTAGE_ID_NoProgress,0.0);
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_ZIP.ZIP_ReconstructCentralDirectoryHeaders;
+var
+  i:  Integer;
+begin
+For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+  with fArchiveStructure.Entries.Arr[i] do
+    begin
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreVersions and not fProcessingSettings.LocalHeader.IgnoreVersions) then
+        begin
+          CentralDirectoryHeader.BinPart.VersionMadeBy := LocalHeader.BinPart.VersionNeededToExtract;
+          CentralDirectoryHeader.BinPart.HostOS := LocalHeader.BinPart.OSNeededForExtraction;
+          CentralDirectoryHeader.BinPart.VersionNeededToExtract := LocalHeader.BinPart.VersionNeededToExtract;
+          CentralDirectoryHeader.BinPart.OSNeededForExtraction := LocalHeader.BinPart.OSNeededForExtraction;
+        end;
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreCompressionMethod and not fProcessingSettings.LocalHeader.IgnoreCompressionMethod) then
+        CentralDirectoryHeader.BinPart.CompressionMethod := LocalHeader.BinPart.CompressionMethod;
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreModTime and not fProcessingSettings.LocalHeader.IgnoreModTime) then
+        CentralDirectoryHeader.BinPart.LastModFileTime := LocalHeader.BinPart.LastModFileTime;
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreModDate and not fProcessingSettings.LocalHeader.IgnoreModDate) then
+        CentralDirectoryHeader.BinPart.LastModFileDate := LocalHeader.BinPart.LastModFileDate;
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreCRC32 and not fProcessingSettings.LocalHeader.IgnoreCRC32) then
+        CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
+      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+        (fProcessingSettings.CentralDirectory.IgnoreSizes and not fProcessingSettings.LocalHeader.IgnoreSizes) then
+        begin
+          CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
+          CentralDirectoryHeader.BinPart.UncompressedSize := LocalHeader.BinPart.UncompressedSize;
+        end;
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+        begin
+          CentralDirectoryHeader.BinPart.Signature := DART_ZIP_CentralDirectoryFileHeaderSignature;
+          CentralDirectoryHeader.BinPart.DiskNumberStart := 0;
+          CentralDirectoryHeader.BinPart.InternalFileAttributes := 0;
+          If ExtractFileName(AnsiReplaceStr(LocalHeader.FileName,DART_ZIP_PathDelim,PathDelim)) <> '' then
+            CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
+          else
+            CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+          CentralDirectoryHeader.BinPart.FileNameLength := LocalHeader.BinPart.FileNameLength;
+          CentralDirectoryHeader.FileName := LocalHeader.FileName;
+        end;
+      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsCRC32 :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreCRC32) and
+        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreCRC32);
+      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsSizes :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
+        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
+      DoProgress(DART_PROGSTAGE_ID_NoProgress,0.0);  
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_ZIP.ZIP_ReconstructEndOfCentralDirectory;
+var
+  i:  Integer;
+begin
+with fArchiveStructure.EndOfCentralDirectory do
+  begin
+    If fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
+      begin
+        BinPart.Signature := DART_ZIP_EndOfCentralDirectorySignature;
+        BinPart.NumberOfThisDisk := 0;
+        BinPart.CentralDirectoryStartDiskNumber := 0;
+        BinPart.CommentLength := 0;
+        Comment := '';
+      end;
+    If fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory or fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries then
+      begin
+        BinPart.EntriesOnDisk := fArchiveStructure.Entries.Count;
+        BinPart.Entries := fArchiveStructure.Entries.Count;
+      end;
+    BinPart.CentralDirectorySize := 0;
+    For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+      begin
+        Inc(BinPart.CentralDirectorySize,SizeOf(TDART_ZIP_CentralDirectoryFileHeaderRecord));
+        Inc(BinPart.CentralDirectorySize,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.BinPart.FileNameLength);
+        Inc(BinPart.CentralDirectorySize,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.BinPart.ExtraFieldLength);
+        Inc(BinPart.CentralDirectorySize,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.BinPart.FileCommentLength);
+      end;
+  end;
+end;
+
 //==============================================================================
 
 class Function TDARTRepairer_ZIP.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
 case MethodIndex of
   DART_METHOD_ID_ZIP_ARCHPROC:  Result := 'ArchiveProcessing';
+  DART_METHOD_ID_ZIP_GETENTRY:  Result := 'GetEntryData(Index)';
   DART_METHOD_ID_ZIP_ZLEOCD:    Result := 'ZIP_LoadEndOfCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCD:      Result := 'ZIP_LoadCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCDH:     Result := 'ZIP_LoadCentralDirectory.LoadCentralDirectoryHeader';

@@ -111,9 +111,9 @@ type
 
   TDART_ZIP_EntryUtilityData = record
     DataOffset:                 Int64;    // offset of actual entry data from the start of archive
+    NeedsCRC32:                 Boolean;  // CRC32 has to be recalculated
+    NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
     //OriginalLocalHeaderOffset:  UInt32;   // stores original offset of local header in input file    
-    //NeedsCRC32:                 Boolean;  // CRC32 has to be recalculated
-    //NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
     //Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
   end;
 
