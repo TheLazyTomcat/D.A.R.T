@@ -11,7 +11,8 @@ uses
 Function GetFileSize(const FilePath: String): Int64;
 Function GetFileSignature(const FilePath: String): UInt32;
 
-Function ForceDirectories(const Path: String): Boolean;
+Function DART_ForceDirectories(const Path: String): Boolean;
+Function DART_DirectoryExists(const Path: String): Boolean;
 
 // system information functions
 Function GetAvailableMemory: UInt64;
@@ -72,12 +73,23 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ForceDirectories(const Path: String): Boolean;
+Function DART_ForceDirectories(const Path: String): Boolean;
 begin
 {$IFDEF FPC_NonUnicode_NoUTF8RTL}
 Result := ForceDirectoriesUTF8(Path);
 {$ELSE}
-Result := SysUtils.ForceDirectories(Path);
+Result := ForceDirectories(Path);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_DirectoryExists(const Path: String): Boolean;
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+Result := DirectoryExistsUTF8(Path);
+{$ELSE}
+Result := DirectoryExists(Path)
 {$ENDIF}
 end;
 

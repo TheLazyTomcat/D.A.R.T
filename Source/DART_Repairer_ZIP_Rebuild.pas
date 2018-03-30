@@ -49,7 +49,7 @@ var
 begin
 DoProgress(DART_PROGSTAGE_ID_ZIP_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
-DART_Auxiliary.ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
+DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
 If fArchiveProcessingSettings.Common.InMemoryProcessing then
   fRebuildArchiveStream := TMemoryStream.Create
@@ -95,10 +95,8 @@ try
     begin
       // need to obtain sizes of entry - getting compressed size here
       If Index < Pred(fArchiveStructure.Entries.Count) then
-      {
-        inner entry (ie. not a last one), compressed size is calculated as a difference
-        between data start (obtained earlier) and start of local header of next entry
-      }
+        // inner entry (ie. not a last one), compressed size is calculated as a difference
+        // between data start (obtained earlier) and start of local header of next entry
         LocalHeader.BinPart.CompressedSize := UInt32(Int64(fArchiveStructure.Entries.Arr[Index + 1].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader) - UtilityData.DataOffset)
       else
         begin
@@ -121,12 +119,10 @@ try
   // assume compression method if required
   If fProcessingSettings.AssumeCompressionMethods then
     begin
-      If (LocalHeader.BinPart.CompressedSize > 0) and (LocalHeader.BinPart.CompressionMethod <> 0) then
+      If (LocalHeader.BinPart.CompressedSize > 0) and (LocalHeader.BinPart.CompressionMethod <> DART_ZCM_Store) then
         begin
-        {
-          compressed entry has non-zero size and stored compression method
-          differs from 0 (store) =>  assuming compression method 8 (deflate)
-        }
+          // compressed entry has non-zero size and stored compression method
+          // differs from 0 (store) =>  assuming compression method 8 (deflate)
           LocalHeader.BinPart.CompressionMethod := DART_ZCM_Deflate;
           CentralDirectoryHeader.BinPart.CompressionMethod := DART_ZCM_Deflate;
         end
@@ -140,7 +136,7 @@ try
   // calculating progress info for processing of current entry
   //ZIP_PrepareEntryProgressInfo(i);
   DoProgress(DART_PROGSTAGE_ID_ZIP_EntryProcessing,0.0);
-  // prepare buffer that will hold compressed data
+  // prepare buffer that will hold entry data
   ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
   // load compressed data
   fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
