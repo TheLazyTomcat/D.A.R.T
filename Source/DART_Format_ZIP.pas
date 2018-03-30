@@ -18,12 +18,6 @@ uses
 const
   DART_ZIP_FileSignature = UInt32($04034b50);
 
-//--- Bit flags ----------------------------------------------------------------
-
-  DART_ZBF_Encrypted        = UInt16($0001);  // bit 0
-  DART_ZBF_DataDescriptor   = UInt16($0008);  // bit 3
-  DART_ZBF_StrongEncryption = UInt16($0040);  // bit 6
-
 //--- Signatures ---------------------------------------------------------------
 
   DART_ZIP_LocalFileHeaderSignature            = UInt32($04034b50);
@@ -116,13 +110,11 @@ type
 //--- Entry utility data -------------------------------------------------------
 
   TDART_ZIP_EntryUtilityData = record
-  (*
-    OriginalLocalHeaderOffset:  UInt32;   // stores offset of local header in input file while processing it into output
     DataOffset:                 Int64;    // offset of actual entry data from the start of archive
-    NeedsCRC32:                 Boolean;  // CRC32 has to be recalculated
-    NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
-    Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
-  *)  
+    //OriginalLocalHeaderOffset:  UInt32;   // stores original offset of local header in input file    
+    //NeedsCRC32:                 Boolean;  // CRC32 has to be recalculated
+    //NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
+    //Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
   end;
 
 //--- Main structure -----------------------------------------------------------
@@ -144,10 +136,27 @@ type
     EndOfCentralDirectory:  TDART_ZIP_EndOfCentralDirectory;
   end;
 
-//--- Other ZIP constants ------------------------------------------------------
+//--- Bit flags ----------------------------------------------------------------
 
 const
+  DART_ZBF_Encrypted        = UInt16($0001);  // bit 0
+  DART_ZBF_DataDescriptor   = UInt16($0008);  // bit 3
+  DART_ZBF_StrongEncryption = UInt16($0040);  // bit 6
+
+//--- Compression method numbers -----------------------------------------------
+
+  DART_ZCM_Store   = 0; // no compression
+  DART_ZCM_Deflate = 8; // deflate
+
+  DART_ZIP_SupportedCompressinMethods = [DART_ZCM_Store,DART_ZCM_Deflate];  // store, deflate  
+
+//--- Other ZIP constants ------------------------------------------------------
+
   DART_ZIP_PathDelim = '/';
+
+  DART_ZIP_DefVersionMadeBy = 20; // 2.0
+  DART_ZIP_DefHostOS        = 0;  // DOS / Windows
+
 
 implementation
 

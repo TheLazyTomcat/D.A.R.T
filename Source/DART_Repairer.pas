@@ -59,18 +59,12 @@ const
       ExceptionClass:     '';
       ExceptionText:      ''));
 
-   // termination flag values
-   DART_TERMFLAG_TERMINATED = -1;
-   DART_TERMFLAG_CONTINUE   = 0;
-
    // progress stages
-   DART_PROGSTAGE_ID_NoProgress     = -100;
-   DART_PROGSTAGE_ID_Direct         = -1;
-   DART_PROGSTAGE_ID_Default        = 0;
-   DART_PROGSTAGE_ID_Loading        = 1;  // loading of metadata (headers) and/or loading on input archive into memory
-   DART_PROGSTAGE_ID_MetaProcessing = 2;  // processing of metadata (eg. correction of data in headers)
-   DART_PROGSTAGE_ID_Processing     = 3;  // data processing (moving compressed data and corrected metadata from input to output archive)
-   DART_PROGSTAGE_ID_Saving         = 4;  // saving of in-memory output archive
+   DART_PROGSTAGE_ID_NoProgress = -100;
+   DART_PROGSTAGE_ID_Direct     = -1;
+   DART_PROGSTAGE_ID_Default    = 0;
+   DART_PROGSTAGE_ID_Loading    = 1;
+   DART_PROGSTAGE_ID_MAX        = 99;
 
 {===============================================================================
    TDARTRepairer - class declaration
@@ -114,6 +108,9 @@ type
     procedure CheckArchiveSignature; virtual;
     Function FindSignature(Signature: UInt32; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False; ProgressStage: Integer = DART_PROGSTAGE_ID_NoProgress): Int64; virtual;
     procedure ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
+    procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: Integer); virtual;
+    procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
+    procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer); virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -131,7 +128,7 @@ type
 implementation
 
 uses
-  Windows;
+  Windows, Math;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -141,6 +138,14 @@ uses
 
 const
   DART_BUFFERSIZE_IO = 1024 * 1024;   // 1MiB, used for I/O operations
+
+  DART_METHOD_ID_STOP      = 0;
+  DART_METHOD_ID_MAINPROC  = 1;
+  DART_METHOD_ID_CHARCHSIG = 2;
+
+   // termination flag values
+   DART_TERMFLAG_TERMINATED = -1;
+   DART_TERMFLAG_CONTINUE   = 0;
 
 {===============================================================================
     TDARTRepairer - class implementation
@@ -205,9 +210,9 @@ If Terminated then
     fTerminating := True;
     Terminated := False;
     DoTerminate;
-    DoError(0,'Processing terminated. Data can be in an inconsistent state.');
+    DoError(DART_METHOD_ID_STOP,'Processing terminated. Data can be in an inconsistent state.');
   end;
-If fProgressTracker.IndexOf(StageID) <= 0 then
+If fProgressTracker.IndexOf(StageID) >= 0 then
   begin
     If Data > 1.0 then Data := 1.0;
     fProgressTracker.SetStageProgress(StageID,Data);
@@ -217,11 +222,8 @@ If fProgressTracker.IndexOf(StageID) <= 0 then
 else
   begin
     If StageID <> DART_PROGSTAGE_ID_NoProgress then
-      begin
-        fProgressTracker.Progress := Data;
-        If Assigned(fOnProgress) then
-          fOnProgress(Self,fProgressTracker.Progress);
-      end;
+      If Assigned(fOnProgress) then
+        fOnProgress(Self,fProgressTracker.Progress);
   end;
 end;
 
@@ -282,9 +284,9 @@ fInputArchiveStream.Seek(0,soBeginning);
 If fInputArchiveStream.Read({%H-}Signature,SizeOf(Signature)) >= SizeOf(Signature) then
   begin
     If Signature <> fExpectedSignature then
-      DoError(2,'Bad file signature (0x%.8x).',[Signature]);
+      DoError(DART_METHOD_ID_CHARCHSIG,'Bad file signature (0x%.8x).',[Signature]);
   end
-else DoError(2,'File is too small to contain any valid signature (%d bytes).',[fInputArchiveStream.Size]);
+else DoError(DART_METHOD_ID_CHARCHSIG,'File is too small to contain any valid signature (%d bytes).',[fInputArchiveStream.Size]);
 end;
 
 //------------------------------------------------------------------------------
@@ -309,9 +311,9 @@ else CurrentOffset := 0;
 If fInputArchiveStream.Size > 0 then
   repeat
     If SearchBack then
-      fInputArchiveStream.Seek(-(CurrentOffset + Int64(fBuffer_IO.Size)),soFromEnd)
+      fInputArchiveStream.Seek(-(CurrentOffset + Int64(fBuffer_IO.Size)),soEnd)
     else
-      fInputArchiveStream.Seek(CurrentOffset,soFromBeginning);
+      fInputArchiveStream.Seek(CurrentOffset,soBeginning);
     BytesRead := fInputArchiveStream.Read(fBuffer_IO.Memory^,fBuffer_IO.Size);
     If BytesRead >= SizeOf(Signature) then
       For i := 0 to (BytesRead - SizeOf(Signature)) do
@@ -336,17 +338,78 @@ DoProgress(ProgressStage,0.0);
 FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
   Stream.Size := FileStream.Size; // prevents reallocations
-  Stream.Seek(0,soFromBeginning);
-  FileStream.Seek(0,soFromBeginning);
+  Stream.Seek(0,soBeginning);
+  FileStream.Seek(0,soBeginning);
   If FileStream.Size > 0 then
     repeat
       BytesRead := FileStream.Read(fBuffer_IO.Memory^,fBuffer_IO.Size);
       Stream.Write(fBuffer_IO.Memory^,BytesRead);
       DoProgress(ProgressStage,FileStream.Position / FileStream.Size);
     until TMemSize(BytesRead) <= fBuffer_IO.Size;
+  Stream.Size := Stream.Position;  
 finally
   FileStream.Free;
 end;
+DoProgress(ProgressStage,1.0);
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: Integer);
+var
+  FileStream: TFileStream;
+  BytesRead:  Integer;
+begin
+DoProgress(ProgressStage,0.0);
+FileStream := TFileStream.Create(StrToRTL(FileName),fmCreate or fmShareExclusive);
+try
+  FileStream.Size := Stream.Size;
+  Stream.Seek(0,soBeginning);
+  FileStream.Seek(0,soBeginning);
+  If Stream.Size > 0 then
+    repeat
+      BytesRead := Stream.Read(fBuffer_IO.Memory^,fBuffer_IO.Size);
+      FileStream.Write(fBuffer_IO.Memory^,BytesRead);
+      DoProgress(ProgressStage,Stream.Position / Stream.Size);
+    until BytesRead <= 0;
+  FileStream.Size := FileStream.Position;  
+finally
+  FileStream.Free;
+end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer);
+var
+  i,Max:  PtrUInt;
+begin
+DoProgress(ProgressStage,0.0);
+Max := Ceil(Size / fBuffer_IO.Size);
+For i := 1 to Max do
+  begin
+    Dec(Size,TMemSize(Stream.Read(Buffer^,Min(Int64(fBuffer_IO.Size),Int64(Size)))));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + PtrUInt(fBuffer_IO.Size));
+    DoProgress(ProgressStage,i / Max);
+  end;
+DoProgress(ProgressStage,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: Integer);
+var
+  i,Max:  PtrUInt;
+begin
+DoProgress(ProgressStage,0.0);
+Max := Ceil(Size / fBuffer_IO.Size);
+For i := 1 to Max do
+  begin
+    Dec(Size,TMemSize(Stream.Write(Buffer^,Min(Int64(fBuffer_IO.Size),Int64(Size)))));
+    Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + PtrUInt(fBuffer_IO.Size));
+    DoProgress(ProgressStage,i / Max);
+  end;
 DoProgress(ProgressStage,1.0);
 end;
 
@@ -358,17 +421,26 @@ inherited;
 fResultInfo.ResultState := rsNormal;
 try
   DoProgress(DART_PROGSTAGE_ID_Direct,0.0);
-  //fLoader := CreateLoader(fArchiveProcessingSettings.Common.SelectedArchiveType);
+  AllocateMemoryBuffers;
   try
-    AllocateMemoryBuffers;
+    If fArchiveProcessingSettings.Common.InMemoryProcessing then
+      fInputArchiveStream := TMemoryStream.Create
+    else
+      fInputArchiveStream := TFileStream.Create(StrToRTL(fArchiveProcessingSettings.Common.ArchivePath),fmOpenRead or fmShareDenyWrite);
     try
-      ArchiveProcessing;
+      If fArchiveProcessingSettings.Common.InMemoryProcessing then
+        ProgressedLoadFile(fArchiveProcessingSettings.Common.ArchivePath,fInputArchiveStream,DART_PROGSTAGE_ID_Loading);
+      If fInputArchiveStream.Size <= 0 then
+        DoError(DART_METHOD_ID_MAINPROC,'Input file does not contain any data.');
+      If not fArchiveProcessingSettings.Common.IgnoreFileSignature then
+        CheckArchiveSignature;
+      ArchiveProcessing;  // <- processing happens here
       DoProgress(DART_PROGSTAGE_ID_Direct,1.0);
     finally
-      FreeMemoryBuffers;
+      fInputArchiveStream.Free;
     end;
   finally
-    //fLoader.Free;
+    FreeMemoryBuffers;
   end;
   DoProgress(DART_PROGSTAGE_ID_Direct,2.0);
 except
@@ -391,11 +463,10 @@ end;
 
 class Function TDARTRepairer.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
-inherited;
 case MethodIndex of
-  0:  Result := 'Stop*';
-  1:  Result := 'MainProcessing';
-  2:  Result := 'CheckArchiveSignature';
+  DART_METHOD_ID_STOP:      Result := 'Stop*';
+  DART_METHOD_ID_MAINPROC:  Result := 'MainProcessing';
+  DART_METHOD_ID_CHARCHSIG: Result := 'CheckArchiveSignature';
 else
   Result := 'unknown method';
 end;
