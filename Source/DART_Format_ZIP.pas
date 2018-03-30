@@ -113,8 +113,8 @@ type
     DataOffset:                 Int64;    // offset of actual entry data from the start of archive
     NeedsCRC32:                 Boolean;  // CRC32 has to be recalculated
     NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
-    //OriginalLocalHeaderOffset:  UInt32;   // stores original offset of local header in input file    
-    //Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
+    OriginalLocalHeaderOffset:  UInt32;   // stores original offset of local header in input file    
+    Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
   end;
 
 //--- Main structure -----------------------------------------------------------

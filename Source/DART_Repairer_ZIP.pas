@@ -16,7 +16,7 @@ const
   DART_PROGSTAGE_ID_ZIP_EntriesProcessing   = DART_PROGSTAGE_ID_MAX + 4;
   DART_PROGSTAGE_ID_ZIP_EntryProcessing     = DART_PROGSTAGE_ID_MAX + 5;
   DART_PROGSTAGE_ID_ZIP_EntryLoading        = DART_PROGSTAGE_ID_MAX + 6;
-  DART_PROGSTAGE_ID_ZIP_EntryDecompressing  = DART_PROGSTAGE_ID_MAX + 7;
+  DART_PROGSTAGE_ID_ZIP_EntryDecompression  = DART_PROGSTAGE_ID_MAX + 7;
   DART_PROGSTAGE_ID_ZIP_EntrySaving         = DART_PROGSTAGE_ID_MAX + 8;
   DART_PROGSTAGE_ID_ZIP_Max                 = DART_PROGSTAGE_ID_MAX + 99;
 
@@ -55,13 +55,13 @@ uses
   StrRect, MemoryBuffer, ZLibCommon;
 
 const
-  DART_METHOD_ID_ZIP_ARCHPROC = 100;
-  DART_METHOD_ID_ZIP_GETENTRY = 101;
-  DART_METHOD_ID_ZIP_ZLEOCD   = 110;
-  DART_METHOD_ID_ZIP_ZLCD     = 111;
-  DART_METHOD_ID_ZIP_ZLCDH    = 112;
-  DART_METHOD_ID_ZIP_ZLLH     = 113;
-  DART_METHOD_ID_ZIP_ZLLHH    = 114;
+  DART_METHOD_ID_ZIP_ARCHPROC = 0100;
+  DART_METHOD_ID_ZIP_GETENTRY = 0101;
+  DART_METHOD_ID_ZIP_ZLEOCD   = 0110;
+  DART_METHOD_ID_ZIP_ZLCD     = 0111;
+  DART_METHOD_ID_ZIP_ZLCDH    = 0112;
+  DART_METHOD_ID_ZIP_ZLLH     = 0113;
+  DART_METHOD_ID_ZIP_ZLLHH    = 0114;
 
 procedure TDARTRepairer_ZIP.InitializeProcessingSettings;
 begin
@@ -83,6 +83,7 @@ end;
 
 procedure TDARTRepairer_ZIP.InitializeProgress;
 begin
+{$message 'implement'}
 end;
 
 //------------------------------------------------------------------------------
@@ -117,21 +118,21 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
         If archive is corrupted, it should first be repaired and only then used as a help file.
       }
         // prepare buffer for entry data
-        ReallocBufferKeep(fBuffer_Comp,LocalHeader.BinPart.CompressedSize);
+        ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
         // load entry data
         fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
-        ProgressedStreamRead(fInputArchiveStream,fBuffer_Comp.Memory,LocalHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_NoProgress);
+        ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_NoProgress);
         If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
           begin
             // entry data are not compressed, copy them out of buffer
             GetMem(Data,LocalHeader.BinPart.CompressedSize);
             Size := TMemSize(LocalHeader.BinPart.CompressedSize);
-            Move(fBuffer_Comp.Memory^,Data^,Size);
+            Move(fBuffer_Entry.Memory^,Data^,Size);
           end
         else
           begin
             // entry data are compressed, decompress them
-            ProgressedDecompressBuffer(fBuffer_Comp.Memory,LocalHeader.BinPart.CompressedSize,
+            ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
                                        Data,Size,WBITS_RAW,DART_PROGSTAGE_ID_NoProgress);
           end;
         // if we are here, everything should be fine

@@ -64,6 +64,7 @@ const
    DART_PROGSTAGE_ID_Direct     = -1;
    DART_PROGSTAGE_ID_Default    = 0;
    DART_PROGSTAGE_ID_Loading    = 1;
+   DART_PROGSTAGE_ID_Saving     = 2;
    DART_PROGSTAGE_ID_MAX        = 99;
 
 {===============================================================================
@@ -90,7 +91,7 @@ type
     fExpectedSignature:         UInt32;
     // preallocated buffers
     fBuffer_IO:                 TMemoryBuffer;
-    fBuffer_Comp:               TMemoryBuffer;
+    fBuffer_Entry:              TMemoryBuffer;
     // for (de)compression
     fCompProgressStage:         Integer;
     // initialization methods
@@ -148,12 +149,12 @@ uses
 ===============================================================================}
 
 const
-  DART_BUFFERSIZE_IO   = 1024 * 1024;       // 1MiB, used for I/O operations
-  DART_BUFFERSIZE_COMP = 1024 * 1024 * 16;  // 16MiB, used for (de)compression
+  DART_BUFFERSIZE_IO    = 1024 * 1024;       // 1MiB, used for I/O operations
+  DART_BUFFERSIZE_ENTRY = 1024 * 1024 * 16;  // 16MiB, used for entry data storage
 
-  DART_METHOD_ID_STOP      = 0;
-  DART_METHOD_ID_MAINPROC  = 1;
-  DART_METHOD_ID_CHARCHSIG = 2;
+  DART_METHOD_ID_STOP      = 0000;
+  DART_METHOD_ID_MAINPROC  = 0001;
+  DART_METHOD_ID_CHARCHSIG = 0002;
 
    // termination flag values
    DART_TERMFLAG_TERMINATED = -1;
@@ -195,7 +196,7 @@ end;
 
 procedure TDARTRepairer.InitializeProgress;
 begin
-
+{$message 'implement'}
 end;
 
 //------------------------------------------------------------------------------
@@ -203,14 +204,14 @@ end;
 procedure TDARTRepairer.AllocateMemoryBuffers;
 begin
 AllocBuffer(fBuffer_IO,DART_BUFFERSIZE_IO);
-AllocBuffer(fBuffer_Comp,DART_BUFFERSIZE_COMP);
+AllocBuffer(fBuffer_Entry,DART_BUFFERSIZE_ENTRY);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer.FreeMemoryBuffers;
 begin
-FreeBuffer(fBuffer_Comp);
+FreeBuffer(fBuffer_Entry);
 FreeBuffer(fBuffer_IO);
 end;
 
@@ -456,7 +457,6 @@ end;
 
 procedure TDARTRepairer.MainProcessing;
 begin
-inherited;
 fResultInfo.ResultState := rsNormal;
 try
   DoProgress(DART_PROGSTAGE_ID_Direct,0.0);
