@@ -23,8 +23,15 @@
 {$IFDEF FPC}
   {$MODE ObjFPC}{$H+}
   {$MODESWITCH CLASSICPROCVARS+}
+  {$INLINE ON}
+  {$DEFINE CanInline}
 {$ELSE}
   {$DEFINE Delphi}
+  {$IF Declared(CompilerVersion)}
+    {$IF CompilerVersion >= 17 then}  // Delphi 2005+
+      {$DEFINE CanInline}
+    {$IFEND}
+  {$IFEND}  
 {$ENDIF}
 
 {$IF Defined(FPC) and not Defined(Unicode)}

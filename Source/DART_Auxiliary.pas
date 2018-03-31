@@ -12,8 +12,8 @@ Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;
 
 // working with directories
-Function DART_ForceDirectories(const Path: String): Boolean;
-Function DART_DirectoryExists(const Path: String): Boolean;
+Function DART_ForceDirectories(const Path: String): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
+Function DART_DirectoryExists(const Path: String): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
 // system information functions
 Function DART_GetAvailableMemory: UInt64;
