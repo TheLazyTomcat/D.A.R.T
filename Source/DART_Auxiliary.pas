@@ -12,8 +12,13 @@ Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;
 
 // working with directories
-Function DART_ForceDirectories(const Path: String): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
-Function DART_DirectoryExists(const Path: String): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
+Function DART_ForceDirectories(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
+Function DART_DirectoryExists(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
+
+// path rectification
+Function DART_ExcludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+Function DART_ExcludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString; {$IFDEF CanInline}inline;{$ENDIF}
 
 // system information functions
 Function DART_GetAvailableMemory: UInt64;
@@ -92,6 +97,41 @@ Result := DirectoryExistsUTF8(Path);
 {$ELSE}
 Result := DirectoryExists(Path)
 {$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_ExcludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+If Length(Path) > 0 then
+  begin
+    If Path[Length(Path)] = Delim then
+      Result := Copy(Path,1,Length(Path) - 1)
+    else
+      Result := Path;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_ExcludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+If Length(Path) > 0 then
+  begin
+    If Path[1] = Delim then
+      Result := Copy(Path,2,Length(Path) - 1)
+    else
+      Result := Path;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+Result := DART_ExcludeLeadingPathDelim(DART_ExcludeTralingPathDelim(Path,Delim),Delim);
 end;
 
 //------------------------------------------------------------------------------

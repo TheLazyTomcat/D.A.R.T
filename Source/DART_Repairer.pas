@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils, Classes,
-  AuxTypes, ProgressTracker, MemoryBuffer, StrRect,
+  AuxTypes, ProgressTracker, MemoryBuffer, StrRect, CRC32,
   DART_Common, DART_ProcessingSettings;
 
 {===============================================================================
@@ -28,7 +28,7 @@ type
   end;
 
   TDART_RI_Warnings = record
-    Arr:    array of string;
+    Arr:    array of String;
     Count:  Integer;
   end;
 
@@ -59,6 +59,19 @@ const
       ExceptionClass:     '';
       ExceptionText:      ''));
 
+type
+  TDART_KnownPath = record
+    Path:       AnsiString;
+    Directory:  Boolean;
+    Hash:       TCRC32;
+  end;
+
+  TDART_KnownPaths = record
+    Arr:    array of TDART_KnownPath;
+    Count:  Integer;
+  end;
+
+const
   // progress stages
   DART_PROGSTAGE_ID_NoProgress = 1;
   DART_PROGSTAGE_ID_Direct     = 2;
@@ -124,6 +137,8 @@ type
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
+    // methods working with known paths
+    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDART_KnownPaths): Integer; virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -133,6 +148,7 @@ type
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
+    Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; virtual; abstract;
     property Heartbeat: PInteger read fHeartbeat write fHeartbeat;
     property ResultInfo: TDARTResultInfo read fResultInfo;
   published
@@ -525,6 +541,24 @@ try
 finally
   Free;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TDARTRepairer.IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDART_KnownPaths): Integer;
+var
+  PathHash: TCRC32;
+  i:        Integer;
+begin
+PathHash := AnsiStringCRC32(AnsiLowerCase(Path));
+Result := -1;
+For i := Low(KnownPaths.Arr) to Pred(KnownPaths.Count) do
+  If KnownPaths.Arr[i].Hash = PathHash then
+    If AnsiSameText(Path,KnownPaths.Arr[i].Path) then
+      begin
+        Result := i;
+        Break{For i};
+      end;
 end;
 
 //------------------------------------------------------------------------------

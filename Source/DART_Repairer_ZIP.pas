@@ -57,6 +57,7 @@ type
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+    Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; override;
     property ArchiveStructure: TDART_ZIP_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -69,8 +70,9 @@ type
 implementation
 
 uses
-  Windows, SysUtils, Classes, StrUtils,
-  StrRect, MemoryBuffer, ZLibCommon;
+  Windows, SysUtils, Classes, StrUtils, CRC32,
+  StrRect, MemoryBuffer, ZLibCommon,
+  DART_Auxiliary, DART_PathDeconstructor;
 
 const
   DART_METHOD_ID_ZIP_ARCHPROC = 0100;
@@ -769,6 +771,50 @@ constructor TDARTRepairer_ZIP.Create(PauseControlObject: TDARTPauseObject; Archi
 begin
 inherited Create(PauseControlObject,ArchiveProcessingSettings);
 fExpectedSignature := DART_ZIP_FileSignature;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer;
+var
+  i:  Integer;
+
+  procedure AddToKnownPaths(const Path: AnsiString; Direcotry: Boolean);
+  begin
+    If KnownPaths.Count >= Length(KnownPaths.Arr) then
+      SetLength(KnownPaths.Arr,Length(KnownPaths.Arr) + 1024);
+    KnownPaths.Arr[KnownPaths.Count].Path := Path;
+    KnownPaths.Arr[KnownPaths.Count].Directory := Direcotry;
+    KnownPaths.Arr[KnownPaths.Count].Hash := CRC32.AnsiStringCRC32(AnsiLowerCase(Path));
+    Inc(KnownPaths.Count);
+  end;
+
+begin
+Result := 0;
+For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+  with fArchiveStructure.Entries.Arr[i] do
+    If IndexOfKnownPath(DART_ExcludeOuterPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim),KnownPaths) < 0 then
+      begin
+        AddToKnownPaths(DART_ExcludeOuterPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim),
+                        CentralDirectoryHeader.BinPart.ExternalFileAttributes = FILE_ATTRIBUTE_DIRECTORY);
+        Inc(Result);
+      end;
+DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+// in case any directory is not explicitly stored, deconstruct all paths and add them
+with TDARTPathDeconstructor.Create(DART_ZIP_PathDelim) do
+try
+  For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+    DeconstructPath(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName);
+  DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+  For i := 0 to Pred(Count) do
+    If (Nodes[i].FullPath <> '') and (IndexOfKnownPath(Nodes[i].FullPath,KnownPaths) < 0) then
+      begin
+        AddToKnownPaths(Nodes[i].FullPath,True);
+        Inc(Result);
+      end
+finally
+  Free
+end;
 end;
 
 //******************************************************************************
