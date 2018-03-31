@@ -8,14 +8,15 @@ uses
   AuxTypes;
 
 // file information functions
-Function GetFileSize(const FilePath: String): Int64;
-Function GetFileSignature(const FilePath: String): UInt32;
+Function DART_GetFileSize(const FilePath: String): Int64;
+Function DART_GetFileSignature(const FilePath: String): UInt32;
 
+// working with directories
 Function DART_ForceDirectories(const Path: String): Boolean;
 Function DART_DirectoryExists(const Path: String): Boolean;
 
 // system information functions
-Function GetAvailableMemory: UInt64;
+Function DART_GetAvailableMemory: UInt64;
 
 // interlocked functions
 // todo
@@ -33,7 +34,7 @@ uses
 
 //------------------------------------------------------------------------------
 
-Function GetFileSize(const FilePath: String): Int64;
+Function DART_GetFileSize(const FilePath: String): Int64;
 var
   SearchResult: TSearchRec;
 begin
@@ -59,7 +60,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetFileSignature(const FilePath: String): UInt32;
+Function DART_GetFileSignature(const FilePath: String): UInt32;
 begin
 Result := 0;
 with TFileStream.Create(StrToRTL(FilePath),fmOpenRead or fmShareDenyWrite) do
@@ -113,7 +114,7 @@ Function GlobalMemoryStatusEx(lpBuffer: PMemoryStatusEx): BOOL; stdcall; externa
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-Function GetAvailableMemory: UInt64;
+Function DART_GetAvailableMemory: UInt64;
 var
   MemStat:  TMemoryStatusEx;
 begin
