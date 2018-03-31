@@ -8,7 +8,7 @@ uses
   DART_Repairer_ZIP;
 
 type
-  TDARTRepairer_ZIP_Convert = TDARTRepairer_ZIP;
+  TDARTRepairer_ZIP_Convert = TDARTRepairer_ZIP_ProcessingBase;
 
 implementation
 
