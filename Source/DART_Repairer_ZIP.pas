@@ -13,17 +13,19 @@ const
   DART_PROGSTAGE_ID_ZIP_EOCDLoading         = DART_PROGSTAGE_ID_MAX + 1;
   DART_PROGSTAGE_ID_ZIP_CDHeadersLoading    = DART_PROGSTAGE_ID_MAX + 2;
   DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading = DART_PROGSTAGE_ID_MAX + 3;
-  DART_PROGSTAGE_ID_ZIP_EntriesProcessing   = DART_PROGSTAGE_ID_MAX + 4;
+  DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep = DART_PROGSTAGE_ID_MAX + 4;
+  DART_PROGSTAGE_ID_ZIP_EntriesProcessing   = DART_PROGSTAGE_ID_MAX + 5;
   
-  DART_PROGSTAGE_ID_ZIP_EntryProcessing     = DART_PROGSTAGE_ID_MAX + 5;
-  DART_PROGSTAGE_ID_ZIP_EntryLoading        = DART_PROGSTAGE_ID_MAX + 6;
-  DART_PROGSTAGE_ID_ZIP_EntryDecompression  = DART_PROGSTAGE_ID_MAX + 7;
-  DART_PROGSTAGE_ID_ZIP_EntrySaving         = DART_PROGSTAGE_ID_MAX + 8;
+  DART_PROGSTAGE_ID_ZIP_EntryProcessing     = DART_PROGSTAGE_ID_MAX + 6;
+  DART_PROGSTAGE_ID_ZIP_EntryLoading        = DART_PROGSTAGE_ID_MAX + 7;
+  DART_PROGSTAGE_ID_ZIP_EntryDecompression  = DART_PROGSTAGE_ID_MAX + 8;
+  DART_PROGSTAGE_ID_ZIP_EntrySaving         = DART_PROGSTAGE_ID_MAX + 9;
   DART_PROGSTAGE_ID_ZIP_Max                 = DART_PROGSTAGE_ID_MAX + 100;
 
   PSID_Z_EOCDLoading         = DART_PROGSTAGE_ID_ZIP_EOCDLoading;
   PSID_Z_CDHeadersLoading    = DART_PROGSTAGE_ID_ZIP_CDHeadersLoading;
   PSID_Z_LocalHeadersLoading = DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading;
+  PSID_Z_EntriesProgressPrep = DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep;
   PSID_Z_EntriesProcessing   = DART_PROGSTAGE_ID_ZIP_EntriesProcessing;
   
   PSID_Z_EntryProcessing     = DART_PROGSTAGE_ID_ZIP_EntryProcessing;
@@ -34,9 +36,9 @@ const
 type
   TDARTRepairer_ZIP = class(TDARTRepairer)
   protected
-    fEntriesProcProgNode: TProgressTracker;
     fProcessingSettings:  TDART_PS_ZIP;
     fArchiveStructure:    TDART_ZIP_ArchiveStructure;
+    fEntriesProcProgNode: TProgressTracker;
     // initialization methods
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
@@ -44,7 +46,6 @@ type
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
-    Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; override;
     // processing methods
     procedure ArchiveProcessing; override;
     // zip specific routines
@@ -112,7 +113,7 @@ Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
 If Index >= 0 then
   begin
     ProcessingNode := fProgressTracker.StageObjects[Index];
-    Quota := 1000;
+    Quota := 950;
     If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
       begin
         ProcessingNode.Add(10,DART_PROGSTAGE_ID_ZIP_EOCDLoading);
@@ -128,6 +129,7 @@ If Index >= 0 then
         ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading);
         Dec(Quota,100);
       end;
+    ProcessingNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep);
     Index := ProcessingNode.Add(Quota,DART_PROGSTAGE_ID_ZIP_EntriesProcessing);
     fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
   end
@@ -188,19 +190,6 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
       end;
   end
 else DoError(DART_METHOD_ID_ZIP_GETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TDARTRepairer_ZIP.GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean;
-var
-  Index:  Integer;
-begin
-Index := IndexOfEntry(EntryFileName);
-If Index >= 0 then
-  Result := GetEntryData(Index,Data,Size)
-else
-  Result := False;
 end;
 
 //------------------------------------------------------------------------------
@@ -822,7 +811,7 @@ end;
 procedure TDARTRepairer_ZIP_ProcessingBase.ArchiveProcessing;
 begin
 inherited;
-ZIP_PrepareEntriesProgress
+ZIP_PrepareEntriesProgress;
 end;
 
 //------------------------------------------------------------------------------
@@ -832,6 +821,7 @@ var
   i,Index:  Integer;
   CurrNode: TProgressTracker;
 begin
+DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],0.0);
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   with fArchiveStructure.Entries.Arr[i] do
     begin
@@ -863,7 +853,9 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntryLoading);
           CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntrySaving);
         end;
+      DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
     end;
+DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],1.0);
 end;
 
 end.

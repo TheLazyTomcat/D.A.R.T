@@ -30,7 +30,6 @@ type
     procedure Clear; virtual;
     procedure Sort; virtual;
     property Nodes[Index: Integer]: TDARTPathNode read GetNode; default;
-  published
     property PathDelimiter: AnsiChar read fPathDelimiter;
     property Count: Integer read fNodes.Count;
     property RootNode: TDARTPathNode read fRootNode;
@@ -60,7 +59,6 @@ type
     procedure Sort; virtual;
     property SubNodes[Index: Integer]: TDARTPathNode read GetSubNode;
     property Files[Index: Integer]: AnsiString read GetFile; default;
-  published
     property Name: AnsiString read fName;
     property FullPath: AnsiString read fFullPath;
     property Deconstructor: TDARTPathDeconstructor read fDeconstructor;

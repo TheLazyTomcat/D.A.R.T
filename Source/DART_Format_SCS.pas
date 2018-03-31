@@ -98,6 +98,7 @@ const
 //--- Default offsets ----------------------------------------------------------
 
   DART_SCS_DefaultEntryTableOffset = UInt64($0000000000001000);
+  DART_SCS_DefaultUnknowmOffset    = UInt64($0000000000000000); // usually starts at $80
 
 //--- Path constants, predefined paths -----------------------------------------
 

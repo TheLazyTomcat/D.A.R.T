@@ -136,7 +136,7 @@ type
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
-    Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
+    Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
     // methods working with known paths
     class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDART_KnownPaths): Integer; virtual;
     // processing methods
@@ -541,6 +541,19 @@ try
 finally
   Free;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer.GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean;
+var
+  Index:  Integer;
+begin
+Index := IndexOfEntry(EntryFileName);
+If Index >= 0 then
+  Result := GetEntryData(Index,Data,Size)
+else
+  Result := False;
 end;
 
 //------------------------------------------------------------------------------
