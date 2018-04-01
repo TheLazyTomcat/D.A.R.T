@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils, Classes,
-  AuxTypes, ProgressTracker, MemoryBuffer, StrRect, CRC32,
+  AuxTypes, ProgressTracker, MemoryBuffer, StrRect,
   DART_Common, DART_ProcessingSettings;
 
 {===============================================================================
@@ -59,19 +59,6 @@ const
       ExceptionClass:     '';
       ExceptionText:      ''));
 
-type
-  TDART_KnownPath = record
-    Path:       AnsiString;
-    Directory:  Boolean;
-    Hash:       TCRC32;
-  end;
-
-  TDART_KnownPaths = record
-    Arr:    array of TDART_KnownPath;
-    Count:  Integer;
-  end;
-
-const
   // progress stages
   DART_PROGSTAGE_ID_NoProgress = 1;
   DART_PROGSTAGE_ID_Direct     = 2;
@@ -159,7 +146,8 @@ type
 implementation
 
 uses
-  Windows, Math, ZLibUtils;
+  Windows, Math,
+  CRC32, ZLibUtils;
 
 {===============================================================================
 --------------------------------------------------------------------------------

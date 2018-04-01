@@ -5,7 +5,8 @@ unit DART_Format_SCS;
 interface
 
 uses
-  AuxTypes, CRC32;
+  AuxTypes, CRC32,
+  DART_Common;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -33,7 +34,7 @@ type
 //--- Entry record (table item) ------------------------------------------------
 
   TDART_SCS_EntryRecord = packed record
-    FileNameHash:     UInt64;
+    Hash:             UInt64;
     DataOffset:       UInt64;
     Flags:            UInt32;
     CRC32:            TCRC32;
@@ -44,13 +45,14 @@ type
 //--- Utility data -------------------------------------------------------------
 
   TDART_SCS_EntryUtilityData = record
-    //Resolved:           Boolean;
+    Resolved:           Boolean;
     //Erroneous:          Boolean;
     //SubEntries:         array of AnsiString;
     //OriginalDataOffset: UInt64;
   end;
 
   TDART_SCS_UtilityData = record
+    UnresolvedCount:  Integer;
     //DataBytes:      UInt64;
   end;
 
@@ -67,20 +69,10 @@ type
     Count:  Integer;
   end;
 
-  TDART_SCS_KnownPathItem = record
-    Path: AnsiString;
-    Hash: TCRC32;
-  end;
-
-  TDART_SCS_KnownPaths = record
-    Arr:    array of TDART_SCS_KnownPathItem;
-    Count:  Integer;
-  end;
-
   TDART_SCS_ArchiveStructure = record
     ArchiveHeader:  TDART_SCS_ArchiveHeader;
     Entries:        TDART_SCS_Entries;
-    KnownPaths:     TDART_SCS_KnownPaths;
+    KnownPaths:     TDART_KnownPaths;
     UtilityData:    TDART_SCS_UtilityData;
   end;
 

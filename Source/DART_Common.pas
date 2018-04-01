@@ -6,8 +6,21 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs,
+  WinSyncObjs, CRC32,
   DART_ProcessingSettings;
+
+type
+  TDART_KnownPath = record
+    Path:       AnsiString;
+    Directory:  Boolean;
+    Hash:       TCRC32;
+    Hash64:     UInt64;
+  end;
+
+  TDART_KnownPaths = record
+    Arr:    array of TDART_KnownPath;
+    Count:  Integer;
+  end;
 
 {===============================================================================
 --------------------------------------------------------------------------------

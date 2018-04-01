@@ -85,7 +85,23 @@ type
 
 //--- SCS#-specific processing settings ----------------------------------------
 
+  TDART_PS_SCS_EntrySettings = record
+    IgnoreCRC32:            Boolean;
+    IgnoreCompressionFlag:  Boolean;
+    IgnoreDictionaryID:     Boolean;
+  end;
+
+  TDART_PS_SCS_PathResolveSettings = record
+    AssumeCityHash:             Boolean;
+    UsePredefinedPaths:         Boolean;
+    ExtractedUnresolvedEntries: Boolean;
+    CustomPaths:                array of AnsiString;
+    HelpFiles:                  array of String;
+  end;
+
   TDART_PS_SCS = record
+    Entry:        TDART_PS_SCS_EntrySettings;
+    PathResolve:  TDART_PS_SCS_PathResolveSettings;
   end;
 
 //--- Main structure -----------------------------------------------------------
@@ -149,6 +165,17 @@ const
         IgnoreFileName:               False;
         IgnoreExtraField:             True;
         IgnoreDataDescriptor:         False));
+    SCS:  (
+      Entry: (
+        IgnoreCRC32:                False;
+        IgnoreCompressionFlag:      False;
+        IgnoreDictionaryID:         False);
+      PathResolve:(
+        AssumeCityHash:             False;
+        UsePredefinedPaths:         True;
+        ExtractedUnresolvedEntries: False;
+        CustomPaths:                nil;
+        HelpFiles:                  nil));
     Auxiliary: (
       InMemoryProcessingAllowed: False));
 
