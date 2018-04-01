@@ -18,8 +18,6 @@ type
     procedure ZIP_WriteEntry(Index: Integer); virtual;
     procedure ZIP_WriteCentralDirectory; virtual;
     procedure ZIP_WriteEndOfCentralDirectory; virtual;
-  public
-    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
   end;
 
 implementation
@@ -29,14 +27,8 @@ uses
   AuxTypes, MemoryBuffer, CRC32, ZLibCommon,
   DART_Auxiliary, DART_Format_ZIP, DART_Repairer;
 
-const
-  DART_METHOD_ID_ZIP_REB_ARCHPROC = 1100;
-
 procedure TDARTRepairer_ZIP_Rebuild.ArchiveProcessing;
 begin
-// check if target <> source
-If AnsiSameText(fArchiveProcessingSettings.Common.ArchivePath,fArchiveProcessingSettings.Common.TargetPath) then
-  DoError(DART_METHOD_ID_ZIP_REB_ARCHPROC,'Output is directed into an input file, cannot proceed.');
 inherited;
 ZIP_RebuildArchive;
 end;
@@ -253,17 +245,5 @@ with fArchiveStructure.EndOfCentralDirectory do
     fRebuildArchiveStream.WriteBuffer(PAnsiChar(Comment)^,BinPart.CommentLength);
   end;
 end;
-
-//==============================================================================
-
-class Function TDARTRepairer_ZIP_Rebuild.GetMethodNameFromIndex(MethodIndex: Integer): String;
-begin
-case MethodIndex of
-  DART_METHOD_ID_ZIP_REB_ARCHPROC:  Result := 'ArchiveProcessing';
-else
-  Result := inherited GetMethodNameFromIndex(MethodIndex);
-end;
-end;
-
 
 end.

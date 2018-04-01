@@ -39,7 +39,6 @@ type
   protected
     fProcessingSettings:  TDART_PS_ZIP;
     fArchiveStructure:    TDART_ZIP_ArchiveStructure;
-    fEntriesProcProgNode: TProgressTracker;
     // initialization methods
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
@@ -58,7 +57,7 @@ type
     procedure ZIP_ReconstructEndOfCentralDirectory; virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
-    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
     Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; override;
     property ArchiveStructure: TDART_ZIP_ArchiveStructure read fArchiveStructure;
   end;
@@ -67,6 +66,8 @@ type
   protected
     procedure ArchiveProcessing; override;
     procedure ZIP_PrepareEntriesProgress; virtual;
+  public
+    class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;    
   end;
 
 implementation
@@ -87,6 +88,7 @@ const
 
 procedure TDARTRepairer_ZIP.InitializeProcessingSettings;
 begin
+inherited;
 fProcessingSettings := fArchiveProcessingSettings.ZIP;
 RectifyZIPProcessingSettings(fProcessingSettings);
 end;
@@ -95,6 +97,7 @@ end;
 
 procedure TDARTRepairer_ZIP.InitializeData;
 begin
+inherited;
 SetLength(fArchiveStructure.Entries.Arr,0);
 fArchiveStructure.Entries.Count := 0;
 FillChar(fArchiveStructure.EndOfCentralDirectory.BinPart,SizeOf(TDART_ZIP_EndOfCentralDirectoryRecord),0);
@@ -114,7 +117,7 @@ Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
 If Index >= 0 then
   begin
     ProcessingNode := fProgressTracker.StageObjects[Index];
-    Quota := 950;
+    Quota := 1000;
     If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
       begin
         ProcessingNode.Add(10,DART_PROGSTAGE_ID_ZIP_EOCDLoading);
@@ -131,6 +134,7 @@ If Index >= 0 then
         Dec(Quota,100);
       end;
     ProcessingNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep);
+    Dec(Quota,50);
     Index := ProcessingNode.Add(Quota,DART_PROGSTAGE_ID_ZIP_EntriesProcessing);
     fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
   end
@@ -143,6 +147,7 @@ Function TDARTRepairer_ZIP.IndexOfEntry(const EntryFileName: AnsiString): Intege
 var
   i:  Integer;
 begin
+inherited;
 Result := -1;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   If AnsiSameText(EntryFileName,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName) then
@@ -156,6 +161,7 @@ end;
 
 Function TDARTRepairer_ZIP.GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
 begin
+inherited;
 Result := False;
 If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchiveStructure.Entries.Count) then
   begin
@@ -197,6 +203,7 @@ end;
 
 procedure TDARTRepairer_ZIP.ArchiveProcessing;
 begin
+inherited;
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
     ZIP_LoadEndOfCentralDirectory;
@@ -757,9 +764,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TDARTRepairer_ZIP.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+constructor TDARTRepairer_ZIP.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
 begin
-inherited Create(PauseControlObject,ArchiveProcessingSettings);
+inherited Create(PauseControlObject,ArchiveProcessingSettings,CatchExceptions);
 fExpectedSignature := DART_ZIP_FileSignature;
 end;
 
@@ -780,6 +787,7 @@ var
   end;
 
 begin
+inherited;
 Result := 0;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   with fArchiveStructure.Entries.Arr[i] do
@@ -809,8 +817,14 @@ end;
 
 //******************************************************************************
 
+const
+  DART_METHOD_ID_ZIP_PROC_ARCHPROC = 1100;
+
 procedure TDARTRepairer_ZIP_ProcessingBase.ArchiveProcessing;
 begin
+// check if target <> source
+If AnsiSameText(fArchiveProcessingSettings.Common.ArchivePath,fArchiveProcessingSettings.Common.TargetPath) then
+  DoError(DART_METHOD_ID_ZIP_PROC_ARCHPROC,'Output is directed into an input file, cannot proceed.');
 inherited;
 ZIP_PrepareEntriesProgress;
 end;
@@ -857,6 +871,17 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
     end;
 DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],1.0);
+end;
+
+//==============================================================================
+
+class Function TDARTRepairer_ZIP_ProcessingBase.GetMethodNameFromIndex(MethodIndex: Integer): String;
+begin
+case MethodIndex of
+  DART_METHOD_ID_ZIP_PROC_ARCHPROC: Result := 'ArchiveProcessing';
+else
+  Result := inherited GetMethodNameFromIndex(MethodIndex);
+end;
 end;
 
 end.

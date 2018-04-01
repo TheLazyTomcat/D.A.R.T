@@ -45,9 +45,9 @@ type
 //--- Utility data -------------------------------------------------------------
 
   TDART_SCS_EntryUtilityData = record
-    Resolved:           Boolean;
-    //Erroneous:          Boolean;
-    //SubEntries:         array of AnsiString;
+    Resolved:     Boolean;
+    Erroneous:    Boolean;
+    DirContent:   array of AnsiString;
     //OriginalDataOffset: UInt64;
   end;
 
@@ -59,7 +59,7 @@ type
 //--- Main structure -----------------------------------------------------------
 
   TDART_SCS_Entry = record
-    Bin:          TDART_SCS_EntryRecord;
+    BinPart:      TDART_SCS_EntryRecord;
     FileName:     AnsiString;
     UtilityData:  TDART_SCS_EntryUtilityData;
   end;
@@ -115,6 +115,8 @@ const
 //--- Other SCS# constants -----------------------------------------------------
 
   DART_SCS_PathDelim = '/';
+
+  DART_SCS_DirMark = '*';
 
 implementation
 

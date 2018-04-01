@@ -77,13 +77,14 @@ type
 
   TDARTRepairer = class(TObject)
   private
-    fHeartbeat:       PInteger;
+    fCatchExceptions: Boolean;
     fTerminatedFlag:  Integer;  // 0 = continue, <>0 = terminated
     fResultInfo:      TDARTResultInfo;
     fOnProgress:      TDARTProgressEvent;
     Function GetTerminated: Boolean;
     procedure SetTerminated(Value: Boolean);
   protected
+    fHeartbeat:                 PInteger;
     fLocalFormatSettings:       TFormatSettings;
     fPauseControlObject:        TDARTPauseObject;
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
@@ -91,6 +92,7 @@ type
     fTerminating:               Boolean;
     fInputArchiveStream:        TStream;
     fExpectedSignature:         UInt32;
+    fEntriesProcProgNode:       TProgressTracker;    
     // preallocated buffers
     fBuffer_IO:                 TMemoryBuffer;
     fBuffer_Entry:              TMemoryBuffer;
@@ -104,6 +106,7 @@ type
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
     // flow control and progress report methods
+    procedure ForwardedProgressHandler(Sender: TObject; Progress: Single); virtual;
     procedure DoProgress(StageIDs: array of Integer; Data: Single); virtual;
     procedure DoWarning(const WarningText: String); virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const); overload; virtual;
@@ -131,7 +134,7 @@ type
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; virtual;
-    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean = True);
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
@@ -236,6 +239,13 @@ procedure TDARTRepairer.FreeMemoryBuffers;
 begin
 FreeBuffer(fBuffer_Entry);
 FreeBuffer(fBuffer_IO);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ForwardedProgressHandler(Sender: TObject; Progress: Single);
+begin
+DoProgress([DART_PROGSTAGE_ID_NoProgress],Progress);
 end;
 
 //------------------------------------------------------------------------------
@@ -593,15 +603,18 @@ try
   DoProgress([DART_PROGSTAGE_ID_Direct],2.0);
 except
   on E: EDARTProcessingException do
-    begin
-      fResultInfo.ErrorInfo.FaultObjectRef := E.FaultObjectRef;
-      fResultInfo.ErrorInfo.FaultObjectClass := E.FaultObjectClass;
-      fResultInfo.ErrorInfo.FaultFunctionIndex := E.FaultFunctionIdx;
-      fResultInfo.ErrorInfo.FaultFunctionName := E.FaultFunctionName;
-      ProcessException(E)
-    end;
+    If fCatchExceptions then
+      begin
+        fResultInfo.ErrorInfo.FaultObjectRef := E.FaultObjectRef;
+        fResultInfo.ErrorInfo.FaultObjectClass := E.FaultObjectClass;
+        fResultInfo.ErrorInfo.FaultFunctionIndex := E.FaultFunctionIdx;
+        fResultInfo.ErrorInfo.FaultFunctionName := E.FaultFunctionName;
+        ProcessException(E)
+      end
+    else raise;
   on E: Exception do
-    ProcessException(E);
+    If fCatchExceptions then ProcessException(E)
+      else raise;
 end;
 end;
 
@@ -622,14 +635,15 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TDARTRepairer.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+constructor TDARTRepairer.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean = True);
 begin
 inherited Create;
-fHeartbeat := nil;
+fCatchExceptions := CatchExceptions;
 fTerminatedFlag := DART_TERMFLAG_CONTINUE;
 fResultInfo := DART_DefaultResultInfo;
 fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
 fOnProgress := nil;
+fHeartbeat := nil;
 {$WARN SYMBOL_PLATFORM OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
 {$WARN SYMBOL_PLATFORM ON}

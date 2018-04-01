@@ -97,7 +97,7 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpFiles:                  array of String;
-    // temporary fields:
+    // temporary fields...
     ParseContent: Boolean;
     BruteForce:   Boolean;
   end;
@@ -237,9 +237,17 @@ end;
 //------------------------------------------------------------------------------
 
 procedure EnsureThreadSafety(var APS: TDARTArchiveProcessingSettings);
+var
+  i:  Integer;
 begin
 UniqueString(APS.Common.ArchivePath);
 UniqueString(APS.Common.TargetPath);
+SetLength(APS.SCS.PathResolve.CustomPaths,Length(APS.SCS.PathResolve.CustomPaths));
+SetLength(APS.SCS.PathResolve.HelpFiles,Length(APS.SCS.PathResolve.HelpFiles));
+For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
+  UniqueString(APS.SCS.PathResolve.CustomPaths[i]);
+For i := Low(APS.SCS.PathResolve.HelpFiles) to High(APS.SCS.PathResolve.HelpFiles) do
+  UniqueString(APS.SCS.PathResolve.HelpFiles[i]);
 end;
 
 end.
