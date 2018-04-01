@@ -97,11 +97,15 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpFiles:                  array of String;
+    // temporary fields:
+    ParseContent: Boolean;
+    BruteForce:   Boolean;
   end;
 
   TDART_PS_SCS = record
-    Entry:        TDART_PS_SCS_EntrySettings;
-    PathResolve:  TDART_PS_SCS_PathResolveSettings;
+    Entry:          TDART_PS_SCS_EntrySettings;
+    EntryTabToMem:  Boolean;
+    PathResolve:    TDART_PS_SCS_PathResolveSettings;
   end;
 
 //--- Main structure -----------------------------------------------------------
@@ -170,12 +174,15 @@ const
         IgnoreCRC32:                False;
         IgnoreCompressionFlag:      False;
         IgnoreDictionaryID:         False);
+      EntryTabToMem:                True;  
       PathResolve:(
         AssumeCityHash:             False;
         UsePredefinedPaths:         True;
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
-        HelpFiles:                  nil));
+        HelpFiles:                  nil;
+        ParseContent:               False;
+        BruteForce:                 False));
     Auxiliary: (
       InMemoryProcessingAllowed: False));
 

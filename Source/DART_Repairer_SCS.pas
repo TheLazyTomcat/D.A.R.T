@@ -91,7 +91,7 @@ implementation
 
 uses
   SysUtils, Classes,
-  City, BitOps, CRC32;
+  City, BitOps, CRC32, MemoryBuffer, StaticMemoryStream;
 
 const
   DART_METHOD_ID_SCS_ARCHPROC   = 0200;
@@ -330,24 +330,44 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_LoadEntries;
 var
-  i:  Integer;
+  Entries:  TStaticMemoryStream;
+
+  procedure LoadEntriesFromStream(Stream: TStream);
+  var
+    i:  Integer;
+  begin
+    For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+      with fArchiveStructure.Entries.Arr[i] do
+        begin
+          Stream.ReadBuffer(Bin,SizeOf(TDART_SCS_EntryRecord));
+          FileName := '';
+          UtilityData.Resolved := False;
+          If fProcessingSettings.Entry.IgnoreCRC32 then
+            Bin.CRC32 := 0;
+          If fProcessingSettings.Entry.IgnoreCompressionFlag then
+            SetFlagState(Bin.Flags,DART_SCS_FLAG_Compressed,Bin.UncompressedSize <> Bin.CompressedSize);
+          DoProgress([PSID_Processing,PSID_C_EntriesLoading],(i + 1) / fArchiveStructure.Entries.Count);
+        end;
+  end ;
+
 begin
 DoProgress([PSID_Processing,PSID_C_EntriesLoading],1.0);
 SetLength(fArchiveStructure.Entries.Arr,fArchiveStructure.ArchiveHeader.EntryCount);
 fArchiveStructure.Entries.Count := Length(fArchiveStructure.Entries.Arr);
 fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntriesOffset,soBeginning);
-For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  with fArchiveStructure.Entries.Arr[i] do
-    begin
-      fInputArchiveStream.ReadBuffer(Bin,SizeOf(TDART_SCS_EntryRecord));
-      FileName := '';
-      UtilityData.Resolved := False;
-      If fProcessingSettings.Entry.IgnoreCRC32 then
-        Bin.CRC32 := 0;
-      If fProcessingSettings.Entry.IgnoreCompressionFlag then
-        SetFlagState(Bin.Flags,DART_SCS_FLAG_Compressed,Bin.UncompressedSize <> Bin.CompressedSize);
-      DoProgress([PSID_Processing,PSID_C_EntriesLoading],(i + 1) / fArchiveStructure.Entries.Count);
+If fProcessingSettings.EntryTabToMem then
+  begin
+    // load entire entry table to memory to speed things up
+    ReallocBufferKeep(fBuffer_Entry,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
+    Entries := TStaticMemoryStream.Create(fBuffer_Entry.Memory,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
+    try
+      Entries.Seek(0,soBeginning);
+      LoadEntriesFromStream(Entries);
+    finally
+      Entries.Free;
     end;
+  end
+else LoadEntriesFromStream(fInputArchiveStream); 
 DoProgress([PSID_Processing,PSID_C_EntriesLoading],1.0);
 end;
 
@@ -400,11 +420,11 @@ SCS_AssignPaths;
 SCS_ResolvePaths_HelpFiles;
 SCS_AssignPaths;
 // parse content of processed archive
-//If fProcessingSettings.PathResolve.ParseContent then
-//  SCS_ResolvePaths_ParseContent;
+If fProcessingSettings.PathResolve.ParseContent then
+  SCS_ResolvePaths_ParseContent;
 SCS_AssignPaths;
-//If fProcessingSettings.PathResolve.BruteForceResolve then
-//  SCS_ResolvePaths_BruteForce;
+If fProcessingSettings.PathResolve.BruteForce then
+  SCS_ResolvePaths_BruteForce;
 SCS_ResolvePaths_Reconstruct;
 DoProgress([PSID_Processing,PSID_C_PathsResolving],1.0);
 end;
@@ -414,7 +434,7 @@ end;
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_Local;
 begin
 DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Local],0.0);
-{$messsage 'implement'}
+{$message 'implement'}
 DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Local],1.0);
 end;
 
