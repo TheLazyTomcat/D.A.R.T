@@ -17,7 +17,7 @@ const
   DART_PROGSTAGE_ID_SCS_EntriesProcessing     = DART_PROGSTAGE_ID_MAX + 5;
 
   DART_PROGSTAGE_ID_SCS_PathsRes_Local        = DART_PROGSTAGE_ID_MAX + 10;
-  DART_PROGSTAGE_ID_SCS_PathsRes_HelpFiles    = DART_PROGSTAGE_ID_MAX + 11;
+  DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives = DART_PROGSTAGE_ID_MAX + 11;
   DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent = DART_PROGSTAGE_ID_MAX + 12;
   DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce   = DART_PROGSTAGE_ID_MAX + 13;
   DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct  = DART_PROGSTAGE_ID_MAX + 14;
@@ -36,7 +36,7 @@ const
   PSID_C_EntriesProcessing     = DART_PROGSTAGE_ID_SCS_EntriesProcessing;
 
   PSID_C_PathsRes_Local        = DART_PROGSTAGE_ID_SCS_PathsRes_Local;
-  PSID_C_PathsRes_HelpFiles    = DART_PROGSTAGE_ID_SCS_PathsRes_HelpFiles;
+  PSID_C_PathsRes_HelpArchives = DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives;
   PSID_C_PathsRes_ParseContent = DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent;
   PSID_C_PathsRes_BruteForce   = DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce;
   PSID_C_PathsRes_Reconstruct  = DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct;
@@ -77,7 +77,7 @@ type
     procedure SCS_ReconstructDirectories; virtual;
     procedure SCS_ResolvePaths; virtual; 
     procedure SCS_ResolvePaths_Local; virtual;
-    procedure SCS_ResolvePaths_HelpFiles; virtual;
+    procedure SCS_ResolvePaths_HelpArchives; virtual;
     procedure SCS_ResolvePaths_ParseContent; virtual;
     procedure SCS_ResolvePaths_BruteForce; virtual;
     procedure SCS_ResolvePaths_Reconstruct; virtual;
@@ -161,8 +161,8 @@ If Index >= 0 then
     // individual stages of paths resolving
     // local
     PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_Local);
-    // help files
-    PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_HelpFiles);
+    // help archives
+    PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives);
     // parse content
     PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent);
     // brute force
@@ -432,7 +432,7 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_LoadEntries;
 var
-  Entries:  TStaticMemoryStream;
+  EntryTable: TStaticMemoryStream;
 
   procedure LoadEntriesFromStream(Stream: TStream);
   var
@@ -456,18 +456,18 @@ begin
 DoProgress([PSID_Processing,PSID_C_EntriesLoading],1.0);
 SetLength(fArchiveStructure.Entries.Arr,fArchiveStructure.ArchiveHeader.EntryCount);
 fArchiveStructure.Entries.Count := Length(fArchiveStructure.Entries.Arr);
-fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntriesOffset,soBeginning);
-If fProcessingSettings.EntryTabToMem then
+fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntryTableOffset,soBeginning);
+If fProcessingSettings.EntryTabInMem then
   begin
     // load entire entry table to memory to speed things up
     ReallocBufferKeep(fBuffer_Entry,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
     fInputArchiveStream.ReadBuffer(fBuffer_Entry.Memory^,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
-    Entries := TStaticMemoryStream.Create(fBuffer_Entry.Memory,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
+    EntryTable := TStaticMemoryStream.Create(fBuffer_Entry.Memory,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));
     try
-      Entries.Seek(0,soBeginning);
-      LoadEntriesFromStream(Entries);
+      EntryTable.Seek(0,soBeginning);
+      LoadEntriesFromStream(EntryTable);
     finally
-      Entries.Free;
+      EntryTable.Free;
     end;
   end
 else LoadEntriesFromStream(fInputArchiveStream); 
@@ -584,9 +584,9 @@ with fProcessingSettings.PathResolve do
     SCS_KnownPaths_Add(CustomPaths[i]);
 // load all paths stored in the archive
 SCS_ResolvePaths_Local;
-// load paths from help files
-If Length(fProcessingSettings.PathResolve.HelpFiles) > 0 then
-  SCS_ResolvePaths_HelpFiles;
+// load paths from help archives
+If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
+  SCS_ResolvePaths_HelpArchives;
 // parse content of processed archive
 If fProcessingSettings.PathResolve.ParseContent then
   SCS_ResolvePaths_ParseContent;
@@ -699,20 +699,20 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer_SCS.SCS_ResolvePaths_HelpFiles;
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_HelpArchives;
 var
   i:  Integer;
 
-  procedure LoadHelpFile(const FileName: String);
+  procedure LoadHelpArchive(const FileName: String);
   var
-    HelpFileProcSettings: TDARTArchiveProcessingSettings;
-    HelpFileRepairer:     TDARTRepairer;
-    ii:                   Integer;
-    TempKnownPaths:       TDART_KnownPaths;
+    HelpArchiveProcSettings:  TDARTArchiveProcessingSettings;
+    HelpArchiveRepairer:      TDARTRepairer;
+    ii:                       Integer;
+    TempKnownPaths:           TDART_KnownPaths;
   begin
   {
     Creates local basic repairer that will load all possible paths from a help
-    file without doing anything with it.
+    archive without doing anything with it.
     Also, for SCS# archives, all paths found to this moment are passed as custom
     paths to the repairer.
     What repairer should be used is discerned by a file signature, when it
@@ -720,68 +720,68 @@ var
     repairer is used.
   }
     // init processing settings for local repairer
-    HelpFileProcSettings := DART_DefaultArchiveProcessingSettings;
-    HelpFileProcSettings.Common.ArchivePath := FileName;
+    HelpArchiveProcSettings := DART_DefaultArchiveProcessingSettings;
+    HelpArchiveProcSettings.Common.ArchivePath := FileName;
     // explicitly turn off in-memory processing, as we do not know size of the file
-    HelpFileProcSettings.Common.InMemoryProcessing := False;
+    HelpArchiveProcSettings.Common.InMemoryProcessing := False;
     // do archive-type-specific processing
     case DART_GetFileSignature(FileName) of
       DART_SCS_FileSignature:   // - - - - - - - - - - - - - - - - - - - - - - -
         begin
           // SCS# archive
           // file signature must be checked because we assume it is SCS# format
-          HelpFileProcSettings.Common.IgnoreFileSignature := False;
+          HelpArchiveProcSettings.Common.IgnoreFileSignature := False;
           // prepare all already known paths
-          SetLength(HelpFileProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
+          SetLength(HelpArchiveProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
           For ii := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-            HelpFileProcSettings.SCS.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths.Arr[ii].Path;            
-          HelpFileRepairer := TDARTRepairer_SCS.Create(fPauseControlObject,HelpFileProcSettings,False);
+            HelpArchiveProcSettings.SCS.PathResolve.CustomPaths[ii] := fArchiveStructure.KnownPaths.Arr[ii].Path;
+          HelpArchiveRepairer := TDARTRepairer_SCS.Create(fPauseControlObject,HelpArchiveProcSettings,False);
           try
-            HelpFileRepairer.OnProgress := ForwardedProgressHandler;
-            HelpFileRepairer.Heartbeat := fHeartbeat;
-            HelpFileRepairer.Run;
+            HelpArchiveRepairer.OnProgress := ForwardedProgressHandler;
+            HelpArchiveRepairer.Heartbeat := fHeartbeat;
+            HelpArchiveRepairer.Run;
             TempKnownPaths.Count := 0;
-            If HelpFileRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
+            If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
               For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
                 SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path);
           finally
-            HelpFileRepairer.Free;
+            HelpArchiveRepairer.Free;
           end;
         end;
     else
      {DART_ZIP_FileSignature:}  // - - - - - - - - - - - - - - - - - - - - - - -
       // other archive types (ZIP)
-      HelpFileRepairer := TDARTRepairer_ZIP.Create(fPauseControlObject,HelpFileProcSettings,False);
+      HelpArchiveRepairer := TDARTRepairer_ZIP.Create(fPauseControlObject,HelpArchiveProcSettings,False);
       try
-        HelpFileRepairer.OnProgress := ForwardedProgressHandler;
-        HelpFileRepairer.Heartbeat := fHeartbeat;
-        HelpFileRepairer.Run;
+        HelpArchiveRepairer.OnProgress := ForwardedProgressHandler;
+        HelpArchiveRepairer.Heartbeat := fHeartbeat;
+        HelpArchiveRepairer.Run;
         TempKnownPaths.Count := 0;
-        If HelpFileRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
+        If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
           For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
             SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path);
       finally
-        HelpFileRepairer.Free;
+        HelpArchiveRepairer.Free;
       end;
     end;
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpFiles],0.0);
+DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    For i := Low(fProcessingSettings.PathResolve.HelpFiles) to High(fProcessingSettings.PathResolve.HelpFiles) do
+    For i := Low(fProcessingSettings.PathResolve.HelpArchives) to High(fProcessingSettings.PathResolve.HelpArchives) do
       begin
-        If Length(fProcessingSettings.PathResolve.HelpFiles[i]) > 0 then
-          LoadHelpFile(fProcessingSettings.PathResolve.HelpFiles[i]);
-        DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpFiles],
-                   (i + 1) / Length(fProcessingSettings.PathResolve.HelpFiles));
+        If Length(fProcessingSettings.PathResolve.HelpArchives[i]) > 0 then
+          LoadHelpArchive(fProcessingSettings.PathResolve.HelpArchives[i]);
+        DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],
+                   (i + 1) / Length(fProcessingSettings.PathResolve.HelpArchives));
         SCS_AssignPaths;
         If fArchiveStructure.UtilityData.UnresolvedCount <= 0 then
           Break{For i}; // all entries are resolved, no need to continue
       end;
   end;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpFiles],1.0);
+DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -814,14 +814,11 @@ end;
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_Reconstruct;
 begin
 DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Reconstruct],0.0);
-If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
-  begin
-    // reconstruct all directory entries from file names
-    fEntriesSorted := False;
-    SCS_DiscardDirectories;
-    SCS_ReconstructDirectories;
-    SCS_SortEntries;
-  end;
+// reconstruct all directory entries from file names
+fEntriesSorted := False;
+SCS_DiscardDirectories;
+SCS_ReconstructDirectories;
+SCS_SortEntries;
 DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Reconstruct],1.0);
 end;
 
@@ -929,9 +926,9 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       CurrNode := fEntriesProcProgNode.StageObjects[Index];
       case fArchiveProcessingSettings.Common.RepairMethod of
         rmRebuild:  begin
-                      If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                      If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
                         CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
-                      {$message 'check when implementing'}  
+                      {$message 'check when implementing'}
                       // need decompressed data for crc32 calculation, unresolved entry saving or directory entry compression/crc32
                       If (fProcessingSettings.Entry.IgnoreCRC32 and GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
                          (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and not UtilityData.Resolved) or

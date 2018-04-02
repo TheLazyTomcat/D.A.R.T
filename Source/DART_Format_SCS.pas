@@ -23,12 +23,12 @@ const
 
 type
   TDART_SCS_ArchiveHeader = packed record
-    Signature:      UInt32;
-    Unknown:        UInt32;
-    HashType:       UInt32;
-    EntryCount:     UInt32;
-    EntriesOffset:  UInt64;
-    UnknownOffset:  UInt64;
+    Signature:        UInt32;
+    Unknown:          UInt32; // allways 1
+    HashType:         UInt32;
+    EntryCount:       UInt32;
+    EntryTableOffset: UInt64;
+    UnknownOffset:    UInt64;
   end;
 
 //--- Entry record (table item) ------------------------------------------------
@@ -90,7 +90,7 @@ const
 //--- Default offsets ----------------------------------------------------------
 
   DART_SCS_DefaultEntryTableOffset = UInt64($0000000000001000);
-  DART_SCS_DefaultUnknowmOffset    = UInt64($0000000000000000); // usually starts at $80
+  DART_SCS_DefaultUnknownOffset    = UInt64($0000000000000000); // usually starts at $80
 
 //--- Path constants, predefined paths -----------------------------------------
 
@@ -117,6 +117,15 @@ const
   DART_SCS_PathDelim = '/';
 
   DART_SCS_DirMark = '*';
+
+{
+  Maximum size of a directory entry that will not be compressed, in bytes.
+  If the entry is larger, it will be compressed in the output, otherwise it will
+  be stored with no compression.
+
+  When set to 0, all directory entries will be compressed.
+}
+  DART_SCS_MaxUncompDirEntrySize = 32;
 
 implementation
 

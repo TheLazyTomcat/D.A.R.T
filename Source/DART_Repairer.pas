@@ -123,6 +123,7 @@ type
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: array of Integer); virtual;
     procedure CompressorProgressHandler(Sender: TObject; Progress: Single); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer); virtual;
+    procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer); virtual;
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
@@ -530,6 +531,27 @@ SetLength(fCompProgressStage,Length(ProgressStage));
 For i := Low(ProgressStage) to High(ProgressStage) do
   fCompProgressStage[i] := ProgressStage[i];
 with TZDecompressionBuffer.Create(InBuff,InSize,WindowBits) do
+try
+  FreeResult := False;
+  OnProgress := CompressorProgressHandler;
+  Process;
+  OutBuff := ResultMemory;
+  OutSize := ResultSize;
+finally
+  Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer);
+var
+  i:  Integer;
+begin
+SetLength(fCompProgressStage,Length(ProgressStage));
+For i := Low(ProgressStage) to High(ProgressStage) do
+  fCompProgressStage[i] := ProgressStage[i];
+with TZCompressionBuffer.Create(InBuff,InSize,zclDefault,WindowBits) do
 try
   FreeResult := False;
   OnProgress := CompressorProgressHandler;

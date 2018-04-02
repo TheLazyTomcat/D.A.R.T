@@ -24,7 +24,7 @@ implementation
 
 uses
   SysUtils,
-  AuxTypes, MemoryBuffer, CRC32, ZLibCommon,
+  AuxTypes, MemoryBuffer, CRC32, ZLibCommon, StrRect,
   DART_Auxiliary, DART_Format_ZIP, DART_Repairer;
 
 procedure TDARTRepairer_ZIP_Rebuild.ArchiveProcessing;
@@ -46,7 +46,7 @@ DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPat
 If fArchiveProcessingSettings.Common.InMemoryProcessing then
   fRebuildArchiveStream := TMemoryStream.Create
 else
-  fRebuildArchiveStream := TFileStream.Create(fArchiveProcessingSettings.Common.TargetPath,fmCreate or fmShareDenyWrite);
+  fRebuildArchiveStream := TFileStream.Create(StrToRTL(fArchiveProcessingSettings.Common.TargetPath),fmCreate or fmShareDenyWrite);
 try
   // prepare output stream
   If fArchiveProcessingSettings.Common.InMemoryProcessing then

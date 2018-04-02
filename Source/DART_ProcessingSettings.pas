@@ -96,7 +96,7 @@ type
     UsePredefinedPaths:         Boolean;
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
-    HelpFiles:                  array of String;
+    HelpArchives:               array of String;
     // temporary fields...
     ParseContent: Boolean;
     BruteForce:   Boolean;
@@ -104,7 +104,7 @@ type
 
   TDART_PS_SCS = record
     Entry:          TDART_PS_SCS_EntrySettings;
-    EntryTabToMem:  Boolean;
+    EntryTabInMem:  Boolean;
     PathResolve:    TDART_PS_SCS_PathResolveSettings;
   end;
 
@@ -174,13 +174,13 @@ const
         IgnoreCRC32:                False;
         IgnoreCompressionFlag:      False;
         IgnoreDictionaryID:         False);
-      EntryTabToMem:                True;  
+      EntryTabInMem:                True;  
       PathResolve:(
         AssumeCityHash:             False;
         UsePredefinedPaths:         True;
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
-        HelpFiles:                  nil;
+        HelpArchives:               nil;
         ParseContent:               False;
         BruteForce:                 False));
     Auxiliary: (
@@ -243,11 +243,11 @@ begin
 UniqueString(APS.Common.ArchivePath);
 UniqueString(APS.Common.TargetPath);
 SetLength(APS.SCS.PathResolve.CustomPaths,Length(APS.SCS.PathResolve.CustomPaths));
-SetLength(APS.SCS.PathResolve.HelpFiles,Length(APS.SCS.PathResolve.HelpFiles));
+SetLength(APS.SCS.PathResolve.HelpArchives,Length(APS.SCS.PathResolve.HelpArchives));
 For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
   UniqueString(APS.SCS.PathResolve.CustomPaths[i]);
-For i := Low(APS.SCS.PathResolve.HelpFiles) to High(APS.SCS.PathResolve.HelpFiles) do
-  UniqueString(APS.SCS.PathResolve.HelpFiles[i]);
+For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
+  UniqueString(APS.SCS.PathResolve.HelpArchives[i]);
 end;
 
 end.
