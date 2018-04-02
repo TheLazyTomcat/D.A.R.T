@@ -5,54 +5,71 @@ unit DART_Repairer_SCS;
 interface
 
 uses
-  AuxTypes,
+  AuxTypes, ProgressTracker,
   DART_Common, DART_ProcessingSettings, DART_Format_SCS, DART_Repairer;
 
-const
+var
   // progress stages
-  DART_PROGSTAGE_ID_SCS_ArchiveHeaderLoading  = DART_PROGSTAGE_ID_MAX + 1;
-  DART_PROGSTAGE_ID_SCS_EntriesLoading        = DART_PROGSTAGE_ID_MAX + 2;
-  DART_PROGSTAGE_ID_SCS_PathsResolving        = DART_PROGSTAGE_ID_MAX + 3;
-  DART_PROGSTAGE_ID_SCS_EntriesProgressPrep   = DART_PROGSTAGE_ID_MAX + 4;
-  DART_PROGSTAGE_ID_SCS_EntriesProcessing     = DART_PROGSTAGE_ID_MAX + 5;
+  DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading:  Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesLoading:        Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsResolving:        Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep:   Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesProcessing:     Integer = -1;
 
-  DART_PROGSTAGE_ID_SCS_PathsRes_Local        = DART_PROGSTAGE_ID_MAX + 10;
-  DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives = DART_PROGSTAGE_ID_MAX + 11;
-  DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent = DART_PROGSTAGE_ID_MAX + 12;
-  DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce   = DART_PROGSTAGE_ID_MAX + 13;
-  DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct  = DART_PROGSTAGE_ID_MAX + 14;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Local:        Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives: Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent: Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce:   Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct:  Integer = -1;
 
-  DART_PROGSTAGE_ID_SCS_EntryProcessing       = DART_PROGSTAGE_ID_MAX + 20;
-  DART_PROGSTAGE_ID_SCS_EntryLoading          = DART_PROGSTAGE_ID_MAX + 21;
-  DART_PROGSTAGE_ID_SCS_EntryDecompression    = DART_PROGSTAGE_ID_MAX + 22;
-  DART_PROGSTAGE_ID_SCS_EntrySaving           = DART_PROGSTAGE_ID_MAX + 23;
+  DART_PROGSTAGE_IDX_SCS_EntryProcessing:       Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntryLoading:          Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntryDecompression:    Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntrySaving:           Integer = -1;
 
-  DART_PROGSTAGE_ID_SCS_Max                   = DART_PROGSTAGE_ID_MAX + 100;
+  PSIDX_C_ArchiveHeaderLoading:  Integer = -1;
+  PSIDX_C_EntriesLoading:        Integer = -1;
+  PSIDX_C_PathsResolving:        Integer = -1;
+  PSIDX_C_EntriesProgressPrep:   Integer = -1;
+  PSIDX_C_EntriesProcessing:     Integer = -1;
 
-  PSID_C_ArchiveHeaderLoading  = DART_PROGSTAGE_ID_SCS_ArchiveHeaderLoading;
-  PSID_C_EntriesLoading        = DART_PROGSTAGE_ID_SCS_EntriesLoading;
-  PSID_C_PathsResolving        = DART_PROGSTAGE_ID_SCS_PathsResolving;
-  PSID_C_EntriesProgressPrep   = DART_PROGSTAGE_ID_SCS_EntriesProgressPrep;
-  PSID_C_EntriesProcessing     = DART_PROGSTAGE_ID_SCS_EntriesProcessing;
+  PSIDX_C_PathsRes_Local:        Integer = -1;
+  PSIDX_C_PathsRes_HelpArchives: Integer = -1;
+  PSIDX_C_PathsRes_ParseContent: Integer = -1;
+  PSIDX_C_PathsRes_BruteForce:   Integer = -1;
+  PSIDX_C_PathsRes_Reconstruct:  Integer = -1;
 
-  PSID_C_PathsRes_Local        = DART_PROGSTAGE_ID_SCS_PathsRes_Local;
-  PSID_C_PathsRes_HelpArchives = DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives;
-  PSID_C_PathsRes_ParseContent = DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent;
-  PSID_C_PathsRes_BruteForce   = DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce;
-  PSID_C_PathsRes_Reconstruct  = DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct;
+  PSIDX_C_EntryProcessing:       Integer = -1;
+  PSIDX_C_EntryLoading:          Integer = -1;
+  PSIDX_C_EntryDecompression:    Integer = -1;
+  PSIDX_C_EntrySaving:           Integer = -1;
+(*
+  PSIDX_C_ArchiveHeaderLoading  = DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading;
+  PSIDX_C_EntriesLoading        = DART_PROGSTAGE_IDX_SCS_EntriesLoading;
+  PSIDX_C_PathsResolving        = DART_PROGSTAGE_IDX_SCS_PathsResolving;
+  PSIDX_C_EntriesProgressPrep   = DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep;
+  PSIDX_C_EntriesProcessing     = DART_PROGSTAGE_IDX_SCS_EntriesProcessing;
 
-  PSID_C_EntryProcessing       = DART_PROGSTAGE_ID_SCS_EntryProcessing;
-  PSID_C_EntryLoading          = DART_PROGSTAGE_ID_SCS_EntryLoading;
-  PSID_C_EntryDecompression    = DART_PROGSTAGE_ID_SCS_EntryDecompression;
-  PSID_C_EntrySaving           = DART_PROGSTAGE_ID_SCS_EntrySaving;
+  PSIDX_C_PathsRes_Local        = DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
+  PSIDX_C_PathsRes_HelpArchives = DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
+  PSIDX_C_PathsRes_ParseContent = DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent;
+  PSIDX_C_PathsRes_BruteForce   = DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
+  PSIDX_C_PathsRes_Reconstruct  = DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
 
+  PSIDX_C_EntryProcessing       = DART_PROGSTAGE_IDX_SCS_EntryProcessing;
+  PSIDX_C_EntryLoading          = DART_PROGSTAGE_IDX_SCS_EntryLoading;
+  PSIDX_C_EntryDecompression    = DART_PROGSTAGE_IDX_SCS_EntryDecompression;
+  PSIDX_C_EntrySaving           = DART_PROGSTAGE_IDX_SCS_EntrySaving;
+*)
 
 type
   TDARTRepairer_SCS = class(TDARTRepairer)
   protected
-    fProcessingSettings:  TDART_PS_SCS;
-    fArchiveStructure:    TDART_SCS_ArchiveStructure;
-    fEntriesSorted:       Boolean;
+    fProcessingSettings:    TDART_PS_SCS;
+    fArchiveStructure:      TDART_SCS_ArchiveStructure;
+    fEntriesSorted:         Boolean;
+    // progress nodes
+    fPathsResolveProcNode:  TProgressTracker;
     // initialization methods
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
@@ -84,7 +101,7 @@ type
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
-    Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; override;
+    Function GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer; override;
     property ArchiveStructure: TDART_SCS_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -102,7 +119,7 @@ implementation
 uses
   SysUtils, Classes,
   City, BitOps, CRC32, StrRect, MemoryBuffer, StaticMemoryStream,
-  ExplicitStringLists, ProgressTracker, ZLibCommon,
+  ExplicitStringLists, ZLibCommon,
   DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP;
 
 const
@@ -136,51 +153,53 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.InitializeProgress;
-var
-  Index:          Integer;
-  ProcessingNode: TProgressTracker;
-  PathsResNode:   TProgressTracker;
 begin
 inherited;
-Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
-If Index >= 0 then
-  begin
-    ProcessingNode := fProgressTracker.StageObjects[Index];
-    ProcessingNode.BeginUpdate;
-    try
-      // set progress info for loading of archive header
-      ProcessingNode.Add(10,DART_PROGSTAGE_ID_SCS_ArchiveHeaderLoading);
-      // loading of entries
-      ProcessingNode.Add(40,DART_PROGSTAGE_ID_SCS_EntriesLoading);
-      // paths resolving
-      Index := ProcessingNode.Add(50,DART_PROGSTAGE_ID_SCS_PathsResolving);
-      PathsResNode := ProcessingNode.StageObjects[Index];
-      // preparing progress of entries processing
-      ProcessingNode.Add(20,DART_PROGSTAGE_ID_SCS_EntriesProgressPrep);
-      // entries processing
-      Index := ProcessingNode.Add(900,DART_PROGSTAGE_ID_SCS_EntriesProcessing);
-      fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
-    finally
-      ProcessingNode.EndUpdate;
-    end;
-    PathsResNode.BeginUpdate;
-    try
-      // individual stages of paths resolving
-      // local
-      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_Local);
-      // help archives
-      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives);
-      // parse content
-      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent);
-      // brute force
-      PathsResNode.Add(30,DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce);
-      // reconstruct dirs
-      PathsResNode.Add(10,DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct);
-    finally
-      PathsResNode.EndUpdate;
-    end;
-  end
-else raise Exception.Create('TDARTRepairer_SCS.InitializeProgress: Processing progress node not found.');
+fProcessingProgNode.BeginUpdate;
+try
+  // set progress info for loading of archive header
+  DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading := fProcessingProgNode.Add(10);
+  // loading of entries
+  DART_PROGSTAGE_IDX_SCS_EntriesLoading := fProcessingProgNode.Add(40);
+  // paths resolving
+  DART_PROGSTAGE_IDX_SCS_PathsResolving := fProcessingProgNode.Add(50);
+  // preparing progress of entries processing
+  DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep := fProcessingProgNode.Add(20);
+  // entries processing
+  DART_PROGSTAGE_IDX_SCS_EntriesProcessing := fProcessingProgNode.Add(900);
+  // assign obtained indices to shorter-named variables
+  PSIDX_C_ArchiveHeaderLoading := DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading;
+  PSIDX_C_EntriesLoading       := DART_PROGSTAGE_IDX_SCS_EntriesLoading;
+  PSIDX_C_PathsResolving       := DART_PROGSTAGE_IDX_SCS_PathsResolving;
+  PSIDX_C_EntriesProgressPrep  := DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep;
+  PSIDX_C_EntriesProcessing    := DART_PROGSTAGE_IDX_SCS_EntriesProcessing;
+  fPathsResolveProcNode := fProcessingProgNode.StageObjects[PSIDX_C_PathsResolving];
+  fEntriesProcessingProgNode := fProcessingProgNode.StageObjects[PSIDX_C_EntriesProcessing];
+finally
+  fProcessingProgNode.EndUpdate;
+end;
+fPathsResolveProcNode.BeginUpdate;
+try
+  // individual stages of paths resolving
+  // local
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Local := fPathsResolveProcNode.Add(20);
+  // help archives
+  DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives := fPathsResolveProcNode.Add(20);
+  // parse content
+  DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
+  // brute force
+  DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce := fPathsResolveProcNode.Add(30);
+  // reconstruct dirs
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct := fPathsResolveProcNode.Add(10);
+  // assign obtained indices to shorter-named variables
+  PSIDX_C_PathsRes_Local        := DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
+  PSIDX_C_PathsRes_HelpArchives := DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
+  PSIDX_C_PathsRes_ParseContent := DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent;
+  PSIDX_C_PathsRes_BruteForce   := DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
+  PSIDX_C_PathsRes_Reconstruct  := DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
+finally
+  fPathsResolveProcNode.EndUpdate;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -210,12 +229,12 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
           ReallocBufferKeep(fBuffer_Entry,BinPart.CompressedSize);
           // load data from input file
           fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
-          ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,[DART_PROGSTAGE_ID_NoProgress]);
+          ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,DART_PROGSTAGE_INFO_NoProgress);
           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) then
             begin
               // data are compressed, decompress them
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,
-                DecompressedBuff,DecompressedSize,WBITS_ZLIB,[DART_PROGSTAGE_ID_NoProgress]);
+                DecompressedBuff,DecompressedSize,WBITS_ZLIB,DART_PROGSTAGE_INFO_NoProgress);
               Data := DecompressedBuff;
               Size := TMemSize(DecompressedSize);
             end
@@ -359,7 +378,7 @@ procedure TDARTRepairer_SCS.SCS_SortEntries;
     end;
     
   begin
-    DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0); // must be called at the start of this routine
+    DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0); // must be called at the start of this routine
     If LeftIdx < RightIdx then
       begin
         ExchangeEntries((LeftIdx + RightIdx) shr 1,RightIdx);
@@ -421,7 +440,7 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_LoadArchiveHeader;
 begin
-DoProgress([PSID_Processing,PSID_C_ArchiveHeaderLoading],0.0);
+DoProgress(fProcessingProgNode,PSIDX_C_ArchiveHeaderLoading,0.0);
 If fInputArchiveStream.Size >= SizeOf(TDART_SCS_ArchiveHeader) then
   begin
     fInputArchiveStream.Seek(0,soBeginning);
@@ -435,7 +454,7 @@ If fInputArchiveStream.Size >= SizeOf(TDART_SCS_ArchiveHeader) then
         DoError(DART_METHOD_ID_SCS_SLDARHEAD,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.HashType]);
   end
 else DoError(DART_METHOD_ID_SCS_SLDARHEAD,'File is too small (%d bytes) to contain a valid archive header.',[fInputArchiveStream.Size]);
-DoProgress([PSID_Processing,PSID_C_ArchiveHeaderLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_ArchiveHeaderLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -458,12 +477,12 @@ var
             BinPart.CRC32 := 0;
           If fProcessingSettings.Entry.IgnoreCompressionFlag then
             SetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed,BinPart.UncompressedSize <> BinPart.CompressedSize);
-          DoProgress([PSID_Processing,PSID_C_EntriesLoading],(i + 1) / fArchiveStructure.Entries.Count);
+          DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,(i + 1) / fArchiveStructure.Entries.Count);
         end;
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_C_EntriesLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,1.0);
 SetLength(fArchiveStructure.Entries.Arr,fArchiveStructure.ArchiveHeader.EntryCount);
 fArchiveStructure.Entries.Count := Length(fArchiveStructure.Entries.Arr);
 fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntryTableOffset,soBeginning);
@@ -481,7 +500,7 @@ If fProcessingSettings.EntryTabInMem then
     end;
   end
 else LoadEntriesFromStream(fInputArchiveStream); 
-DoProgress([PSID_Processing,PSID_C_EntriesLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -499,7 +518,7 @@ For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPa
           fArchiveStructure.Entries.Arr[Index].FileName := fArchiveStructure.KnownPaths.Arr[i].Path;
           fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
         end;
-    DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);  
+    DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
   end;
 // count unresolved entries
 fArchiveStructure.UtilityData.UnresolvedCount := 0;
@@ -526,7 +545,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
             fArchiveStructure.Entries.Arr[EntryCount] := fArchiveStructure.Entries.Arr[i];
           Inc(EntryCount);
         end;
-      DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
     end;
 fArchiveStructure.Entries.Count := EntryCount;
 end;
@@ -546,7 +565,7 @@ try
       If fArchiveStructure.Entries.Arr[i].UtilityData.Resolved then
         PathDeconstructor.DeconstructPath(fArchiveStructure.Entries.Arr[i].FileName);
       // this is the slowest part of path reconstruction, so progress is done here
-      DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Reconstruct],(i + 1) / fArchiveStructure.Entries.Count);
+      DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,(i + 1) / fArchiveStructure.Entries.Count);
     end;
   PathDeconstructor.Sort;
   // store deconstructed paths into entries
@@ -566,7 +585,7 @@ try
           UtilityData.DirContent[j] := '*' + PathDeconstructor[i].SubNodes[j].Name;
         For j := 0 to Pred(PathDeconstructor[i].FileCount) do
           UtilityData.DirContent[PathDeconstructor[i].SubNodeCount + j] := PathDeconstructor[i].Files[j];
-        DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+        DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
       end;
   fArchiveStructure.Entries.Count := fArchiveStructure.Entries.Count + PathDeconstructor.Count;
 finally
@@ -580,7 +599,7 @@ procedure TDARTRepairer_SCS.SCS_ResolvePaths;
 var
   i:  Integer;
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving],0.0);
+DoProgress(fProcessingProgNode,PSIDX_C_PathsResolving,0.0);
 fArchiveStructure.KnownPaths.Count := 0;
 // add root
 SCS_KnownPaths_Add(DART_SCS_PATHS_Root);
@@ -604,7 +623,7 @@ If fProcessingSettings.PathResolve.ParseContent then
 If fProcessingSettings.PathResolve.BruteForce then
   SCS_ResolvePaths_BruteForce;
 SCS_ResolvePaths_Reconstruct;
-DoProgress([PSID_Processing,PSID_C_PathsResolving],1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_PathsResolving,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -639,7 +658,7 @@ var
             If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) then
               begin
                 // data needs to be decompressed first
-                ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,OutBuff,OutSize,WBITS_ZLIB,[DART_PROGSTAGE_ID_NoProgress]);
+                ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,OutBuff,OutSize,WBITS_ZLIB,DART_PROGSTAGE_INFO_NoProgress);
                 try
                   If UInt32(OutSize) <> BinPart.UncompressedSize then
                     DoError(DART_METHOD_ID_SCS_SLDPLOCLP,'Decompressed size does not match for entry #%d ("%s").',[Index,AnsiToStr(Path)]);
@@ -668,12 +687,13 @@ var
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
-              DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Local],ProcessedDirCount / DirCount);
+              DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,ProcessedDirCount / DirCount);
           end;
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Local],0.0);
+{$message 'does not properly report progress'}
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,0.0);
 DirectoryList := TAnsiStringList.Create;
 try
   CurrentLevel := TAnsiStringList.Create;
@@ -704,7 +724,7 @@ finally
   DirectoryList.Free;
 end;
 SCS_AssignPaths;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Local],1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -718,7 +738,7 @@ var
     HelpArchiveProcSettings:  TDARTArchiveProcessingSettings;
     HelpArchiveRepairer:      TDARTRepairer;
     ii:                       Integer;
-    TempKnownPaths:           TDART_KnownPaths;
+    TempKnownPaths:           TDARTKnownPaths;
   begin
   {
     Creates local basic repairer that will load all possible paths from a help
@@ -777,59 +797,58 @@ var
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],0.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_HelpArchives,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
     For i := Low(fProcessingSettings.PathResolve.HelpArchives) to High(fProcessingSettings.PathResolve.HelpArchives) do
       begin
         If Length(fProcessingSettings.PathResolve.HelpArchives[i]) > 0 then
           LoadHelpArchive(fProcessingSettings.PathResolve.HelpArchives[i]);
-        DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],
-                   (i + 1) / Length(fProcessingSettings.PathResolve.HelpArchives));
+        DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_HelpArchives,(i + 1) / Length(fProcessingSettings.PathResolve.HelpArchives));
         SCS_AssignPaths;
         If fArchiveStructure.UtilityData.UnresolvedCount <= 0 then
           Break{For i}; // all entries are resolved, no need to continue
       end;
   end;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_HelpArchives],1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_HelpArchives,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_ParseContent;
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_ParseContent],0.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
     DoError(-1,'Content parsing is not implemented in this build.');
     SCS_AssignPaths;
   end;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_ParseContent],1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce;
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_BruteForce],0.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
     DoError(-1,'Brute-force resolve is not implemented in this build.');
   end;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_BruteForce],1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_Reconstruct;
 begin
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Reconstruct],0.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,0.0);
 // reconstruct all directory entries from file names
 fEntriesSorted := False;
 SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
-DoProgress([PSID_Processing,PSID_C_PathsResolving,PSID_C_PathsRes_Reconstruct],1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
 end;
 
 //==============================================================================
@@ -859,7 +878,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_SCS.GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer;
+Function TDARTRepairer_SCS.GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer;
 var
   i:  Integer;
 begin
@@ -927,20 +946,20 @@ var
   i,Index:  Integer;
   CurrNode: TProgressTracker;
 begin
-DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],0.0);
-fEntriesProcProgNode.BeginUpdate;
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesProgressPrep,0.0);
+fEntriesProcessingProgNode.BeginUpdate;
 try
   For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
     with fArchiveStructure.Entries.Arr[i] do
       begin
-        Index := fEntriesProcProgNode.Add(BinPart.CompressedSize,DART_PROGSTAGE_ID_SCS_EntryProcessing);
-        CurrNode := fEntriesProcProgNode.StageObjects[Index];
+        Index := fEntriesProcessingProgNode.Add(BinPart.CompressedSize,DART_PROGSTAGE_IDX_SCS_EntryProcessing);
+        CurrNode := fEntriesProcessingProgNode.StageObjects[Index];
         CurrNode.BeginUpdate;
         try
           case fArchiveProcessingSettings.Common.RepairMethod of
             rmRebuild:  begin
                           If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
                           {
                             need decompressed data for compressed file or compressed unresolved directory
                             when CRC32 is ignored, or for resolved directory (CRC32 of new data)
@@ -948,39 +967,44 @@ try
                           If ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
                             GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
                             (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
+                          DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
             rmExtract:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
                           {$message 'check when implementing'}
                           // need decompression for compressed file or unresolved entry
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                              (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
+                          DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
             rmConvert:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30,DART_PROGSTAGE_IDX_SCS_EntryLoading);
                           // need decompression for compressed files and unresolved entries
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                              ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or
                              not UtilityData.Resolved) then
-                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
+                          DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
           end;
+          // assign obtained indices to shorter named-variables
+          PSIDX_C_EntryProcessing    := DART_PROGSTAGE_IDX_SCS_EntryProcessing;
+          PSIDX_C_EntryLoading       := DART_PROGSTAGE_IDX_SCS_EntryLoading;
+          PSIDX_C_EntryDecompression := DART_PROGSTAGE_IDX_SCS_EntryDecompression;
+          PSIDX_C_EntrySaving        := DART_PROGSTAGE_IDX_SCS_EntrySaving;
         finally
           CurrNode.EndUpdate;
         end;
-        DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
+        DoProgress(fProcessingProgNode,PSIDX_C_EntriesProgressPrep,(i + 1) / fArchiveStructure.Entries.Count);
       end;
 finally
-  fEntriesProcProgNode.EndUpdate;
+  fEntriesProcessingProgNode.EndUpdate;
 end;
-DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesProgressPrep,1.0);
 end;
 
 //------------------------------------------------------------------------------

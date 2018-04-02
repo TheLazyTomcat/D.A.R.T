@@ -8,31 +8,29 @@ uses
   AuxTypes, ProgressTracker,
   DART_Common, DART_ProcessingSettings, DART_Format_ZIP, DART_Repairer;
 
-const
+var
   // progress stages
-  DART_PROGSTAGE_ID_ZIP_EOCDLoading         = DART_PROGSTAGE_ID_MAX + 1;
-  DART_PROGSTAGE_ID_ZIP_CDHeadersLoading    = DART_PROGSTAGE_ID_MAX + 2;
-  DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading = DART_PROGSTAGE_ID_MAX + 3;
-  DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep = DART_PROGSTAGE_ID_MAX + 4;
-  DART_PROGSTAGE_ID_ZIP_EntriesProcessing   = DART_PROGSTAGE_ID_MAX + 5;
-  
-  DART_PROGSTAGE_ID_ZIP_EntryProcessing     = DART_PROGSTAGE_ID_MAX + 10;
-  DART_PROGSTAGE_ID_ZIP_EntryLoading        = DART_PROGSTAGE_ID_MAX + 11;
-  DART_PROGSTAGE_ID_ZIP_EntryDecompression  = DART_PROGSTAGE_ID_MAX + 12;
-  DART_PROGSTAGE_ID_ZIP_EntrySaving         = DART_PROGSTAGE_ID_MAX + 13;
+  DART_PROGSTAGE_IDX_ZIP_EOCDLoading:         Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading:    Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading: Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep: Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_EntriesProcessing:   Integer = -1;
 
-  DART_PROGSTAGE_ID_ZIP_Max                 = DART_PROGSTAGE_ID_MAX + 100;
+  DART_PROGSTAGE_IDX_ZIP_EntryProcessing:     Integer = -1; // not really used
+  DART_PROGSTAGE_IDX_ZIP_EntryLoading:        Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_EntryDecompression:  Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_EntrySaving:         Integer = -1;
 
-  PSID_Z_EOCDLoading         = DART_PROGSTAGE_ID_ZIP_EOCDLoading;
-  PSID_Z_CDHeadersLoading    = DART_PROGSTAGE_ID_ZIP_CDHeadersLoading;
-  PSID_Z_LocalHeadersLoading = DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading;
-  PSID_Z_EntriesProgressPrep = DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep;
-  PSID_Z_EntriesProcessing   = DART_PROGSTAGE_ID_ZIP_EntriesProcessing;
-  
-  PSID_Z_EntryProcessing     = DART_PROGSTAGE_ID_ZIP_EntryProcessing;
-  PSID_Z_EntryLoading        = DART_PROGSTAGE_ID_ZIP_EntryLoading;
-  PSID_Z_EntryDecompression  = DART_PROGSTAGE_ID_ZIP_EntryDecompression;
-  PSID_Z_EntrySaving         = DART_PROGSTAGE_ID_ZIP_EntrySaving;
+  PSIDX_Z_EOCDLoading:         Integer = -1;
+  PSIDX_Z_CDHeadersLoading:    Integer = -1;
+  PSIDX_Z_LocalHeadersLoading: Integer = -1;
+  PSIDX_Z_EntriesProgressPrep: Integer = -1;
+  PSIDX_Z_EntriesProcessing:   Integer = -1;
+
+  PSIDX_Z_EntryProcessing:     Integer = -1;
+  PSIDX_Z_EntryLoading:        Integer = -1;
+  PSIDX_Z_EntryDecompression:  Integer = -1;
+  PSIDX_Z_EntrySaving:         Integer = -1;
 
 type
   TDARTRepairer_ZIP = class(TDARTRepairer)
@@ -58,7 +56,7 @@ type
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
-    Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; override;
+    Function GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer; override;
     property ArchiveStructure: TDART_ZIP_ArchiveStructure read fArchiveStructure;
   end;
 
@@ -108,42 +106,40 @@ end;
 
 procedure TDARTRepairer_ZIP.InitializeProgress;
 var
-  Index:          Integer;
-  ProcessingNode: TProgressTracker;
-  Quota:          Integer;
+  Quota:  Integer;
 begin
 inherited;
-Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
-If Index >= 0 then
-  begin
-    ProcessingNode := fProgressTracker.StageObjects[Index];
-    ProcessingNode.BeginUpdate;
-    try
-      Quota := 1000;
-      If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
-        begin
-          ProcessingNode.Add(10,DART_PROGSTAGE_ID_ZIP_EOCDLoading);
-          Dec(Quota,10);
-        end;
-      If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-        begin
-          ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_CDHeadersLoading);
-          Dec(Quota,100);
-        end;
-      If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
-        begin
-          ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading);
-          Dec(Quota,100);
-        end;
-      ProcessingNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep);
-      Dec(Quota,50);
-      Index := ProcessingNode.Add(Quota,DART_PROGSTAGE_ID_ZIP_EntriesProcessing);
-      fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
-    finally
-      ProcessingNode.EndUpdate;
+fProcessingProgNode.BeginUpdate;
+try
+  Quota := 1000;
+  If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
+    begin
+      DART_PROGSTAGE_IDX_ZIP_EOCDLoading := fProcessingProgNode.Add(10);
+      Dec(Quota,10);
     end;
-  end
-else raise Exception.Create('TDARTRepairer_ZIP.InitializeProgress: Processing progress node not found.');
+  If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+    begin
+      DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading := fProcessingProgNode.Add(100);
+      Dec(Quota,100);
+    end;
+  If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+    begin
+      DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading := fProcessingProgNode.Add(100);
+      Dec(Quota,100);
+    end;
+  DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep := fProcessingProgNode.Add(50);
+  Dec(Quota,50);
+  DART_PROGSTAGE_IDX_ZIP_EntriesProcessing := fProcessingProgNode.Add(Quota);
+  // assign obtained indices to shorter-named variables  
+  PSIDX_Z_EOCDLoading         := DART_PROGSTAGE_IDX_ZIP_EOCDLoading;
+  PSIDX_Z_CDHeadersLoading    := DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading;
+  PSIDX_Z_LocalHeadersLoading := DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading;
+  PSIDX_Z_EntriesProgressPrep := DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep;
+  PSIDX_Z_EntriesProcessing   := DART_PROGSTAGE_IDX_ZIP_EntriesProcessing;
+  fEntriesProcessingProgNode := fProcessingProgNode.StageObjects[PSIDX_Z_EntriesProcessing];
+finally
+  fProcessingProgNode.EndUpdate;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -183,7 +179,7 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
         ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
         // load entry data
         fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
-        ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,[DART_PROGSTAGE_ID_NoProgress]);
+        ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DART_PROGSTAGE_INFO_NoProgress);
         If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
           begin
             // entry data are not compressed, copy them out of buffer
@@ -195,7 +191,7 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
           begin
             // entry data are compressed, decompress them
             ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                                       Data,Size,WBITS_RAW,[DART_PROGSTAGE_ID_NoProgress]);
+                                       Data,Size,WBITS_RAW,DART_PROGSTAGE_INFO_NoProgress);
           end;
         // if we are here, everything should be fine
         Result := True;        
@@ -235,9 +231,10 @@ procedure TDARTRepairer_ZIP.ZIP_LoadEndOfCentralDirectory;
 var
   EOCDPosition: Int64;
 begin
-DoProgress([PSID_Processing,PSID_Z_EOCDLoading],0.0);
-EOCDPosition := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,[],-1,True,fProcessingSettings.EndOfCentralDirectory.LimitSearch);
-DoProgress([PSID_Processing,PSID_Z_EOCDLoading],0.5);
+DoProgress(fProcessingProgNode,PSIDX_Z_EOCDLoading,0.0);
+EOCDPosition := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,DART_PROGSTAGE_INFO_NoProgress,-1,
+                              True,fProcessingSettings.EndOfCentralDirectory.LimitSearch);
+DoProgress(fProcessingProgNode,PSIDX_Z_EOCDLoading,0.5);
 If EOCDPosition >= 0 then
   begin
     fInputArchiveStream.Seek(EOCDPosition,soBeginning);
@@ -246,7 +243,7 @@ If EOCDPosition >= 0 then
         with fArchiveStructure.EndOfCentralDirectory do
           begin
             fInputArchiveStream.ReadBuffer(BinPart,SizeOf(TDART_ZIP_EndOfCentralDirectoryRecord));
-            DoProgress([PSID_Processing,PSID_Z_EOCDLoading],0.9);
+            DoProgress(fProcessingProgNode,PSIDX_Z_EOCDLoading,0.9);
             If fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit then
               begin
                 BinPart.NumberOfThisDisk := 0;
@@ -279,7 +276,7 @@ If EOCDPosition >= 0 then
     else DoError(DART_METHOD_ID_ZIP_ZLEOCD,'Not enough data for end of central directory record.');
   end
 else DoError(DART_METHOD_ID_ZIP_ZLEOCD,'End of central directory signature not found in the input stream.');
-DoProgress([PSID_Processing,PSID_Z_EOCDLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_EOCDLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -374,12 +371,12 @@ var
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_Z_CDHeadersLoading],0.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_CDHeadersLoading,0.0);
 If fProcessingSettings.EndOfCentralDirectory.IgnoreCentralDirectoryOffset or
   fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
     // find where the central directory starts
-    WorkingOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,[]);
+    WorkingOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
     If WorkingOffset >= 0 then
       fArchiveStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset := UInt32(WorkingOffset)
     else
@@ -394,11 +391,12 @@ If fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries or
       If fArchiveStructure.Entries.Count >= Length(fArchiveStructure.Entries.Arr) then
         SetLength(fArchiveStructure.Entries.Arr,Length(fArchiveStructure.Entries.Arr) + 1024);
       fInputArchiveStream.Seek(WorkingOffset,soBeginning);
-      DoProgress([PSID_Processing,PSID_Z_CDHeadersLoading],
+      DoProgress(fProcessingProgNode,PSIDX_Z_CDHeadersLoading,
        (WorkingOffset - fArchiveStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset) /
        (fInputArchiveStream.Size - fArchiveStructure.EndOfCentralDirectory.BinPart.CentralDirectoryOffset));
       LoadCentralDirectoryHeader(fArchiveStructure.Entries.Count);
-      WorkingOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,[],fInputArchiveStream.Position,False);
+      WorkingOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                     fInputArchiveStream.Position,False);
       Inc(fArchiveStructure.Entries.Count);
     until WorkingOffset < 0;
     fArchiveStructure.EndOfCentralDirectory.BinPart.EntriesOnDisk := fArchiveStructure.Entries.Count;
@@ -412,10 +410,10 @@ else
     For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
       begin
         LoadCentralDirectoryHeader(i);
-        DoProgress([PSID_Processing,PSID_Z_CDHeadersLoading],(i + 1) / fArchiveStructure.Entries.Count);
+        DoProgress(fProcessingProgNode,PSIDX_Z_CDHeadersLoading,(i + 1) / fArchiveStructure.Entries.Count);
       end;
   end;
-DoProgress([PSID_Processing,PSID_Z_CDHeadersLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_CDHeadersLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -498,7 +496,8 @@ var
           not fProcessingSettings.LocalHeader.IgnoreDataDescriptor then
           begin
             If fProcessingSettings.LocalHeader.IgnoreSizes then
-              DescriptorOffset := FindSignature(DART_ZIP_DataDescriptorSignature,[],fInputArchiveStream.Position,False)
+              DescriptorOffset := FindSignature(DART_ZIP_DataDescriptorSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                                fInputArchiveStream.Position,False)
             else
               DescriptorOffset := fInputArchiveStream.Position + BinPart.CompressedSize;
             If (DescriptorOffset > 0) and ((DescriptorOffset + SizeOf(TDART_ZIP_DataDescriptorRecord)) <= fInputArchiveStream.Size) then
@@ -565,7 +564,7 @@ var
   end;
 
 begin
-DoProgress([PSID_Processing,PSID_Z_LocalHeadersLoading],0.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,0.0);
 If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
   begin
     // local headers are not loaded from the file, they are instead constructed from data
@@ -588,7 +587,8 @@ else
                 begin
                   // position of local header for given CD entry is not known,
                   // search for next local header from current position
-                  WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,[],fInputArchiveStream.Position,False);
+                  WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                                 fInputArchiveStream.Position,False);
                   If WorkingOffset >= 0 then
                     begin
                       BinPart.RelativeOffsetOfLocalHeader := UInt32(WorkingOffset);
@@ -598,7 +598,7 @@ else
                 end
               else fInputArchiveStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soBeginning);
               LoadLocalHeader(i);
-              DoProgress([PSID_Processing,PSID_Z_LocalHeadersLoading],(i + 1) / fArchiveStructure.Entries.Count);
+              DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,(i + 1) / fArchiveStructure.Entries.Count);
               If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
                 If not AnsiSameText(FileName,fArchiveStructure.Entries.Arr[i].LocalHeader.FileName) then
                   DoError(DART_METHOD_ID_ZIP_ZLLH,'Mismatch in local and central directory file name for entry #%d (%s; %s).',
@@ -608,21 +608,22 @@ else
     else
       begin
         // no entries are loaded yet, search for local headers and load them
-        WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,[]);
+        WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
         If WorkingOffset >= 0 then
           repeat
             If fArchiveStructure.Entries.Count > Length(fArchiveStructure.Entries.Arr) then
               SetLength(fArchiveStructure.Entries.Arr,Length(fArchiveStructure.Entries.Arr) + 1024);
             fArchiveStructure.Entries.Arr[fArchiveStructure.Entries.Count].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
             fInputArchiveStream.Seek(WorkingOffset,soBeginning);
-            DoProgress([PSID_Processing,PSID_Z_LocalHeadersLoading],WorkingOffset / fInputArchiveStream.Size);
+            DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,WorkingOffset / fInputArchiveStream.Size);
             LoadLocalHeader(fArchiveStructure.Entries.Count);
-            WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,[],fInputArchiveStream.Position,False);
+            WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                           fInputArchiveStream.Position,False);
             Inc(fArchiveStructure.Entries.Count);
           until WorkingOffset < 0;
       end;
   end;
-DoProgress([PSID_Processing,PSID_Z_LocalHeadersLoading],1.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -657,7 +658,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
         end;
-      DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
     end;
 end;
 
@@ -714,7 +715,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       fArchiveStructure.Entries.Arr[i].UtilityData.NeedsSizes :=
         (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
-      DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);  
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);  
     end;
 end;
 
@@ -777,7 +778,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_ZIP.GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer;
+Function TDARTRepairer_ZIP.GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer;
 var
   i:  Integer;
 
@@ -802,13 +803,13 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
                         CentralDirectoryHeader.BinPart.ExternalFileAttributes = FILE_ATTRIBUTE_DIRECTORY);
         Inc(Result);
       end;
-DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
 // in case any directory is not explicitly stored, deconstruct all paths and add them
 with TDARTPathDeconstructor.Create(DART_ZIP_PathDelim) do
 try
   For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
     DeconstructPath(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName);
-  DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+  DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
   For i := 0 to Pred(Count) do
     If (Nodes[i].FullPath <> '') and (IndexOfKnownPath(Nodes[i].FullPath,KnownPaths) < 0) then
       begin
@@ -841,17 +842,17 @@ var
   i,Index:  Integer;
   CurrNode: TProgressTracker;
 begin
-DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],0.0);
-fEntriesProcProgNode.BeginUpdate;
+DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProgressPrep,0.0);
+fEntriesProcessingProgNode.BeginUpdate;
 try
   For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
     with fArchiveStructure.Entries.Arr[i] do
       begin
         If CentralDirectoryHeader.BinPart.CompressedSize <> 0 then
-          Index := fEntriesProcProgNode.Add(CentralDirectoryHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_ZIP_EntryProcessing)
+          Index := fEntriesProcessingProgNode.Add(CentralDirectoryHeader.BinPart.CompressedSize)
         else
-          Index := fEntriesProcProgNode.Add(1,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-        CurrNode := fEntriesProcProgNode.StageObjects[Index];
+          Index := fEntriesProcessingProgNode.Add(1);
+        CurrNode := fEntriesProcessingProgNode.StageObjects[Index];
         CurrNode.BeginUpdate;
         try
           If UtilityData.NeedsCRC32 or UtilityData.NeedsSizes then
@@ -859,33 +860,38 @@ try
               If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
                 begin
                   // no decompression
-                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-                  CurrNode.Add(20,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+                  DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(40);
+                  DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(20);
+                  DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(40);
                 end
               else
                 begin
                   // decompression is needed
-                  CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-                  CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+                  DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(30);
+                  DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(40);
+                  DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(30);
                 end;
             end
           else
             begin
               // no decompression or other calculation
-              CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-              CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+              DART_PROGSTAGE_IDX_ZIP_EntryLoading := CurrNode.Add(50);
+              DART_PROGSTAGE_IDX_ZIP_EntrySaving  := CurrNode.Add(50);
             end;
+          // assign obtained indices to shorter named-variables
+          PSIDX_Z_EntryProcessing    := DART_PROGSTAGE_IDX_ZIP_EntryProcessing;
+          PSIDX_Z_EntryLoading       := DART_PROGSTAGE_IDX_ZIP_EntryLoading;
+          PSIDX_Z_EntryDecompression := DART_PROGSTAGE_IDX_ZIP_EntryDecompression;
+          PSIDX_Z_EntrySaving        := DART_PROGSTAGE_IDX_ZIP_EntrySaving;
         finally
           CurrNode.EndUpdate;
         end;
-        DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
+        DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProgressPrep,(i + 1) / fArchiveStructure.Entries.Count);
       end;
 finally
-  fEntriesProcProgNode.EndUpdate;
+  fEntriesProcessingProgNode.EndUpdate;
 end;
-DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],1.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProgressPrep,1.0);
 end;
 
 //==============================================================================

@@ -24,7 +24,7 @@ implementation
 uses
   Windows, SysUtils, Classes, StrUtils,
   AuxTypes, StrRect, MemoryBuffer, ZLibCommon,
-  DART_Auxiliary, DART_Format_ZIP, DART_Repairer;
+  DART_Auxiliary, DART_Common, DART_Format_ZIP, DART_Repairer;
 
 const
   DART_METHOD_ID_ZIP_EXT_SETFLTM = 2100;
@@ -46,10 +46,10 @@ procedure TDARTRepairer_ZIP_Extract.ZIP_ExtractArchive;
 var
   i:  Integer;
 begin
-DoProgress([PSID_Processing,PSID_Z_EntriesProcessing],0.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,0.0);
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   ZIP_ExtractEntry(i);
-DoProgress([PSID_Processing,PSID_Z_EntriesProcessing],1.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -92,9 +92,9 @@ try
             else
               begin
                 // last entry, find CD or EOCD
-                TempOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,[]);
+                TempOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
                 If TempOffset < 0 then
-                  TempOffset := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,[]);
+                  TempOffset := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,DART_PROGSTAGE_INFO_NoProgress);
                 If TempOffset >= UtilityData.DataOffset then
                   // CD or EOCD found, let's assume it marks end of entry data
                   LocalHeader.BinPart.CompressedSize := UInt32(TempOffset - UtilityData.DataOffset)
@@ -117,13 +117,15 @@ try
 
         // store offset of entry local header it has in input (needed for progress)
         UtilityData.OriginalLocalHeaderOffset := CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader;
-        DoProgress([PSID_Processing,PSID_Z_EntriesProcessing,-Index],0.0);
+        // prepare progress
+        fEntryProcessingProgNode := fEntriesProcessingProgNode.StageObjects[Index];
+        DoProgress(fEntriesProcessingProgNode,Index,0.0);
         // prepare buffer for entry data
         ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
         // read data from input archive
         fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
         ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                             [PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntryLoading]);
+                             DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
 
         // process input data according to compression method
         case LocalHeader.BinPart.CompressionMethod of
@@ -131,11 +133,11 @@ try
             begin
               // decompress data
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-                                         WBITS_RAW,[PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntryDecompression]);
+                                         WBITS_RAW,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
               try
                 // write decompressed data into entry output file
                 ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,
-                                      [PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntrySaving]);
+                                      DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
               finally
                 FreeMem(DecompressedBuff,DecompressedSize);
               end;
@@ -143,14 +145,14 @@ try
         else
           // no compression, write input data directly to output
           ProgressedStreamWrite(EntryFileStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                                [PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntrySaving]);
+                                DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
         end;
 
         // finalize
         EntryFileStream.Size := EntryFileStream.Position;
         // write file time and make progress
         ZIP_WriteEntryFileTime(FullEntryFileName,LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate);
-        DoProgress([PSID_Processing,PSID_Z_EntriesProcessing,-Index],1.0);
+        DoProgress(fEntriesProcessingProgNode,Index,1.0);
       finally
         EntryFileStream.Free;
       end;

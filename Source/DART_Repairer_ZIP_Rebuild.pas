@@ -25,7 +25,7 @@ implementation
 uses
   SysUtils,
   AuxTypes, MemoryBuffer, CRC32, ZLibCommon, StrRect,
-  DART_Auxiliary, DART_Format_ZIP, DART_Repairer;
+  DART_Auxiliary, DART_Common, DART_Format_ZIP, DART_Repairer;
 
 procedure TDARTRepairer_ZIP_Rebuild.ArchiveProcessing;
 begin
@@ -39,7 +39,7 @@ procedure TDARTRepairer_ZIP_Rebuild.ZIP_RebuildArchive;
 var
   i:  Integer;
 begin
-DoProgress([PSID_Processing,PSID_Z_EntriesProcessing],0.0);
+DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
 DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
@@ -61,9 +61,10 @@ try
   ZIP_WriteEndOfCentralDirectory;
   // finalize
   fRebuildArchiveStream.Size := fRebuildArchiveStream.Position;
-  DoProgress([PSID_Processing,PSID_Z_EntriesProcessing],1.0);
+  DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
-    ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,[DART_PROGSTAGE_ID_Saving]);
+    ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,
+                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fRebuildArchiveStream.Free;
 end;
@@ -93,9 +94,9 @@ try
       else
         begin
           // last entry, find CD or EOCD
-          TempOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,[]);
+          TempOffset := FindSignature(DART_ZIP_CentralDirectoryFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
           If TempOffset < 0 then
-            TempOffset := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,[]);
+            TempOffset := FindSignature(DART_ZIP_EndOfCentralDirectorySignature,DART_PROGSTAGE_INFO_NoProgress);
           If TempOffset >= UtilityData.DataOffset then
             // CD or EOCD found, let's assume it marks an end of entry data
             LocalHeader.BinPart.CompressedSize := UInt32(TempOffset - UtilityData.DataOffset)
@@ -125,20 +126,22 @@ try
         end;
     end;
 
-  DoProgress([PSID_Processing,PSID_Z_EntriesProcessing,-Index],0.0);
+  // prepare progress
+  fEntryProcessingProgNode := fEntriesProcessingProgNode.StageObjects[Index];
+  DoProgress(fEntriesProcessingProgNode,Index,0.0);
   // prepare buffer that will hold entry data
   ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
   // load compressed data
   fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
   ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                       [PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntryLoading]);
+                       DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
 
   // deciding whether entry data needs to be decompressed for further processing
   If (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0) then
     begin
       // data needs to be decompressed for further processing
       ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-                                 WBITS_RAW,[PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntryDecompression]);
+                                 WBITS_RAW,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
       try
         If UtilityData.NeedsCRC32 then
           begin
@@ -182,11 +185,11 @@ try
   fRebuildArchiveStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
   // write entry data
   ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                        [PSID_Processing,PSID_Z_EntriesProcessing,-Index,PSID_Z_EntrySaving]);
+                        DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
   // write data descriptor
   If (LocalHeader.BinPart.GeneralPurposeBitFlag and DART_ZBF_DataDescriptor) <> 0 then
     fRebuildArchiveStream.WriteBuffer(DataDescriptor,SizeOf(TDART_ZIP_DataDescriptorRecord));
-  DoProgress([PSID_Processing,PSID_Z_EntriesProcessing,-Index],1.0);
+  DoProgress(fEntriesProcessingProgNode,Index,1.0);
   // if we are here, then there was no error during processing
   UtilityData.Erroneous := False;
 except
@@ -231,7 +234,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           fRebuildArchiveStream.WriteBuffer(PAnsiChar(ExtraField)^,BinPart.ExtraFieldLength);
           fRebuildArchiveStream.WriteBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
         end;
-    DoProgress([DART_PROGSTAGE_ID_NoProgress],0.0);
+    DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
   end;
 end;
 

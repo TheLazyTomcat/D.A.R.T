@@ -25,7 +25,7 @@ uses
   SysUtils,
   AuxTypes, StrRect, BitOps, CRC32, MemoryBuffer, StaticMemoryStream,
   ExplicitStringListsBase, ExplicitStringLists, ZLibCommon,
-  DART_Auxiliary, DART_Format_SCS, DART_Repairer;
+  DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer;
 
 procedure TDARTRepairer_SCS_Rebuild.ArchiveProcessing;
 begin
@@ -39,7 +39,7 @@ procedure TDARTRepairer_SCS_Rebuild.SCS_RebuildArchive;
 var
   i:  Integer;
 begin
-DoProgress([PSID_Processing,PSID_C_EntriesProcessing],0.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,0.0);
 // create directory where the rebuild file will be stored
 DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
@@ -62,9 +62,10 @@ try
   fRebuildArchiveStream.Seek(0,soBeginning);
   SCS_WriteHeaderAndEntryTable(False);
   // finalize
-  DoProgress([PSID_Processing,PSID_C_EntriesProcessing],1.0);
+  DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
-    ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,[DART_PROGSTAGE_ID_Saving]);  
+    ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,
+                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fRebuildArchiveStream.Free;
 end;
@@ -146,7 +147,9 @@ var
 begin
 with fArchiveStructure.Entries.Arr[Index] do
 try
-  DoProgress([PSID_Processing,PSID_C_EntriesProcessing,-Index],0.0);
+  // prepare progress
+  fEntryProcessingProgNode := fEntriesProcessingProgNode.StageObjects[Index];
+  DoProgress(fEntriesProcessingProgNode,Index,0.0);
   If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved then
     begin
       // entry is a resolved directory
@@ -169,12 +172,12 @@ try
         If BinPart.UncompressedSize > DART_SCS_MaxUncompDirEntrySize then
           begin
             ProgressedCompressBuffer(DirBuffer.Memory,DirBuffer.Size,CompressedBuff,CompressedSize,WBITS_ZLIB,
-              [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntryDecompression]);
+              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
             try
               BinPart.CompressedSize := UInt32(CompressedSize) ;
               SetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
               ProgressedStreamWrite(fRebuildArchiveStream,CompressedBuff,CompressedSize,
-                [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntrySaving]);
+                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
             finally
               FreeMem(CompressedBuff,CompressedSize);
             end;
@@ -184,7 +187,7 @@ try
             BinPart.CompressedSize := BinPart.UncompressedSize;
             ResetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
             ProgressedStreamWrite(fRebuildArchiveStream,DirBuffer.Memory,DirBuffer.Size,
-              [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntrySaving]);
+              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
           end;
       finally
         DirBuffer.Free;
@@ -200,7 +203,7 @@ try
       // load compressed data from input
       fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
       ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-        [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntryLoading]);
+        DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));
       If ((BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0)) or not UtilityData.Resolved then
         begin
           // a new CRC32 checksum is required or the entry is not resolved (might need extraction)
@@ -208,7 +211,7 @@ try
             begin
               // data needs to be decompressed for CRC32 calculation
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,DecompressedBuff,DecompressedSize,WBITS_ZLIB,
-               [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntryDecompression]);
+                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
               try
                 If not UtilityData.Resolved then
                   SCS_SaveEntryAsUnresolved(i,DecompressedBuff,DecompressedSize);
@@ -230,9 +233,9 @@ try
       BinPart.DataOffset := UInt64(fRebuildArchiveStream.Position);
       // bin part does not need any more changes, save the data to output
       ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-        [PSID_Processing,PSID_C_EntriesProcessing,-Index,DART_PROGSTAGE_ID_SCS_EntrySaving]);
+        DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
     end;
-  DoProgress([PSID_Processing,PSID_C_EntriesProcessing,-Index],1.0);
+  DoProgress(fEntriesProcessingProgNode,Index,1.0);
 except
   on E: Exception do
     begin

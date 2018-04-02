@@ -60,14 +60,23 @@ const
       ExceptionText:      ''));
 
   // progress stages
-  DART_PROGSTAGE_ID_NoProgress = 1;
-  DART_PROGSTAGE_ID_Direct     = 2;
-  DART_PROGSTAGE_ID_Loading    = 10;
-  DART_PROGSTAGE_ID_Processing = 11;
-  DART_PROGSTAGE_ID_Saving     = 12;
-  DART_PROGSTAGE_ID_Max        = 99;
+  DART_PROGSTAGE_IDX_NoProgress = -11;
+  DART_PROGSTAGE_IDX_Direct     = -10;
 
-  PSID_Processing = DART_PROGSTAGE_ID_Processing;
+  DART_PROGSTAGE_INFO_NoProgress: TDARTProgressStageInfo = (
+    ParentStage:  nil;
+    StageIndex:   DART_PROGSTAGE_IDX_NoProgress);
+
+  DART_PROGSTAGE_INFO_Direct: TDARTProgressStageInfo = (
+    ParentStage:  nil;
+    StageIndex:   DART_PROGSTAGE_IDX_Direct);
+
+var
+  DART_PROGSTAGE_IDX_Loading:    Integer = -1;
+  DART_PROGSTAGE_IDX_Processing: Integer = -1;
+  DART_PROGSTAGE_IDX_Saving:     Integer = -1;
+
+  PSIDX_Processing:  Integer = -1;
 
 {===============================================================================
    TDARTRepairer - class declaration
@@ -96,11 +105,11 @@ type
     fBuffer_IO:                 TMemoryBuffer;
     fBuffer_Entry:              TMemoryBuffer;
     // for (de)compression
-    fCompProgressStage:         array of Integer;
+    fCompProgressStageInfo:     TDARTProgressStageInfo;
     // progress nodes
     fProcessingProgNode:        TProgressTracker;
-    fEntriesProcProgNode:       TProgressTracker;
-    fEntryProcProgNode:         TProgressTracker;
+    fEntriesProcessingProgNode: TProgressTracker;
+    fEntryProcessingProgNode:   TProgressTracker;
     // initialization methods
     procedure InitializeProcessingSettings; virtual;
     procedure InitializeData; virtual; abstract;
@@ -110,7 +119,9 @@ type
     procedure FreeMemoryBuffers; virtual;
     // flow control and progress report methods
     procedure ForwardedProgressHandler(Sender: TObject; Progress: Single); virtual;
-    procedure DoProgress(StageIDs: array of Integer; Data: Single); virtual;
+    procedure DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Data: Single); overload; virtual;
+    procedure DoProgress(ProgressInfo: TDART_PSI; Data: Single); overload; virtual;
+    procedure DoProgress(StageIndex: Integer; Data: Single); overload; virtual;
     procedure DoWarning(const WarningText: String); virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const); overload; virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
@@ -119,20 +130,20 @@ type
     procedure ProcessException(E: Exception); virtual;
     // common processing methods
     procedure CheckArchiveSignature; virtual;
-    Function FindSignature(Signature: UInt32; ProgressStage: array of Integer; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False): Int64; virtual;
-    procedure ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: array of Integer); virtual;
-    procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: array of Integer); virtual;
-    procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: array of Integer); virtual;
-    procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: array of Integer); virtual;
+    Function FindSignature(Signature: UInt32; ProgressInfo: TDART_PSI; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False): Int64; virtual;
+    procedure ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressInfo: TDART_PSI); virtual;
+    procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressInfo: TDART_PSI); virtual;
+    procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
+    procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
     procedure CompressorProgressHandler(Sender: TObject; Progress: Single); virtual;
-    procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer); virtual;
-    procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer); virtual;
+    procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
+    procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
     // methods working with known paths
-    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDART_KnownPaths): Integer; virtual;
+    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -142,7 +153,7 @@ type
     destructor Destroy; override;
     procedure Run; virtual;
     procedure Stop; virtual;
-    Function GetAllKnownPaths(var KnownPaths: TDART_KnownPaths): Integer; virtual; abstract;
+    Function GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer; virtual; abstract;
     property Heartbeat: PInteger read fHeartbeat write fHeartbeat;
     property ResultInfo: TDARTResultInfo read fResultInfo;
   published
@@ -217,18 +228,22 @@ try
     begin
       case fArchiveProcessingSettings.Common.RepairMethod of
         rmRebuild,
-        rmConvert:  begin
-                      fProgressTracker.Add(300,DART_PROGSTAGE_ID_Loading);
-                      fProgressTracker.Add(400,DART_PROGSTAGE_ID_Processing);
-                      fProgressTracker.Add(300,DART_PROGSTAGE_ID_Saving);
-                    end;
-        rmExtract:  begin
-                      fProgressTracker.Add(400,DART_PROGSTAGE_ID_Loading);
-                      fProgressTracker.Add(600,DART_PROGSTAGE_ID_Processing);
-                    end;
+        rmConvert:
+          begin
+            DART_PROGSTAGE_IDX_Loading    := fProgressTracker.Add(300);
+            DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(400);
+            DART_PROGSTAGE_IDX_Saving     := fProgressTracker.Add(300);
+          end;
+        rmExtract:
+          begin
+            DART_PROGSTAGE_IDX_Loading    := fProgressTracker.Add(400);
+            DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(600);
+          end;
       end;
     end
-  else fProgressTracker.Add(1000,DART_PROGSTAGE_ID_Processing)
+  else DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(1000);
+  PSIDX_Processing := DART_PROGSTAGE_IDX_Processing;
+  fProcessingProgNode := fProgressTracker.StageObjects[PSIDX_Processing];
 finally
   fProgressTracker.EndUpdate;
 end;
@@ -254,15 +269,12 @@ end;
 
 procedure TDARTRepairer.ForwardedProgressHandler(Sender: TObject; Progress: Single);
 begin
-DoProgress([DART_PROGSTAGE_ID_NoProgress],Progress);
+DoProgress(DART_PROGSTAGE_IDX_NoProgress,Progress);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.DoProgress(StageIDs: array of Integer; Data: Single);
-var
-  CurrentStageNode: TProgressTracker;
-  i,Index:          Integer;
+procedure TDARTRepairer.DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Data: Single);
 begin
 If Assigned(fHeartbeat) then InterlockedIncrement(fHeartbeat^);
 fPauseControlObject.WaitFor;
@@ -274,67 +286,31 @@ If Terminated then
     DoError(DART_METHOD_ID_STOP,'Processing terminated. Data can be in an inconsistent state.');
   end;
 // actual progress...
-{$message 'progress needs serious optimization'}  
-case Length(StageIDs) of
-  0:  If Assigned(fOnProgress) then
-        fOnProgress(Self,fProgressTracker.Progress);
-  1:  begin
-        If StageIDs[0] <= 0 then
-          begin
-            Index := Abs(StageIDs[0]);
-            If (Index < fProgressTracker.LowIndex) or (Index > fProgressTracker.HighIndex) then
-              Index := -1;
-          end
-        else Index := fProgressTracker.IndexOf(StageIDs[0]);
-        If Index >= 0 then
-          begin
-            If Data > 1.0 then Data := 1.0;
-            fProgressTracker.SetStageProgress(Index,Data);
-            If Assigned(fOnProgress) then
-              fOnProgress(Self,fProgressTracker.Progress);
-          end
-        else
-          If Assigned(fOnProgress) and (StageIDs[0] <> DART_PROGSTAGE_ID_NoProgress) then
-            case StageIDs[0] of
-              DART_PROGSTAGE_ID_Direct: fOnProgress(Self,Data);
-            else
-              fOnProgress(Self,fProgressTracker.Progress);
-            end;
-      end;
+case StageIndex of
+  DART_PROGSTAGE_IDX_NoProgress:;  // do nothing
+  DART_PROGSTAGE_IDX_Direct:
+    If Assigned(fOnProgress) then
+      fOnProgress(Self,Data);
 else
-  // length > 1
-  CurrentStageNode := fProgressTracker;
-  For i := Low(StageIDs) to High(StageIDs) do
-    begin
-      If StageIDs[i] <= 0 then
-        begin
-          Index := Abs(StageIDs[i]);
-          If (Index < CurrentStageNode.LowIndex) or (Index > CurrentStageNode.HighIndex) then
-            Index := -1;
-        end
-      else Index := CurrentStageNode.IndexOf(StageIDs[i]);
-      If Index < 0 then
-        begin
-          CurrentStageNode := nil;
-          Break{For i};
-        end
-      else CurrentStageNode := CurrentStageNode.StageObjects[Index];
-    end;
-  If Assigned(CurrentStageNode) then
-    begin
-      If Data > 1.0 then Data := 1.0;
-      CurrentStageNode.Progress := Data;
-      If Assigned(fOnProgress) then
-        fOnProgress(Self,fProgressTracker.Progress);
-    end
-  else
-    If Assigned(fOnProgress) and (StageIDs[0] <> DART_PROGSTAGE_ID_NoProgress) then
-      case StageIDs[0] of
-        DART_PROGSTAGE_ID_Direct: fOnProgress(Self,Data);
-      else
-        fOnProgress(Self,fProgressTracker.Progress);
-      end;
+  If Data > 1.0 then Data := 1.0;
+  ParentStage.SetStageProgress(StageIndex,Data);
+  If Assigned(fOnProgress) then
+    fOnProgress(Self,fProgressTracker.Progress);
 end;
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+procedure TDARTRepairer.DoProgress(ProgressInfo: TDART_PSI; Data: Single);
+begin
+DoProgress(ProgressInfo.ParentStage,ProgressInfo.StageIndex,Data);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+procedure TDARTRepairer.DoProgress(StageIndex: Integer; Data: Single);
+begin
+DoProgress(fProgressTracker,StageIndex,Data);
 end;
 
 //------------------------------------------------------------------------------
@@ -381,7 +357,7 @@ begin
 fResultInfo.ResultState := rsError;
 fResultInfo.ErrorInfo.ExceptionClass := E.ClassName;
 fResultInfo.ErrorInfo.ExceptionText := E.Message;
-DoProgress([DART_PROGSTAGE_ID_Direct],-1.0);
+DoProgress(DART_PROGSTAGE_IDX_Direct,-1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -401,7 +377,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer.FindSignature(Signature: UInt32; ProgressStage: array of Integer; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False): Int64;
+Function TDARTRepairer.FindSignature(Signature: UInt32; ProgressInfo: TDART_PSI; SearchFrom: Int64 = -1; SearchBack: Boolean = False; Limited: Boolean = False): Int64;
 const
   BufferOverlap = SizeOf(Signature) - 1;
 var
@@ -433,18 +409,18 @@ If fInputArchiveStream.Size > 0 then
             Exit;
           end;
     Inc(CurrentOffset,fBuffer_IO.Size - BufferOverlap);
-    DoProgress(ProgressStage,CurrentOffset / fInputArchiveStream.Size);
+    DoProgress(ProgressInfo,CurrentOffset / fInputArchiveStream.Size);
   until (CurrentOffset > fInputArchiveStream.Size) or Limited;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressStage: array of Integer);
+procedure TDARTRepairer.ProgressedLoadFile(const FileName: String; Stream: TStream; ProgressInfo: TDART_PSI);
 var
   FileStream: TFileStream;
   BytesRead:  Integer;
 begin
-DoProgress(ProgressStage,0.0);
+DoProgress(ProgressInfo,0.0);
 FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
   Stream.Size := FileStream.Size; // prevents reallocations
@@ -454,23 +430,23 @@ try
     repeat
       BytesRead := FileStream.Read(fBuffer_IO.Memory^,fBuffer_IO.Size);
       Stream.Write(fBuffer_IO.Memory^,BytesRead);
-      DoProgress(ProgressStage,FileStream.Position / FileStream.Size);
+      DoProgress(ProgressInfo,FileStream.Position / FileStream.Size);
     until TMemSize(BytesRead) < fBuffer_IO.Size;
   Stream.Size := Stream.Position;  
 finally
   FileStream.Free;
 end;
-DoProgress(ProgressStage,1.0);
+DoProgress(ProgressInfo,1.0);
 end;
  
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressStage: array of Integer);
+procedure TDARTRepairer.ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressInfo: TDART_PSI);
 var
   FileStream: TFileStream;
   BytesRead:  Integer;
 begin
-DoProgress(ProgressStage,0.0);
+DoProgress(ProgressInfo,0.0);
 FileStream := TFileStream.Create(StrToRTL(FileName),fmCreate or fmShareExclusive);
 try
   FileStream.Size := Stream.Size;
@@ -480,65 +456,61 @@ try
     repeat
       BytesRead := Stream.Read(fBuffer_IO.Memory^,fBuffer_IO.Size);
       FileStream.Write(fBuffer_IO.Memory^,BytesRead);
-      DoProgress(ProgressStage,Stream.Position / Stream.Size);
+      DoProgress(ProgressInfo,Stream.Position / Stream.Size);
     until TMemSize(BytesRead) < fBuffer_IO.Size;
   FileStream.Size := FileStream.Position;  
 finally
   FileStream.Free;
 end;
-DoProgress(ProgressStage,1.0);
+DoProgress(ProgressInfo,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: array of Integer);
+procedure TDARTRepairer.ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI);
 var
   i,Max:  PtrUInt;
 begin
-DoProgress(ProgressStage,0.0);
+DoProgress(ProgressInfo,0.0);
 Max := Ceil(Size / fBuffer_IO.Size);
 For i := 1 to Max do
   begin
     Dec(Size,TMemSize(Stream.Read(Buffer^,Min(Int64(fBuffer_IO.Size),Int64(Size)))));
     Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + PtrUInt(fBuffer_IO.Size));
-    DoProgress(ProgressStage,i / Max);
+    DoProgress(ProgressInfo,i / Max);
   end;
-DoProgress(ProgressStage,1.0);
+DoProgress(ProgressInfo,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressStage: array of Integer);
+procedure TDARTRepairer.ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI);
 var
   i,Max:  PtrUInt;
 begin
-DoProgress(ProgressStage,0.0);
+DoProgress(ProgressInfo,0.0);
 Max := Ceil(Size / fBuffer_IO.Size);
 For i := 1 to Max do
   begin
     Dec(Size,TMemSize(Stream.Write(Buffer^,Min(Int64(fBuffer_IO.Size),Int64(Size)))));
     Buffer := {%H-}Pointer({%H-}PtrUInt(Buffer) + PtrUInt(fBuffer_IO.Size));
-    DoProgress(ProgressStage,i / Max);
+    DoProgress(ProgressInfo,i / Max);
   end;
-DoProgress(ProgressStage,1.0);
+DoProgress(ProgressInfo,1.0);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer.CompressorProgressHandler(Sender: TObject; Progress: Single);
 begin
-DoProgress(fCompProgressStage,Progress);
+DoProgress(fCompProgressStageInfo,Progress);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer);
-var
-  i:  Integer;
+procedure TDARTRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI);
 begin
-SetLength(fCompProgressStage,Length(ProgressStage));
-For i := Low(ProgressStage) to High(ProgressStage) do
-  fCompProgressStage[i] := ProgressStage[i];
+fCompProgressStageInfo := ProgressInfo;
 with TZDecompressionBuffer.Create(InBuff,InSize,WindowBits) do
 try
   FreeResult := False;
@@ -553,13 +525,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressStage: array of Integer);
-var
-  i:  Integer;
+procedure TDARTRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI);
 begin
-SetLength(fCompProgressStage,Length(ProgressStage));
-For i := Low(ProgressStage) to High(ProgressStage) do
-  fCompProgressStage[i] := ProgressStage[i];
+fCompProgressStageInfo := ProgressInfo;
 with TZCompressionBuffer.Create(InBuff,InSize,zclDefault,WindowBits) do
 try
   FreeResult := False;
@@ -587,7 +555,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-class Function TDARTRepairer.IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDART_KnownPaths): Integer;
+class Function TDARTRepairer.IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer;
 var
   PathHash: TCRC32;
   i:        Integer;
@@ -609,7 +577,7 @@ procedure TDARTRepairer.MainProcessing;
 begin
 fResultInfo.ResultState := rsNormal;
 try
-  DoProgress([DART_PROGSTAGE_ID_Direct],0.0);
+  DoProgress(DART_PROGSTAGE_IDX_Direct,0.0);
   AllocateMemoryBuffers;
   try
     If fArchiveProcessingSettings.Common.InMemoryProcessing then
@@ -618,20 +586,21 @@ try
       fInputArchiveStream := TFileStream.Create(StrToRTL(fArchiveProcessingSettings.Common.ArchivePath),fmOpenRead or fmShareDenyWrite);
     try
       If fArchiveProcessingSettings.Common.InMemoryProcessing then
-        ProgressedLoadFile(fArchiveProcessingSettings.Common.ArchivePath,fInputArchiveStream,[DART_PROGSTAGE_ID_Loading]);
+        ProgressedLoadFile(fArchiveProcessingSettings.Common.ArchivePath,fInputArchiveStream,
+          DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Loading));
       If fInputArchiveStream.Size <= 0 then
         DoError(DART_METHOD_ID_MAINPROC,'Input file does not contain any data.');
       If not fArchiveProcessingSettings.Common.IgnoreFileSignature then
         CheckArchiveSignature;
       ArchiveProcessing;  // <- processing happens here
-      DoProgress([DART_PROGSTAGE_ID_Direct],1.0);
+      DoProgress(DART_PROGSTAGE_IDX_Direct,1.0);
     finally
       fInputArchiveStream.Free;
     end;
   finally
     FreeMemoryBuffers;
   end;
-  DoProgress([DART_PROGSTAGE_ID_Direct],2.0);
+  DoProgress(DART_PROGSTAGE_IDX_Direct,2.0);
 except
   on E: EDARTProcessingException do
     If fCatchExceptions then
@@ -686,7 +655,7 @@ fProgressTracker.ConsecutiveStages := True;
 fProgressTracker.StrictlyGrowing := True;
 fTerminating := False;
 fExpectedSignature := 0;
-fCompProgressStage := nil;
+fCompProgressStageInfo := DART_PROGSTAGE_INFO_NoProgress;
 InitializeProcessingSettings;
 InitializeProgress;
 InitializeData;

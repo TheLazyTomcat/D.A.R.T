@@ -6,21 +6,31 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs, CRC32,
+  WinSyncObjs, CRC32, ProgressTracker,
   DART_ProcessingSettings;
 
 type
-  TDART_KnownPath = record
+  TDARTKnownPath = record
     Path:       AnsiString;
     Directory:  Boolean;
     Hash:       TCRC32;
     Hash64:     UInt64;
   end;
 
-  TDART_KnownPaths = record
-    Arr:    array of TDART_KnownPath;
+  TDARTKnownPaths = record
+    Arr:    array of TDARTKnownPath;
     Count:  Integer;
   end;
+
+type
+  TDARTProgressStageInfo = record
+    ParentStage:  TProgressTracker;
+    StageIndex:   Integer;
+  end;
+
+  TDART_PSI = TDARTProgressStageInfo;
+
+Function DARTProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo; {$IFDEF CanInline}inline;{$ENDIF}
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -63,6 +73,12 @@ implementation
 
 uses
   Windows;
+
+Function DARTProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo;
+begin
+Result.ParentStage := ParentStage;
+Result.StageIndex := StageIndex;
+end;
 
 {===============================================================================
 --------------------------------------------------------------------------------

@@ -72,7 +72,7 @@ type
   TDART_SCS_ArchiveStructure = record
     ArchiveHeader:  TDART_SCS_ArchiveHeader;
     Entries:        TDART_SCS_Entries;
-    KnownPaths:     TDART_KnownPaths;
+    KnownPaths:     TDARTKnownPaths;
     UtilityData:    TDART_SCS_UtilityData;
   end;
 
