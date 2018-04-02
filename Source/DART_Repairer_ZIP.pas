@@ -117,26 +117,31 @@ Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
 If Index >= 0 then
   begin
     ProcessingNode := fProgressTracker.StageObjects[Index];
-    Quota := 1000;
-    If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
-      begin
-        ProcessingNode.Add(10,DART_PROGSTAGE_ID_ZIP_EOCDLoading);
-        Dec(Quota,10);
-      end;
-    If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-      begin
-        ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_CDHeadersLoading);
-        Dec(Quota,100);
-      end;
-    If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
-      begin
-        ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading);
-        Dec(Quota,100);
-      end;
-    ProcessingNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep);
-    Dec(Quota,50);
-    Index := ProcessingNode.Add(Quota,DART_PROGSTAGE_ID_ZIP_EntriesProcessing);
-    fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
+    ProcessingNode.BeginUpdate;
+    try
+      Quota := 1000;
+      If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
+        begin
+          ProcessingNode.Add(10,DART_PROGSTAGE_ID_ZIP_EOCDLoading);
+          Dec(Quota,10);
+        end;
+      If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+        begin
+          ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_CDHeadersLoading);
+          Dec(Quota,100);
+        end;
+      If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+        begin
+          ProcessingNode.Add(100,DART_PROGSTAGE_ID_ZIP_LocalHeadersLoading);
+          Dec(Quota,100);
+        end;
+      ProcessingNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntriesProgressPrep);
+      Dec(Quota,50);
+      Index := ProcessingNode.Add(Quota,DART_PROGSTAGE_ID_ZIP_EntriesProcessing);
+      fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
+    finally
+      ProcessingNode.EndUpdate;
+    end;
   end
 else raise Exception.Create('TDARTRepairer_ZIP.InitializeProgress: Processing progress node not found.');
 end;
@@ -837,39 +842,49 @@ var
   CurrNode: TProgressTracker;
 begin
 DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],0.0);
-For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  with fArchiveStructure.Entries.Arr[i] do
-    begin
-      If CentralDirectoryHeader.BinPart.CompressedSize <> 0 then
-        Index := fEntriesProcProgNode.Add(CentralDirectoryHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_ZIP_EntryProcessing)
-      else
-        Index := fEntriesProcProgNode.Add(1,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-      CurrNode := fEntriesProcProgNode.StageObjects[Index];
-      If UtilityData.NeedsCRC32 or UtilityData.NeedsSizes then
-        begin
-          If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
+fEntriesProcProgNode.BeginUpdate;
+try
+  For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+    with fArchiveStructure.Entries.Arr[i] do
+      begin
+        If CentralDirectoryHeader.BinPart.CompressedSize <> 0 then
+          Index := fEntriesProcProgNode.Add(CentralDirectoryHeader.BinPart.CompressedSize,DART_PROGSTAGE_ID_ZIP_EntryProcessing)
+        else
+          Index := fEntriesProcProgNode.Add(1,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
+        CurrNode := fEntriesProcProgNode.StageObjects[Index];
+        CurrNode.BeginUpdate;
+        try
+          If UtilityData.NeedsCRC32 or UtilityData.NeedsSizes then
             begin
-              // no decompression
-              CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-              CurrNode.Add(20,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-              CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+              If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
+                begin
+                  // no decompression
+                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryLoading);
+                  CurrNode.Add(20,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
+                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+                end
+              else
+                begin
+                  // decompression is needed
+                  CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntryLoading);
+                  CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
+                  CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+                end;
             end
           else
             begin
-              // decompression is needed
-              CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-              CurrNode.Add(40,DART_PROGSTAGE_ID_ZIP_EntryProcessing);
-              CurrNode.Add(30,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+              // no decompression or other calculation
+              CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntryLoading);
+              CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntrySaving);
             end;
-        end
-      else
-        begin
-          // no decompression or other calculation
-          CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntryLoading);
-          CurrNode.Add(50,DART_PROGSTAGE_ID_ZIP_EntrySaving);
+        finally
+          CurrNode.EndUpdate;
         end;
-      DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
-    end;
+        DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
+      end;
+finally
+  fEntriesProcProgNode.EndUpdate;
+end;
 DoProgress([PSID_Processing,PSID_Z_EntriesProgressPrep],1.0);
 end;
 

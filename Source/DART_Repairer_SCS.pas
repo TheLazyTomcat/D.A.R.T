@@ -146,29 +146,39 @@ Index := fProgressTracker.IndexOf(DART_PROGSTAGE_ID_Processing);
 If Index >= 0 then
   begin
     ProcessingNode := fProgressTracker.StageObjects[Index];
-    // set progress info for loading of archive header
-    ProcessingNode.Add(10,DART_PROGSTAGE_ID_SCS_ArchiveHeaderLoading);
-    // loading of entries
-    ProcessingNode.Add(40,DART_PROGSTAGE_ID_SCS_EntriesLoading);
-    // paths resolving
-    Index := ProcessingNode.Add(50,DART_PROGSTAGE_ID_SCS_PathsResolving);
-    PathsResNode := ProcessingNode.StageObjects[Index];
-    // preparing progress of entries processing
-    ProcessingNode.Add(20,DART_PROGSTAGE_ID_SCS_EntriesProgressPrep);    
-    // entries processing
-    Index := ProcessingNode.Add(900,DART_PROGSTAGE_ID_SCS_EntriesProcessing);
-    fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
-    // individual stages of paths resolving
-    // local
-    PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_Local);
-    // help archives
-    PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives);
-    // parse content
-    PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent);
-    // brute force
-    PathsResNode.Add(30,DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce);
-    // reconstruct dirs
-    PathsResNode.Add(10,DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct);
+    ProcessingNode.BeginUpdate;
+    try
+      // set progress info for loading of archive header
+      ProcessingNode.Add(10,DART_PROGSTAGE_ID_SCS_ArchiveHeaderLoading);
+      // loading of entries
+      ProcessingNode.Add(40,DART_PROGSTAGE_ID_SCS_EntriesLoading);
+      // paths resolving
+      Index := ProcessingNode.Add(50,DART_PROGSTAGE_ID_SCS_PathsResolving);
+      PathsResNode := ProcessingNode.StageObjects[Index];
+      // preparing progress of entries processing
+      ProcessingNode.Add(20,DART_PROGSTAGE_ID_SCS_EntriesProgressPrep);
+      // entries processing
+      Index := ProcessingNode.Add(900,DART_PROGSTAGE_ID_SCS_EntriesProcessing);
+      fEntriesProcProgNode := ProcessingNode.StageObjects[Index];
+    finally
+      ProcessingNode.EndUpdate;
+    end;
+    PathsResNode.BeginUpdate;
+    try
+      // individual stages of paths resolving
+      // local
+      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_Local);
+      // help archives
+      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_HelpArchives);
+      // parse content
+      PathsResNode.Add(20,DART_PROGSTAGE_ID_SCS_PathsRes_ParseContent);
+      // brute force
+      PathsResNode.Add(30,DART_PROGSTAGE_ID_SCS_PathsRes_BruteForce);
+      // reconstruct dirs
+      PathsResNode.Add(10,DART_PROGSTAGE_ID_SCS_PathsRes_Reconstruct);
+    finally
+      PathsResNode.EndUpdate;
+    end;
   end
 else raise Exception.Create('TDARTRepairer_SCS.InitializeProgress: Processing progress node not found.');
 end;
@@ -918,48 +928,58 @@ var
   CurrNode: TProgressTracker;
 begin
 DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],0.0);
-For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  with fArchiveStructure.Entries.Arr[i] do
-    begin
-      Index := fEntriesProcProgNode.Add(BinPart.CompressedSize,DART_PROGSTAGE_ID_SCS_EntryProcessing);
-      CurrNode := fEntriesProcProgNode.StageObjects[Index];
-      case fArchiveProcessingSettings.Common.RepairMethod of
-        rmRebuild:  begin
-                      If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
-                      {
-                        need decompressed data for compressed file or compressed unresolved directory
-                        when CRC32 is ignored, or for resolved directory (CRC32 of new data)
-                      }
-                      If ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
-                        GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
-                        (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                      CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
-                    end;
-        rmExtract:  begin
-                      If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
-                      {$message 'check when implementing'}  
-                      // need decompression for compressed file or unresolved entry
-                      If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
-                         (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                      CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
-                    end;
-        rmConvert:  begin
-                      If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
-                      // need decompression for compressed files and unresolved entries  
-                      If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
-                         ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or
-                         not UtilityData.Resolved) then
-                        CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
-                      CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);  
-                    end;
+fEntriesProcProgNode.BeginUpdate;
+try
+  For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+    with fArchiveStructure.Entries.Arr[i] do
+      begin
+        Index := fEntriesProcProgNode.Add(BinPart.CompressedSize,DART_PROGSTAGE_ID_SCS_EntryProcessing);
+        CurrNode := fEntriesProcProgNode.StageObjects[Index];
+        CurrNode.BeginUpdate;
+        try
+          case fArchiveProcessingSettings.Common.RepairMethod of
+            rmRebuild:  begin
+                          If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                          {
+                            need decompressed data for compressed file or compressed unresolved directory
+                            when CRC32 is ignored, or for resolved directory (CRC32 of new data)
+                          }
+                          If ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
+                            GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
+                            (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
+                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                        end;
+            rmExtract:  begin
+                          If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                          {$message 'check when implementing'}
+                          // need decompression for compressed file or unresolved entry
+                          If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
+                             (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
+                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                        end;
+            rmConvert:  begin
+                          If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                          // need decompression for compressed files and unresolved entries
+                          If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
+                             ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or
+                             not UtilityData.Resolved) then
+                            CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
+                          CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
+                        end;
+          end;
+        finally
+          CurrNode.EndUpdate;
+        end;
+        DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);
       end;
-      DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],(i + 1) / fArchiveStructure.Entries.Count);    
-    end;
+finally
+  fEntriesProcProgNode.EndUpdate;
+end;
 DoProgress([PSID_Processing,PSID_C_EntriesProgressPrep],1.0);
 end;
 

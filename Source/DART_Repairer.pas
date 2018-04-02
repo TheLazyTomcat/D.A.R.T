@@ -92,12 +92,15 @@ type
     fTerminating:               Boolean;
     fInputArchiveStream:        TStream;
     fExpectedSignature:         UInt32;
-    fEntriesProcProgNode:       TProgressTracker;    
     // preallocated buffers
     fBuffer_IO:                 TMemoryBuffer;
     fBuffer_Entry:              TMemoryBuffer;
     // for (de)compression
     fCompProgressStage:         array of Integer;
+    // progress nodes
+    fProcessingProgNode:        TProgressTracker;
+    fEntriesProcProgNode:       TProgressTracker;
+    fEntryProcProgNode:         TProgressTracker;
     // initialization methods
     procedure InitializeProcessingSettings; virtual;
     procedure InitializeData; virtual; abstract;
@@ -207,23 +210,28 @@ end;
 
 procedure TDARTRepairer.InitializeProgress;
 begin
-fProgressTracker.Clear;
-If fArchiveProcessingSettings.Common.InMemoryProcessing then
-  begin
-    case fArchiveProcessingSettings.Common.RepairMethod of
-      rmRebuild,
-      rmConvert:  begin
-                    fProgressTracker.Add(300,DART_PROGSTAGE_ID_Loading);
-                    fProgressTracker.Add(400,DART_PROGSTAGE_ID_Processing);
-                    fProgressTracker.Add(300,DART_PROGSTAGE_ID_Saving);
-                  end;
-      rmExtract:  begin
-                    fProgressTracker.Add(400,DART_PROGSTAGE_ID_Loading);
-                    fProgressTracker.Add(600,DART_PROGSTAGE_ID_Processing);
-                  end;
-    end;
-  end
-else fProgressTracker.Add(1000,DART_PROGSTAGE_ID_Processing)
+fProgressTracker.BeginUpdate;
+try
+  fProgressTracker.Clear;
+  If fArchiveProcessingSettings.Common.InMemoryProcessing then
+    begin
+      case fArchiveProcessingSettings.Common.RepairMethod of
+        rmRebuild,
+        rmConvert:  begin
+                      fProgressTracker.Add(300,DART_PROGSTAGE_ID_Loading);
+                      fProgressTracker.Add(400,DART_PROGSTAGE_ID_Processing);
+                      fProgressTracker.Add(300,DART_PROGSTAGE_ID_Saving);
+                    end;
+        rmExtract:  begin
+                      fProgressTracker.Add(400,DART_PROGSTAGE_ID_Loading);
+                      fProgressTracker.Add(600,DART_PROGSTAGE_ID_Processing);
+                    end;
+      end;
+    end
+  else fProgressTracker.Add(1000,DART_PROGSTAGE_ID_Processing)
+finally
+  fProgressTracker.EndUpdate;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -265,7 +273,8 @@ If Terminated then
     DoTerminate;
     DoError(DART_METHOD_ID_STOP,'Processing terminated. Data can be in an inconsistent state.');
   end;
-// actual progress...  
+// actual progress...
+{$message 'progress needs serious optimization'}  
 case Length(StageIDs) of
   0:  If Assigned(fOnProgress) then
         fOnProgress(Self,fProgressTracker.Progress);
@@ -674,7 +683,7 @@ fPauseControlObject.SetEvent;
 fArchiveProcessingSettings := ArchiveProcessingSettings;
 fProgressTracker := TProgressTracker.Create;
 fProgressTracker.ConsecutiveStages := True;
-fProgressTracker.GrowOnly := True;
+fProgressTracker.StrictlyGrowing := True;
 fTerminating := False;
 fExpectedSignature := 0;
 fCompProgressStage := nil;

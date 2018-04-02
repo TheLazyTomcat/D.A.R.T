@@ -9,9 +9,9 @@
 
   Progress tracker
 
-  ©František Milt 2018-03-21
+  ©František Milt 2018-04-02
 
-  Version 1.1
+  Version 1.2
 
 ===============================================================================}
 unit ProgressTracker;
@@ -31,17 +31,20 @@ interface
 ===============================================================================}
 
 type
+  TGrowMode = (gmSlow, gmLinear, gmFast, gmFastAttenuated);
+
   TProgressEvent    = procedure(Sender: TObject; Progress: Single) of object;
   TProgressCallback = procedure(Sender: TObject; Progress: Single);
 
   TProgressTracker = class; // forward declaration
 
   TProgressStage = record
-    StageID:        Integer;
-    AbsoluteLength: Single;
-    RelativeLength: Single;
-    RelativeStart:  Single;
-    StageObject:    TProgressTracker;
+    StageID:          Integer;
+    AbsoluteLength:   Single;
+    RelativeLength:   Single;
+    RelativeStart:    Single;
+    StageObject:      TProgressTracker;
+    RelativeProgress: Single;
   end;
 
   TProgressStages = record
@@ -57,11 +60,17 @@ type
   private
     fUpdateCounter:       Integer;
     fConsecutiveStages:   Boolean;
-    fGrowOnly:            Boolean;
+    fConsStagesActiveIdx: Integer;
+    fStrictlyGrowing:     Boolean;
+    fMinProgressDelta:    Single;
+    fPrevProgress:        Single;
     fProgress:            Single;
     fMaximum:             Int64;
     fPosition:            Int64;
+    fStageIndex:          Integer;
     fStages:              TProgressStages;
+    fGrowMode:            TGrowMode;
+    fGrowFactor:          Single;
     fOnStageProgress:     TProgressEvent;
     fOnTrackerProgress:   TProgressEvent;
     fOnTrackerProgressCB: TProgressCallback;
@@ -72,6 +81,8 @@ type
     procedure SetProgress(Value: Single);
     procedure SetMaximum(Value: Int64);
     procedure SetPosition(Value: Int64);
+    Function GetCapacity: Integer;
+    procedure SetCapacity(Value: Integer);
     Function GetStage(Index: Integer): TProgressStage;
     Function GetStageObject(Index: Integer): TProgressTracker;
   protected
@@ -79,9 +90,11 @@ type
     procedure Grow; virtual;
     procedure DoStageProgress; virtual;
     procedure DoTrackerProgress; virtual;
-    procedure DoProgressEvents; virtual;
+    procedure DoProgress; virtual;
     procedure StageProgressHandler(Sender: TObject; {%H-}Progress: Single); virtual;
+    procedure ReindexStages; virtual;
     property StageEvent: TProgressEvent read fOnStageProgress write fOnStageProgress;
+    property StageIndex: Integer read fStageIndex write fStageIndex;
   public
     constructor Create;
     destructor Destroy; override;
@@ -106,7 +119,7 @@ type
     Function Remove(StageID: Integer): Integer; overload; virtual;
     procedure Delete(Index: Integer); virtual;
     procedure Clear; virtual;
-    Function Recalculate(ProgressOnly: Boolean): Single; virtual;
+    Function Recalculate(LocalProgressOnly: Boolean): Single; virtual;
     procedure RecalculateStages; virtual;
     procedure SetStageProgress(Index: Integer; NewValue: Single); virtual;
     procedure SetStageMaximum(Index: Integer; NewValue: Int64); virtual;
@@ -121,11 +134,16 @@ type
   published
     property Updating: Boolean read GetUpdating;
     property ConsecutiveStages: Boolean read fConsecutiveStages write SetConsecutiveStages;
-    property GrowOnly: Boolean read fGrowOnly write fGrowOnly;
+    property StrictlyGrowing: Boolean read fStrictlyGrowing write fStrictlyGrowing;
+    property MinProgressDelta: Single read fMinProgressDelta write fMinProgressDelta;
     property Progress: Single read fProgress write SetProgress;
     property Maximum: Int64 read fMaximum write SetMaximum;
     property Position: Int64 read fPosition write SetPosition;
+    property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read fStages.Count;
+    property GrowMode: TGrowMode read fGrowMode write fGrowMode;
+    property GrowFactor: Single read fGrowFactor write fGrowFactor;
+    property OnProgressEvent: TProgressEvent read fOnTrackerProgress write fOnTrackerProgress;
     property OnProgress: TProgressEvent read fOnTrackerProgress write fOnTrackerProgress;
     property UserIntData: Integer read fUserIntData write fUserIntData;
     property UserData: Integer read fUserIntData write fUserIntData;
@@ -143,7 +161,7 @@ uses
 ===============================================================================}
 
 const
-  PT_GROW_DELTA = 32;
+  PT_GROW_INIT = 32;
 
 {===============================================================================
     TProgressTracker - implementation
@@ -172,10 +190,10 @@ end;
 
 procedure TProgressTracker.SetProgress(Value: Single);
 begin
-If (Value > fProgress) or not fGrowOnly then
+If (Value > fProgress) or not fStrictlyGrowing then
   begin
     fProgress := Value;
-    DoProgressEvents;
+    DoProgress;
   end;
 end;
 
@@ -199,6 +217,29 @@ If fPosition <> Value then
     fPosition := Value;
     Recalculate(True);
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TProgressTracker.GetCapacity: Integer;
+begin
+Result := Length(fStages.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TProgressTracker.SetCapacity(Value: Integer);
+var
+  i:  Integer;
+begin
+If Value < fStages.Count then
+  begin
+    For i := Value to Pred(fStages.Count) do
+      FreeAndNil(fStages.Arr[i].StageObject);
+    fStages.Count := Value;
+    Recalculate(False);
+  end;
+SetLength(fStages.Arr,Value);
 end;
 
 //------------------------------------------------------------------------------
@@ -231,9 +272,33 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TProgressTracker.Grow;
+var
+  NewCapacity:  Integer;
 begin
-If fStages.Count >= Length(fStages.Arr) then
-  SetLength(fStages.Arr,Length(fSTages.Arr) + PT_GROW_DELTA);
+If fStages.Count >= Capacity then
+  begin
+    If Capacity = 0 then
+      NewCapacity := PT_GROW_INIT
+    else
+      case fGrowMode of
+        gmLinear:
+          NewCapacity := Capacity + Trunc(fGrowFactor);
+        gmFast:
+          NewCapacity := Trunc(Capacity * fGrowFactor);
+        gmFastAttenuated:
+          If Trunc(Capacity * fGrowFactor) >= High(Integer) then
+            NewCapacity := Capacity + ((High(Integer) - Capacity) div 2)
+          else
+            NewCapacity := Trunc(Capacity * fGrowFactor);
+      else
+       {gmSlow}
+       NewCapacity := Capacity + 1;
+      end;
+    If NewCapacity <= Capacity then
+      raise Exception.Create('TProgressTracker.Grow: Cannot grow.')
+    else
+      Capacity := NewCapacity;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -259,22 +324,65 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TProgressTracker.DoProgressEvents;
+procedure TProgressTracker.DoProgress;
 begin
-If (fUpdateCounter <= 0) then
+If (Abs(fProgress - fPrevProgress) >= fMinProgressDelta) or
+   ((fProgress = 0.0) or (fProgress = 1.0)) then
   begin
-    DoStageProgress;
-    DoTrackerProgress;
+    fPrevProgress := fProgress;
+    If (fUpdateCounter <= 0) then
+      begin
+        DoStageProgress;
+        DoTrackerProgress;
+      end;
   end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TProgressTracker.StageProgressHandler(Sender: TObject; Progress: Single);
+var
+  NewRelativeProgress:  Single;
 begin
-Recalculate(True);
+If CheckIndex((Sender as TProgressTracker).StageIndex) then
+  with fStages.Arr[TProgressTracker(Sender).StageIndex] do
+    begin
+      NewRelativeProgress := (Progress * RelativeLength);
+      If fConsecutiveStages then
+        begin
+          If TProgressTracker(Sender).StageIndex >= fConsStagesActiveIdx then
+            begin
+              If NewRelativeProgress <> 0.0 then
+                begin
+                  fConsStagesActiveIdx := TProgressTracker(Sender).StageIndex;
+                  fProgress := RelativeStart + NewRelativeProgress
+                end
+              else If RelativeProgress <> 0.0 then Recalculate(True);
+            end;
+          RelativeProgress := NewRelativeProgress;
+        end
+      else
+        begin
+          If RelativeProgress <> NewRelativeProgress then
+            begin
+              fProgress := (fProgress - RelativeProgress) + NewRelativeProgress;
+              RelativeProgress := NewRelativeProgress;
+            end;
+        end;
+      DoProgress;
+    end;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TProgressTracker.ReindexStages;
+var
+  i:  Integer;
+begin
+If fUpdateCounter <= 0 then
+  For i := LowIndex to HighIndex do
+    fStages.Arr[i].StageObject.StageIndex := i;
+end;
 
 {-------------------------------------------------------------------------------
     TProgressTracker - public methods
@@ -285,12 +393,18 @@ begin
 inherited;
 fUpdateCounter := 0;
 fConsecutiveStages := True;
-fGrowOnly := False;
+fConsStagesActiveIdx := -1;
+fStrictlyGrowing := False;
+fMinProgressDelta := 0.0;
+fPrevProgress := 0.0;
 fProgress := 0.0;
 fMaximum := 0;
 fPosition := 0;
+fStageIndex := -1;
 SetLength(fStages.Arr,0);
 fStages.Count := 0;
+fGrowMode := gmFast;
+fGrowFactor := 2.0;
 fOnStageProgress := nil;
 fOnTrackerProgress := nil;
 fOnTrackerProgressCB := nil;
@@ -326,8 +440,9 @@ Dec(fUpdateCounter);
 Result := fUpdateCounter;
 If fUpdateCounter <= 0 then
   begin
+    fUpdateCounter := 0;  
+    ReindexStages;
     Recalculate(False);
-    fUpdateCounter := 0;
   end;
 end;
 
@@ -447,6 +562,13 @@ NewItem.AbsoluteLength := AbsoluteLength;
 NewItem.RelativeLength := 0.0;
 NewItem.StageObject := TProgressTracker.Create;
 NewItem.StageObject.StageEvent := StageProgressHandler;
+NewItem.StageObject.StageIndex := fStages.Count;
+NewItem.StageObject.ConsecutiveStages := fConsecutiveStages;
+NewItem.StageObject.StrictlyGrowing := fStrictlyGrowing;
+NewItem.StageObject.MinProgressDelta := fMinProgressDelta;
+NewItem.StageObject.GrowMode := fGrowMode;
+NewItem.StageObject.GrowFactor := fGrowFactor;
+NewItem.RelativeProgress := 0.0;
 Result := fStages.Count;
 fStages.Arr[Result] := NewItem;
 Inc(fStages.Count);
@@ -470,8 +592,16 @@ If CheckIndex(Index) then
     NewItem.RelativeLength := 0.0;
     NewItem.StageObject := TProgressTracker.Create;
     NewItem.StageObject.StageEvent := StageProgressHandler;
+    NewItem.StageObject.StageIndex := Index;
+    NewItem.StageObject.ConsecutiveStages := fConsecutiveStages;
+    NewItem.StageObject.StrictlyGrowing := fStrictlyGrowing;
+    NewItem.StageObject.MinProgressDelta := fMinProgressDelta;
+    NewItem.StageObject.GrowMode := fGrowMode;
+    NewItem.StageObject.GrowFactor := fGrowFactor;
+    NewItem.RelativeProgress := 0.0;
     fStages.Arr[Index] := NewItem;
     Inc(fStages.Count);
+    ReindexStages;
     Recalculate(False);
   end
 else If Index = fStages.Count then
@@ -501,6 +631,7 @@ If SrcIdx <> DstIdx then
       For i := SrcIdx downto Succ(DstIdx) do
         fStages.Arr[i] := fStages.Arr[i - 1];
     fStages.Arr[DstIdx] := Temp;
+    ReindexStages;
     Recalculate(False);
   end;
 end;
@@ -520,6 +651,7 @@ If Idx1 <> Idx2 then
     Temp := fStages.Arr[Idx1];
     fStages.Arr[Idx1] := fStages.Arr[Idx2];
     fStages.Arr[Idx2] := Temp;
+    ReindexStages;
     Recalculate(False);
   end;
 end;
@@ -538,6 +670,7 @@ If CheckIndex(Index) then
     For i := Succ(Index) to Pred(fStages.Count) do
       fStages.Arr[i - 1] := fStages.Arr[i];
     Dec(fStages.Count);
+    ReindexStages;
     Recalculate(False);
   end
 else Result := nil;
@@ -573,6 +706,7 @@ If CheckIndex(Index) then
     For i := Succ(Index) to Pred(fStages.Count) do
       fStages.Arr[i - 1] := fStages.Arr[i];
     Dec(fStages.Count);
+    ReindexStages;
     Recalculate(False);
   end
 else raise Exception.CreateFmt('TProgressTracker.Delete: Index (%d) out of bounds..',[Index]);
@@ -587,59 +721,67 @@ begin
 For i := LowIndex to HighIndex do
   FreeAndNil(fStages.Arr[i].StageObject);
 fStages.Count := 0;
+ReindexStages;
 Recalculate(False);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TProgressTracker.Recalculate(ProgressOnly: Boolean): Single;
+Function TProgressTracker.Recalculate(LocalProgressOnly: Boolean): Single;
 var
   i:    Integer;
   Temp: Single;
 begin
-If fStages.Count > 0 then
+If fUpdateCounter <= 0 then
   begin
-    If not ProgressOnly then
+    If fStages.Count > 0 then
       begin
-        Temp := 0.0;
-        For i := LowIndex to HighIndex do
-          Temp := Temp + fStages.Arr[i].AbsoluteLength;
-        For i := LowIndex to HighIndex do
+        If not LocalProgressOnly then
           begin
-            If Temp <> 0.0 then
-              fStages.Arr[i].RelativeLength := fStages.Arr[i].AbsoluteLength / Temp
-            else
-              fStages.Arr[i].RelativeLength := 0.0;
-            If i > LowIndex then
-              fStages.Arr[i].RelativeStart := fStages.Arr[i - 1].RelativeStart + fStages.Arr[i - 1].RelativeLength
-            else
-              fStages.Arr[i].RelativeStart := 0.0;
+            Temp := 0.0;
+            For i := LowIndex to HighIndex do
+              Temp := Temp + fStages.Arr[i].AbsoluteLength;
+            For i := LowIndex to HighIndex do
+              with fStages.Arr[i] do
+                begin
+                  If Temp <> 0.0 then
+                    RelativeLength := AbsoluteLength / Temp
+                  else
+                    RelativeLength := 0.0;
+                  If i > LowIndex then
+                    RelativeStart := fStages.Arr[i - 1].RelativeStart + fStages.Arr[i - 1].RelativeLength
+                  else
+                    RelativeStart := 0.0;
+                  RelativeProgress := RelativeLength * StageObject.Progress;
+               end;
           end;
-      end;
-    fProgress := 0.0;
-    If fConsecutiveStages then
-      begin
-        For i := HighIndex downto LowIndex  do
-          If fStages.Arr[i].StageObject.Progress <> 0.0 then
-            begin
-              fProgress := fStages.Arr[i].RelativeStart + (fStages.Arr[i].StageObject.Progress * fStages.Arr[i].RelativeLength);
-              Break{For i};
-            end;
+        fProgress := 0.0;
+        If fConsecutiveStages then
+          begin
+            fConsStagesActiveIdx := -1;
+            For i := HighIndex downto LowIndex  do
+              If fStages.Arr[i].StageObject.Progress <> 0.0 then
+                begin
+                  fConsStagesActiveIdx := i;
+                  fProgress := fStages.Arr[i].RelativeStart + (fStages.Arr[i].StageObject.Progress * fStages.Arr[i].RelativeLength);
+                  Break{For i};
+                end;
+          end
+        else
+          begin
+            For i := LowIndex to HighIndex do
+              fProgress := fProgress + (fStages.Arr[i].StageObject.Progress * fStages.Arr[i].RelativeLength);
+          end;
       end
     else
       begin
-        For i := LowIndex to HighIndex do
-          fProgress := fProgress + (fStages.Arr[i].StageObject.Progress * fStages.Arr[i].RelativeLength);
+        If fMaximum <> 0 then
+          fProgress := fPosition / fMaximum
+        else
+          fProgress := 0.0;
       end;
-  end
-else
-  begin
-    If fMaximum <> 0 then
-      fProgress := fPosition / fMaximum
-    else
-      fProgress := 0.0;
+    DoProgress;
   end;
-DoProgressEvents;
 Result := fProgress;
 end;
 
