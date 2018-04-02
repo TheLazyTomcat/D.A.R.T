@@ -48,7 +48,7 @@ type
     Resolved:     Boolean;
     Erroneous:    Boolean;
     DirContent:   array of AnsiString;
-    //OriginalDataOffset: UInt64;
+    OrigDataOff:  UInt64;
   end;
 
   TDART_SCS_UtilityData = record

@@ -90,7 +90,7 @@ type
 
   TDARTRepairer_SCS_ProcessingBase = class(TDARTRepairer_SCS)
   protected
-    procedure SCS_SaveUnresolvedEntry(EntryIdx: Integer; Data: Pointer; Size: TMemSize); virtual;
+    procedure SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize); virtual;
     procedure SCS_PrepareEntriesProgress; virtual;
     procedure ArchiveProcessing; override;
   public
@@ -871,44 +871,43 @@ end;
 const
   DART_METHOD_ID_SCS_PROC_ARCHPROC = 0;
 
-procedure TDARTRepairer_SCS_ProcessingBase.SCS_SaveUnresolvedEntry(EntryIdx: Integer; Data: Pointer; Size: TMemSize);
+procedure TDARTRepairer_SCS_ProcessingBase.SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize);
 var
   EntryFileName:    String;
   EntryFileStream:  TFileStream;
 begin
 If (EntryIdx >= Low(fArchiveStructure.Entries.Arr)) and (EntryIdx < fArchiveStructure.Entries.Count) then
   with fArchiveStructure.Entries.Arr[EntryIdx] do
-    If not UtilityData.Resolved then  // save only unresolved entries...
-      begin
-        If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then  // ...and only when required
-          begin
-            // raw data will be saved to a file
-            DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',
-                             [EntryIdx,BinPart.Hash,BinPart.UncompressedSize]));
-            If ExtractFileName(fArchiveProcessingSettings.Common.TargetPath) <> '' then
-              // target is file
-              EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fArchiveProcessingSettings.Common.TargetPath) + 'unresolved_' +
-                ChangeFileExt(ExtractFileName(fArchiveProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,BinPart.Hash])
-            else
-              // target is directory
-              EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fArchiveProcessingSettings.Common.TargetPath) + '_unresolved_') +
-                Format('%s(%.16x)',[SCS_HashName,BinPart.Hash]);
-            If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-              EntryFileName := EntryFileName + 'D'
-            else
-              EntryFileName := EntryFileName + 'F';
-            DART_ForceDirectories(ExtractFileDir(EntryFileName));
-            EntryFileStream := TFileStream.Create(StrToRTL(EntryFileName),fmCreate or fmShareDenyWrite);
-            try
-              EntryFileStream.WriteBuffer(Data^,Size);
-              EntryFileStream.Size := EntryFileStream.Position;
-            finally
-              EntryFileStream.Free;
-            end;
-          end
-        // data will not be extracted...
-        else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved.',[EntryIdx,BinPart.Hash]));
-      end;
+    begin
+      If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then  // save and only when required
+        begin
+          // raw data will be saved to a file
+          DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',
+                           [EntryIdx,BinPart.Hash,BinPart.UncompressedSize]));
+          If ExtractFileName(fArchiveProcessingSettings.Common.TargetPath) <> '' then
+            // target is file
+            EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fArchiveProcessingSettings.Common.TargetPath) + 'unresolved_' +
+              ChangeFileExt(ExtractFileName(fArchiveProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,BinPart.Hash])
+          else
+            // target is directory
+            EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fArchiveProcessingSettings.Common.TargetPath) + '_unresolved_') +
+              Format('%s(%.16x)',[SCS_HashName,BinPart.Hash]);
+          If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+            EntryFileName := EntryFileName + 'D'
+          else
+            EntryFileName := EntryFileName + 'F';
+          DART_ForceDirectories(ExtractFileDir(EntryFileName));
+          EntryFileStream := TFileStream.Create(StrToRTL(EntryFileName),fmCreate or fmShareDenyWrite);
+          try
+            EntryFileStream.WriteBuffer(Data^,Size);
+            EntryFileStream.Size := EntryFileStream.Position;
+          finally
+            EntryFileStream.Free;
+          end;
+        end
+      // data will not be extracted...
+      else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved.',[EntryIdx,BinPart.Hash]));
+    end;
 end;
 
 //------------------------------------------------------------------------------
@@ -928,17 +927,20 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
         rmRebuild:  begin
                       If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
                         CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
-                      {$message 'check when implementing'}
-                      // need decompressed data for crc32 calculation, unresolved entry saving or directory entry compression/crc32
-                      If (fProcessingSettings.Entry.IgnoreCRC32 and GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
-                         (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and not UtilityData.Resolved) or
-                         GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                      {
+                        need decompressed data for compressed file or compressed unresolved directory
+                        when CRC32 is ignored, or for resolved directory (CRC32 of new data)
+                      }
+                      If ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
+                        GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
+                        (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
                         CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryDecompression);
                       CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntrySaving);
                     end;
         rmExtract:  begin
                       If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
                         CurrNode.Add(30,DART_PROGSTAGE_ID_SCS_EntryLoading);
+                      {$message 'check when implementing'}  
                       // need decompression for compressed file or unresolved entry
                       If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                          (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved) then
