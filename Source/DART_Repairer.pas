@@ -246,10 +246,16 @@ try
           begin
             DART_PROGSTAGE_IDX_Loading    := fProgressTracker.Add(400);
             DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(600);
+            DART_PROGSTAGE_IDX_Saving     := fProgressTracker.Add(0);
           end;
       end;
     end
-  else DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(1000);
+  else
+    begin
+      DART_PROGSTAGE_IDX_Loading    := fProgressTracker.Add(0);
+      DART_PROGSTAGE_IDX_Processing := fProgressTracker.Add(1000);
+      DART_PROGSTAGE_IDX_Saving     := fProgressTracker.Add(0);
+    end;
   PSIDX_Processing := DART_PROGSTAGE_IDX_Processing;
   fProcessingProgNode := fProgressTracker.StageObjects[PSIDX_Processing];
 finally

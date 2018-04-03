@@ -956,21 +956,30 @@ try
           case fArchiveProcessingSettings.Common.RepairMethod of
             rmRebuild:  begin
                           If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
-                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(0);
+
                           {
                             decompression progres is required when:
                               - entry is a resolved directory (it might need compression, decomp. prog. is used there)
                               - entry is compressed and original CRC32 is ignored or the entry is not resolved
                           }
                           If (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) or
-                            ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
-                            GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) then
-                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
+                             ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
+                             GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) then
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(0);
+
                           DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
             rmExtract:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved then
-                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(0);
+
                           {
                             decompression progres is required when:
                               - entry is compressed, not resolved and extraction of unresolved entries is active
@@ -979,20 +988,38 @@ try
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                              (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or
                              (not UtilityData.Resolved and fProcessingSettings.PathResolve.ExtractedUnresolvedEntries)) then
-                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(0);
+
                           If not UtilityData.Resolved or not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
+                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(0);    
                         end;
             rmConvert:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
-                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30,DART_PROGSTAGE_IDX_SCS_EntryLoading);
-                          {$message 'check against implementation'}
-                          // need decompression for compressed files and unresolved entries
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(0);
+
+                          {
+                            decompression progres is required when:
+                              - entry is compressed, resolved but original CRC32 was ignored
+                              - entry id compressed, not resolved and extraction of unresolved entries is active
+                          }
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
-                             ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or
-                             not UtilityData.Resolved) then
-                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
-                          DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
+                             ((fProcessingSettings.PathResolve.ExtractedUnresolvedEntries and not UtilityData.Resolved) or
+                             fProcessingSettings.Entry.IgnoreCRC32) then
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(0);
+
+                          If (not UtilityData.Resolved and fProcessingSettings.PathResolve.ExtractedUnresolvedEntries) or
+                            not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30)
+                          else
+                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(1);  // only header is saved
                         end;
           end;
           // assign obtained indices to shorter named-variables

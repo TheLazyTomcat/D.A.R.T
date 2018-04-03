@@ -318,6 +318,7 @@ begin
 DoProgress(fEntriesConvertingProgNode,DART_PROGSTAGE_IDX_ZIP_CONV_SCS_ProgressReset,0.0);
 fEntriesProcessingProgNode.BeginUpdate;
 try
+  fEntriesProcessingProgNode.Clear;
   For i := Low(fSCSArchiveStructure.Entries.Arr) to Pred(fSCSArchiveStructure.Entries.Count) do
     with fSCSArchiveStructure.Entries.Arr[i] do
       begin
@@ -329,32 +330,26 @@ try
         CurrNode := fEntriesProcessingProgNode.StageObjects[Index];
         CurrNode.BeginUpdate;
         try
-          {$message 'correct for dirs'}
           with fArchiveStructure.Entries.Arr[fSCSArchiveStructure.Entries.Arr[i].UtilityData.Index] do
-            If UtilityData.NeedsCRC32 or UtilityData.NeedsSizes then
+            If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
               begin
-                If LocalHeader.BinPart.CompressionMethod = DART_ZCM_Store then
-                  begin
-                    // no decompression
-                    DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(40);
-                    DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(20);
-                    DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(40);
-                  end
-                else
-                  begin
-                    // decompression (recompression) is needed
-                    DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(30);
-                    DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(40);
-                    DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(30);
-                  end;
+                // entry is a directory
+                DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(0);
+                DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(60);
+                DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(40);
               end
             else
               begin
-                // no decompression or other calculation
-                DART_PROGSTAGE_IDX_ZIP_EntryLoading := CurrNode.Add(50);
-                DART_PROGSTAGE_IDX_ZIP_EntrySaving  := CurrNode.Add(50);
+                // entry is a file
+                DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(40);
+                If (LocalHeader.BinPart.CompressionMethod <> DART_ZCM_Store) and
+                  (LocalHeader.BinPart.CompressedSize > 0) then
+                  DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(20)
+                else
+                  DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(0);
+                DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(40);
               end;
-          // assign obtained indices to shorter named-variables
+           // assign obtained indices to shorter named-variables
           PSIDX_Z_EntryProcessing    := DART_PROGSTAGE_IDX_ZIP_EntryProcessing;
           PSIDX_Z_EntryLoading       := DART_PROGSTAGE_IDX_ZIP_EntryLoading;
           PSIDX_Z_EntryDecompression := DART_PROGSTAGE_IDX_ZIP_EntryDecompression;
@@ -570,6 +565,7 @@ try
             end;
         end;
     end;
+    
   DoProgress(fEntriesProcessingProgNode,Index,1.0);
 except
   on E: Exception do

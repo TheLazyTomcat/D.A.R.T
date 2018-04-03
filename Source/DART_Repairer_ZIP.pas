@@ -883,8 +883,9 @@ try
           else
             begin
               // no decompression or other calculation
-              DART_PROGSTAGE_IDX_ZIP_EntryLoading := CurrNode.Add(50);
-              DART_PROGSTAGE_IDX_ZIP_EntrySaving  := CurrNode.Add(50);
+              DART_PROGSTAGE_IDX_ZIP_EntryLoading       := CurrNode.Add(50);
+              DART_PROGSTAGE_IDX_ZIP_EntryDecompression := CurrNode.Add(0);
+              DART_PROGSTAGE_IDX_ZIP_EntrySaving        := CurrNode.Add(50);
             end;
           // assign obtained indices to shorter named-variables
           PSIDX_Z_EntryProcessing    := DART_PROGSTAGE_IDX_ZIP_EntryProcessing;

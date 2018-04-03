@@ -239,7 +239,7 @@ var
   DecompressedBuff: Pointer;
   DecompressedSize: TMemSize;
 
-  procedure ManageCompressedEntry;
+  procedure ManageCompressedEntryData;
   begin
   {
     Entry is a compressed ZLib stream.
@@ -335,7 +335,7 @@ try
                 ProgressedStreamWrite(fConvertedArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
                   DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving))
               else
-                ManageCompressedEntry;
+                ManageCompressedEntryData;
             end;
         end
       else
