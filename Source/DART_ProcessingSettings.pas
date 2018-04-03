@@ -24,6 +24,7 @@ type
     OriginalArchiveType:    TDARTArchiveType;
     SelectedArchiveType:    TDARTArchiveType;
     RepairMethod:           TDARTRepairMethod;
+    ConvertTo:              TDARTArchiveType;
     TargetPath:             String;
     IgnoreFileSignature:    Boolean;
     InMemoryProcessing:     Boolean;
@@ -129,6 +130,7 @@ const
       OriginalArchiveType:    atUnknown;
       SelectedArchiveType:    atUnknown;
       RepairMethod:           rmRebuild;
+      ConvertTo:              atUnknown;
       TargetPath:             '';
       IgnoreFileSignature:    True;
       InMemoryProcessing:     False;
