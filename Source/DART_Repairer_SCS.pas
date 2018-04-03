@@ -86,7 +86,7 @@ type
     Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;
     procedure SCS_SortEntries; virtual;
     Function SCS_KnownPaths_IndexOf(const Path: AnsiString): Integer; virtual;
-    Function SCS_KnownPaths_Add(const Path: AnsiString): Integer; virtual;
+    Function SCS_KnownPaths_Add(const Path: AnsiString; Directory: Boolean): Integer; virtual;
     procedure SCS_LoadArchiveHeader; virtual;
     procedure SCS_LoadEntries; virtual;
     procedure SCS_AssignPaths; virtual;
@@ -421,7 +421,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_SCS.SCS_KnownPaths_Add(const Path: AnsiString): Integer;
+Function TDARTRepairer_SCS.SCS_KnownPaths_Add(const Path: AnsiString; Directory: Boolean): Integer;
 begin
 Result := SCS_KnownPaths_IndexOf(Path);
 If Result < 0 then
@@ -429,7 +429,7 @@ If Result < 0 then
     If fArchiveStructure.KnownPaths.Count >= Length(fArchiveStructure.KnownPaths.Arr) then
       SetLength(fArchiveStructure.KnownPaths.Arr,Length(fArchiveStructure.KnownPaths.Arr) + 1024);
     fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Path := Path;
-    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Directory := False;
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Directory := Directory;
     fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash := AnsiStringCRC32(AnsiLowerCase(Path));
     fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash64 := SCS_EntryFileNameHash(Path);
     Inc(fArchiveStructure.KnownPaths.Count);
@@ -602,15 +602,19 @@ begin
 DoProgress(fProcessingProgNode,PSIDX_C_PathsResolving,0.0);
 fArchiveStructure.KnownPaths.Count := 0;
 // add root
-SCS_KnownPaths_Add(DART_SCS_PATHS_Root);
+SCS_KnownPaths_Add(DART_SCS_PATHS_Root,True);
 // add predefined paths
 If fProcessingSettings.PathResolve.UsePredefinedPaths then
-  For i := Low(DART_SCS_PATHS_Predefined) to High(DART_SCS_PATHS_Predefined) do
-    SCS_KnownPaths_Add(DART_SCS_PATHS_Predefined[i]);
+  begin
+    For i := Low(DART_SCS_PATHS_PredefinedDirs) to High(DART_SCS_PATHS_PredefinedDirs) do
+      SCS_KnownPaths_Add(DART_SCS_PATHS_PredefinedDirs[i],True);
+    For i := Low(DART_SCS_PATHS_PredefinedFiles) to High(DART_SCS_PATHS_PredefinedFiles) do
+      SCS_KnownPaths_Add(DART_SCS_PATHS_PredefinedFiles[i],False);
+  end;
 // add custom paths
 with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
-    SCS_KnownPaths_Add(CustomPaths[i]);
+    SCS_KnownPaths_Add(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
 // load all paths stored in the archive
 SCS_ResolvePaths_Local;
 // load paths from help archives
@@ -681,9 +685,9 @@ var
                         Directories.Add(Path + DART_SCS_PathDelim + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
                       else
                         Directories.Add(Copy(EntryLines[ii],2,Length(EntryLines[ii])));
-                      SCS_KnownPaths_Add(Directories[Pred(Directories.Count)]);
+                      SCS_KnownPaths_Add(Directories[Pred(Directories.Count)],True);
                     end
-                  else SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii]); // file
+                  else SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False); // file
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
@@ -773,7 +777,7 @@ var
             TempKnownPaths.Count := 0;
             If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
               For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
-                SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path);
+                SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
           finally
             HelpArchiveRepairer.Free;
           end;
@@ -789,7 +793,7 @@ var
         TempKnownPaths.Count := 0;
         If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
           For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
-            SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path);
+            SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
       finally
         HelpArchiveRepairer.Free;
       end;

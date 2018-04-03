@@ -96,7 +96,14 @@ const
 
   DART_SCS_PATHS_Root = '';
 
-  DART_SCS_PATHS_Predefined: array[0..21] of AnsiString = (
+  DART_SCS_PATHS_PredefinedDirs: array[0..14] of AnsiString = (
+    {
+    some folders from ETS2
+  }
+    'automat','def','effect','locale','map','material','model','model2',
+    'prefab','prefab2','sound','system','ui','unit','vehicle');
+
+  DART_SCS_PATHS_PredefinedFiles: array[0..6] of AnsiString = (
   {
     modifications stuff
   }
@@ -105,12 +112,8 @@ const
   {
     untracked files from ETS2 base.scs
   }
-    'version.txt','autoexec.cfg',
-  {
-    some folders from ETS2
-  }
-    'automat','def','effect','locale','map','material','model','model2',
-    'prefab','prefab2','sound','system','ui','unit','vehicle');
+    'version.txt','autoexec.cfg');
+
 
 //--- Other SCS# constants -----------------------------------------------------
 
