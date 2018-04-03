@@ -48,12 +48,12 @@ type
     Resolved:     Boolean;
     Erroneous:    Boolean;
     DirContent:   array of AnsiString;
-    OrigDataOff:  UInt64;
+    DataOffset:   UInt64;
+    Index:        Integer;
   end;
 
   TDART_SCS_UtilityData = record
     UnresolvedCount:  Integer;
-    //DataBytes:      UInt64;
   end;
 
 //--- Main structure -----------------------------------------------------------

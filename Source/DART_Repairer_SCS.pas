@@ -14,6 +14,7 @@ var
   DART_PROGSTAGE_IDX_SCS_EntriesLoading:        Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsResolving:        Integer = -1;
   DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep:   Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesConverting:     Integer = -1;
   DART_PROGSTAGE_IDX_SCS_EntriesProcessing:     Integer = -1;
 
   DART_PROGSTAGE_IDX_SCS_PathsRes_Local:        Integer = -1;
@@ -31,6 +32,7 @@ var
   PSIDX_C_EntriesLoading:        Integer = -1;
   PSIDX_C_PathsResolving:        Integer = -1;
   PSIDX_C_EntriesProgressPrep:   Integer = -1;
+  PSIDX_C_EntriesConverting:     Integer = -1;
   PSIDX_C_EntriesProcessing:     Integer = -1;
 
   PSIDX_C_PathsRes_Local:        Integer = -1;
@@ -147,6 +149,9 @@ try
   DART_PROGSTAGE_IDX_SCS_PathsResolving := fProcessingProgNode.Add(50);
   // preparing progress of entries processing
   DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep := fProcessingProgNode.Add(20);
+  // entries conversion
+  If fArchiveProcessingSettings.Common.RepairMethod = rmConvert then
+    DART_PROGSTAGE_IDX_SCS_EntriesConverting := fProcessingProgNode.Add(20);
   // entries processing
   DART_PROGSTAGE_IDX_SCS_EntriesProcessing := fProcessingProgNode.Add(900);
   // assign obtained indices to shorter-named variables
@@ -154,6 +159,7 @@ try
   PSIDX_C_EntriesLoading       := DART_PROGSTAGE_IDX_SCS_EntriesLoading;
   PSIDX_C_PathsResolving       := DART_PROGSTAGE_IDX_SCS_PathsResolving;
   PSIDX_C_EntriesProgressPrep  := DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep;
+  PSIDX_C_EntriesConverting    := DART_PROGSTAGE_IDX_SCS_EntriesConverting;
   PSIDX_C_EntriesProcessing    := DART_PROGSTAGE_IDX_SCS_EntriesProcessing;
   fPathsResolveProcNode := fProcessingProgNode.StageObjects[PSIDX_C_PathsResolving];
   fEntriesProcessingProgNode := fProcessingProgNode.StageObjects[PSIDX_C_EntriesProcessing];
@@ -298,6 +304,7 @@ else
       end;
   end;
 end;
+
 //------------------------------------------------------------------------------
 
 Function TDARTRepairer_SCS.SCS_IndexOfEntry(Hash: UInt64): Integer;
@@ -979,7 +986,7 @@ try
             rmConvert:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
                             DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30,DART_PROGSTAGE_IDX_SCS_EntryLoading);
-                          {$message 'check when implementing'}
+                          {$message 'check against implementation'}
                           // need decompression for compressed files and unresolved entries
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                              ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or

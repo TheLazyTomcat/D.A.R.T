@@ -27,7 +27,7 @@ implementation
 uses
   Windows, SysUtils, Classes,
   AuxTypes, BitOps, CRC32, StrRect, MemoryBuffer, ZLibCommon,
-  DART_Common, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
+  DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
 
 const
   DART_METHOD_ID_SCS_CONV_ZIP_SCEQSEE = $01030200;
@@ -60,6 +60,7 @@ var
   end;
 
 begin
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesConverting,0.0);
 SetLength(fZIPArchiveStructure.Entries.Arr,fArchiveStructure.Entries.Count);
 fZIPArchiveStructure.Entries.Count := fArchiveStructure.Entries.Count;
 // process entries, ignore whether the entry is resolved or not for now
@@ -121,7 +122,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       end;
     // fill local file headers
     CopyCentralToLocal(i);
-    DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);    
+    DoProgress(fProcessingProgNode,PSIDX_C_EntriesConverting,(i + 1) / fArchiveStructure.Entries.Count);
   end;
 // fill end of central directory
 with fZIPArchiveStructure.EndOfCentralDirectory do
@@ -138,6 +139,7 @@ with fZIPArchiveStructure.EndOfCentralDirectory do
   end;
 // sort converted entries
 SCS_Conv_ZIP_SortConvertedEntries;
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesConverting,0.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -147,6 +149,8 @@ var
   i:  Integer;
 begin
 DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,0.0);
+// create directory where the converted archive will be stored
+DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
 If fArchiveProcessingSettings.Common.InMemoryProcessing then
   fConvertedArchiveStream := TMemoryStream.Create
@@ -167,16 +171,14 @@ try
   // write end of central directory
   SCS_Conv_ZIP_WriteEndOfCentralDirectory;
   // finalize
-  DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);
   fConvertedArchiveStream.Size := fConvertedArchiveStream.Position;
-  DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);
+  DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);  
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fConvertedArchiveStream,
                        DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fConvertedArchiveStream.Free;
 end;
-DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);
 end;
 
 //------------------------------------------------------------------------------

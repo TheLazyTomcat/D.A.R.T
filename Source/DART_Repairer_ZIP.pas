@@ -14,6 +14,7 @@ var
   DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading:    Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading: Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep: Integer = -1;
+  DART_PROGSTAGE_IDX_ZIP_EntriesConverting:   Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_EntriesProcessing:   Integer = -1;
 
   DART_PROGSTAGE_IDX_ZIP_EntryProcessing:     Integer = -1; // not really used
@@ -25,6 +26,7 @@ var
   PSIDX_Z_CDHeadersLoading:    Integer = -1;
   PSIDX_Z_LocalHeadersLoading: Integer = -1;
   PSIDX_Z_EntriesProgressPrep: Integer = -1;
+  PSIDX_Z_EntriesConverting:   Integer = -1;
   PSIDX_Z_EntriesProcessing:   Integer = -1;
 
   PSIDX_Z_EntryProcessing:     Integer = -1;
@@ -129,12 +131,18 @@ try
     end;
   DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep := fProcessingProgNode.Add(50);
   Dec(Quota,50);
+  If fArchiveProcessingSettings.Common.RepairMethod = rmConvert then
+    begin
+      DART_PROGSTAGE_IDX_ZIP_EntriesConverting := fProcessingProgNode.Add(50);
+      Dec(Quota,50);
+    end;
   DART_PROGSTAGE_IDX_ZIP_EntriesProcessing := fProcessingProgNode.Add(Quota);
   // assign obtained indices to shorter-named variables  
   PSIDX_Z_EOCDLoading         := DART_PROGSTAGE_IDX_ZIP_EOCDLoading;
   PSIDX_Z_CDHeadersLoading    := DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading;
   PSIDX_Z_LocalHeadersLoading := DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading;
   PSIDX_Z_EntriesProgressPrep := DART_PROGSTAGE_IDX_ZIP_EntriesProgressPrep;
+  PSIDX_Z_EntriesConverting   := DART_PROGSTAGE_IDX_ZIP_EntriesConverting;
   PSIDX_Z_EntriesProcessing   := DART_PROGSTAGE_IDX_ZIP_EntriesProcessing;
   fEntriesProcessingProgNode := fProcessingProgNode.StageObjects[PSIDX_Z_EntriesProcessing];
 finally

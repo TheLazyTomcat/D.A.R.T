@@ -181,7 +181,7 @@ const
   Mathod ID format:
 
     byte 0 - method number
-    byte 1 - input format (00 = unknown, 01 = ZIP, 02 = SCS$)
+    byte 1 - input format (00 = unknown, 01 = ZIP, 02 = SCS#)
     byte 2 - repair method (00 = unknown, 01 = rebuild, 02 = extract, 03 = convert)
     byte 3 - repair method specific
 }

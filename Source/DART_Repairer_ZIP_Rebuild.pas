@@ -61,7 +61,7 @@ try
   ZIP_WriteEndOfCentralDirectory;
   // finalize
   fRebuildArchiveStream.Size := fRebuildArchiveStream.Position;
-  DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);
+  DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);  
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,
                        DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));

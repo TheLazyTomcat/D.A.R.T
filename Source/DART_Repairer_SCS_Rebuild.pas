@@ -58,7 +58,7 @@ try
   For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
     SCS_WriteEntry(i);
   fRebuildArchiveStream.Size := fRebuildArchiveStream.Position;
-  // write header entry table
+  // write header and entry table
   fRebuildArchiveStream.Seek(0,soBeginning);
   SCS_WriteHeaderAndEntryTable(False);
   // finalize
@@ -75,9 +75,8 @@ end;
 
 procedure TDARTRepairer_SCS_Rebuild.SCS_WriteHeaderAndEntryTable(Placeholder: Boolean);
 var
-  EntryTableSize:   TMemSize;
-  EntryTable:       TWritableStaticMemoryStream;
-  EntryTableCount:  Integer;
+  EntryTableSize: TMemSize;
+  EntryTable:     TWritableStaticMemoryStream;
 
   Function WriteEntriesToStream(Stream: TStream): Integer;
   var
@@ -112,20 +111,20 @@ else
         EntryTable := TWritableStaticMemoryStream.Create(fBuffer_Entry.Memory,EntryTableSize);
         try
           EntryTable.Seek(0,soBeginning);
-          EntryTableCount := WriteEntriesToStream(EntryTable);
+          fArchiveStructure.ArchiveHeader.EntryCount := WriteEntriesToStream(EntryTable);
           fRebuildArchiveStream.WriteBuffer(fBuffer_Entry.Memory^,EntryTableSize);
         finally
           EntryTable.Free;
         end;
       end
-    else EntryTableCount := WriteEntriesToStream(fRebuildArchiveStream);
+    else fArchiveStructure.ArchiveHeader.EntryCount := WriteEntriesToStream(fRebuildArchiveStream);
     // fill header with corrected data (erroneous entries discarded)...
     If fArchiveProcessingSettings.Common.IgnoreFileSignature then
       fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
     fArchiveStructure.ArchiveHeader.Unknown := 1;
     If fProcessingSettings.PathResolve.AssumeCityHash then
       fArchiveStructure.ArchiveHeader.HashType := DART_SCS_HASH_City;
-    fArchiveStructure.ArchiveHeader.EntryCount := EntryTableCount;
+  //fArchiveStructure.ArchiveHeader.EntryCount := ;   // was set earlier
     fArchiveStructure.ArchiveHeader.EntryTableOffset := DART_SCS_DefaultEntryTableOffset;
     fArchiveStructure.ArchiveHeader.UnknownOffset := DART_SCS_DefaultUnknownOffset;
     // ...and write it
@@ -196,8 +195,8 @@ try
   else
     begin
       // entry is a file or unresolved directory
-      // preserve original data offset
-      UtilityData.OrigDataOff := BinPart.DataOffset;
+      // preserve original data offset (not really needed, but better to be sure)
+      UtilityData.DataOffset := BinPart.DataOffset;
       // prepare buffer that will hold compressed data
       ReallocBufferKeep(fBuffer_Entry,BinPart.CompressedSize);
       // load compressed data from input
