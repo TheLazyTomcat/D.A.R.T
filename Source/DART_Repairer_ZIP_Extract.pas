@@ -130,7 +130,7 @@ try
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
                                          WBITS_RAW,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
               try
-                // write decompressed data into entry output file
+                // write decompressed data into entry output archive
                 ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,
                                       DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
               finally

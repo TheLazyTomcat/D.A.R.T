@@ -384,9 +384,9 @@ fInputArchiveStream.Seek(0,soBeginning);
 If fInputArchiveStream.Read({%H-}Signature,SizeOf(Signature)) >= SizeOf(Signature) then
   begin
     If Signature <> fExpectedSignature then
-      DoError(DART_METHOD_ID_CHARCHSIG,'Bad file signature (0x%.8x).',[Signature]);
+      DoError(DART_METHOD_ID_CHARCHSIG,'Bad archive signature (0x%.8x).',[Signature]);
   end
-else DoError(DART_METHOD_ID_CHARCHSIG,'File is too small to contain any valid signature (%d bytes).',[fInputArchiveStream.Size]);
+else DoError(DART_METHOD_ID_CHARCHSIG,'Archive is too small to contain any valid signature (%d bytes).',[fInputArchiveStream.Size]);
 end;
 
 //------------------------------------------------------------------------------
@@ -603,8 +603,8 @@ try
         ProgressedLoadFile(fArchiveProcessingSettings.Common.ArchivePath,fInputArchiveStream,
           DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Loading));
       If fInputArchiveStream.Size <= 0 then
-        DoError(DART_METHOD_ID_MAINPROC,'Input file does not contain any data.');
-      If not fArchiveProcessingSettings.Common.IgnoreFileSignature then
+        DoError(DART_METHOD_ID_MAINPROC,'Input archive does not contain any data.');
+      If not fArchiveProcessingSettings.Common.IgnoreArchiveSignature then
         CheckArchiveSignature;
       ArchiveProcessing;  // <- processing happens here
       DoProgress(DART_PROGSTAGE_IDX_Direct,1.0);

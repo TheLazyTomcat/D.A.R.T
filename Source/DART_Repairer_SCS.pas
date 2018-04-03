@@ -215,7 +215,7 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
           // entry is a file
           // prepare buffer that will hold entry data
           ReallocBufferKeep(fBuffer_Entry,BinPart.CompressedSize);
-          // load data from input file
+          // load data from input archive
           fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
           ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,DART_PROGSTAGE_INFO_NoProgress);
           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) then
@@ -250,7 +250,7 @@ inherited;
 SCS_LoadArchiveHeader;
 SCS_LoadEntries;
 If fArchiveStructure.Entries.Count <= 0 then
-  DoError(DART_METHOD_ID_SCS_ARCHPROC,'Input file does not contain any valid entries.');
+  DoError(DART_METHOD_ID_SCS_ARCHPROC,'Input archive does not contain any valid entries.');
 // following step is optional at this point, but provides better performance
 SCS_SortEntries;
 SCS_ResolvePaths;
@@ -434,7 +434,7 @@ If fInputArchiveStream.Size >= SizeOf(TDART_SCS_ArchiveHeader) then
   begin
     fInputArchiveStream.Seek(0,soBeginning);
     fInputArchiveStream.ReadBuffer(fArchiveStructure.ArchiveHeader,SizeOf(TDART_SCS_ArchiveHeader));
-    If fArchiveProcessingSettings.Common.IgnoreFileSignature then
+    If fArchiveProcessingSettings.Common.IgnoreArchiveSignature then
       fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
     If fProcessingSettings.PathResolve.AssumeCityHash then
       fArchiveStructure.ArchiveHeader.HashType := DART_SCS_HASH_City
@@ -442,7 +442,7 @@ If fInputArchiveStream.Size >= SizeOf(TDART_SCS_ArchiveHeader) then
       If fArchiveStructure.ArchiveHeader.HashType <> DART_SCS_HASH_City then
         DoError(DART_METHOD_ID_SCS_SLDARHEAD,'Unsupported hash algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.HashType]);
   end
-else DoError(DART_METHOD_ID_SCS_SLDARHEAD,'File is too small (%d bytes) to contain a valid archive header.',[fInputArchiveStream.Size]);
+else DoError(DART_METHOD_ID_SCS_SLDARHEAD,'Archive is too small (%d bytes) to contain a valid archive header.',[fInputArchiveStream.Size]);
 DoProgress(fProcessingProgNode,PSIDX_C_ArchiveHeaderLoading,1.0);
 end;
 
@@ -741,22 +741,22 @@ var
     archive without doing anything with it.
     Also, for SCS# archives, all paths found to this moment are passed as custom
     paths to the repairer.
-    What repairer should be used is discerned by a file signature, when it
+    What repairer should be used is discerned by an archive signature, when it
     matches signature of SCS# archive, then SCS repairer is used, otherwise ZIP
     repairer is used.
   }
     // init processing settings for local repairer
     HelpArchiveProcSettings := DART_DefaultArchiveProcessingSettings;
     HelpArchiveProcSettings.Common.ArchivePath := FileName;
-    // explicitly turn off in-memory processing, as we do not know size of the file
+    // explicitly turn off in-memory processing, as we do not know size of the archive
     HelpArchiveProcSettings.Common.InMemoryProcessing := False;
     // do archive-type-specific processing
     case DART_GetFileSignature(FileName) of
       DART_SCS_FileSignature:   // - - - - - - - - - - - - - - - - - - - - - - -
         begin
           // SCS# archive
-          // file signature must be checked because we assume it is SCS# format
-          HelpArchiveProcSettings.Common.IgnoreFileSignature := False;
+          // archive signature must be checked because we assume it is SCS# format
+          HelpArchiveProcSettings.Common.IgnoreArchiveSignature := False;
           // prepare all already known paths
           SetLength(HelpArchiveProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
           For ii := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
@@ -1044,7 +1044,7 @@ procedure TDARTRepairer_SCS_ProcessingBase.ArchiveProcessing;
 begin
 // check if target <> source
 If AnsiSameText(fArchiveProcessingSettings.Common.ArchivePath,fArchiveProcessingSettings.Common.TargetPath) then
-  DoError(DART_METHOD_ID_SCS_PROC_ARCHPROC,'Output is directed into an input file, cannot proceed.');
+  DoError(DART_METHOD_ID_SCS_PROC_ARCHPROC,'Output is directed into an input archive, cannot proceed.');
 inherited;
 SCS_PrepareEntriesProgress;
 end;

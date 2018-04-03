@@ -287,7 +287,7 @@ try
 
   // prepare buffer that will hold compressed data
   ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
-  // load compressed data from input file
+  // load compressed data from input archive
   fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
   ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
     DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));

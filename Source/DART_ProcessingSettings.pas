@@ -26,7 +26,7 @@ type
     RepairMethod:           TDARTRepairMethod;
     ConvertTo:              TDARTArchiveType;
     TargetPath:             String;
-    IgnoreFileSignature:    Boolean;
+    IgnoreArchiveSignature: Boolean;
     InMemoryProcessing:     Boolean;
     IgnoreErroneousEntries: Boolean;
   end;
@@ -132,7 +132,7 @@ const
       RepairMethod:           rmRebuild;
       ConvertTo:              atUnknown;
       TargetPath:             '';
-      IgnoreFileSignature:    True;
+      IgnoreArchiveSignature: True;
       InMemoryProcessing:     False;
       IgnoreErroneousEntries: False);
     ZIP: (
@@ -235,6 +235,7 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
+// nothing to do here
 end;
 
 //------------------------------------------------------------------------------

@@ -178,10 +178,10 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
       begin
       {
         This method is called only when parsing content of the archive for paths, which,
-        for ZIP archive, occurs only when processing it as help file - therefore we will assume
+        for ZIP archive, occurs only when processing it as help archive - therefore we will assume
         the archive is not corrupted and stored compressed size and compression method are
         both correct and do not need to be rectified.
-        If archive is corrupted, it should first be repaired and only then used as a help file.
+        If archive is corrupted, it should first be repaired and only then used as a help archive.
       }
         // prepare buffer for entry data
         ReallocBufferKeep(fBuffer_Entry,LocalHeader.BinPart.CompressedSize);
@@ -230,7 +230,7 @@ If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
 ZIP_ReconstructCentralDirectoryHeaders;
 ZIP_ReconstructEndOfCentralDirectory;
 If fArchiveStructure.Entries.Count <= 0 then
-  DoError(DART_METHOD_ID_ZIP_ARCHPROC,'Input file does not contain any valid entries.');
+  DoError(DART_METHOD_ID_ZIP_ARCHPROC,'Input archive does not contain any valid entries.');
 end;
 
 //------------------------------------------------------------------------------
@@ -575,14 +575,14 @@ begin
 DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,0.0);
 If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
   begin
-    // local headers are not loaded from the file, they are instead constructed from data
-    // stored in central directory
+    // local headers are not loaded from the archive, they are instead
+    // constructed from data stored in central directory
     For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
       CopyCentralToLocal(i);
   end
 else
   begin
-    // load local headers from the archive file
+    // load local headers from the archive
     If fArchiveStructure.Entries.Count > 0 then
       begin
         // entries are already prepared from central directory
@@ -838,7 +838,7 @@ procedure TDARTRepairer_ZIP_ProcessingBase.ArchiveProcessing;
 begin
 // check if target <> source
 If AnsiSameText(fArchiveProcessingSettings.Common.ArchivePath,fArchiveProcessingSettings.Common.TargetPath) then
-  DoError(DART_METHOD_ID_ZIP_PROC_ARCHPROC,'Output is directed into an input file, cannot proceed.');
+  DoError(DART_METHOD_ID_ZIP_PROC_ARCHPROC,'Output is directed into an input archive, cannot proceed.');
 inherited;
 ZIP_PrepareEntriesProgress;
 end;

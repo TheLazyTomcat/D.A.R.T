@@ -40,7 +40,7 @@ var
   i:  Integer;
 begin
 DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,0.0);
-// create directory where the rebuild file will be stored
+// create directory where the rebuild archive will be stored
 DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
 If fArchiveProcessingSettings.Common.InMemoryProcessing then
@@ -119,7 +119,7 @@ else
       end
     else fArchiveStructure.ArchiveHeader.EntryCount := WriteEntriesToStream(fRebuildArchiveStream);
     // fill header with corrected data (erroneous entries discarded)...
-    If fArchiveProcessingSettings.Common.IgnoreFileSignature then
+    If fArchiveProcessingSettings.Common.IgnoreArchiveSignature then
       fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
     fArchiveStructure.ArchiveHeader.Unknown := 1;
     If fProcessingSettings.PathResolve.AssumeCityHash then

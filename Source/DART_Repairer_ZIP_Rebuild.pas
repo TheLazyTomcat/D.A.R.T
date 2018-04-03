@@ -40,7 +40,7 @@ var
   i:  Integer;
 begin
 DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,0.0);
-// create directory where the rebuild file will be stored
+// create directory where the rebuild archive will be stored
 DART_ForceDirectories(ExtractFileDir(fArchiveProcessingSettings.Common.TargetPath));
 // create output stream
 If fArchiveProcessingSettings.Common.InMemoryProcessing then
