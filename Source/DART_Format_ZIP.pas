@@ -115,6 +115,7 @@ type
     NeedsSizes:                 Boolean;  // actual sizes needs to be obtained
     OriginalLocalHeaderOffset:  UInt32;   // stores original offset of local header in input file    
     Erroneous:                  Boolean;  // entry is erroneous but the error was ignored
+    Index:                      Integer;  // used when converting SCS# archive to ZIP (points to corresponding entry in SCS#)
   end;
 
 //--- Main structure -----------------------------------------------------------

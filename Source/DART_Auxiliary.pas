@@ -7,6 +7,11 @@ interface
 uses
   AuxTypes;
 
+{$IF not Declared(FILE_WRITE_ATTRIBUTES)}
+const
+  FILE_WRITE_ATTRIBUTES = 256;
+{$IFEND}
+
 // file information functions
 Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;

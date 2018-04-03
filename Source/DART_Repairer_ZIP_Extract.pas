@@ -27,12 +27,7 @@ uses
   DART_Auxiliary, DART_Common, DART_Format_ZIP, DART_Repairer;
 
 const
-  DART_METHOD_ID_ZIP_EXT_SETFLTM = 2100;
-
-{$IF not Declared(FILE_WRITE_ATTRIBUTES)}
-  FILE_WRITE_ATTRIBUTES = 256;
-{$IFEND}
-
+  DART_METHOD_ID_ZIP_EXT_SETFLTM = $00020100;
 
 procedure TDARTRepairer_ZIP_Extract.ArchiveProcessing;
 begin
@@ -150,13 +145,14 @@ try
 
         // finalize
         EntryFileStream.Size := EntryFileStream.Position;
-        // write file time and make progress
+        // write file time
         ZIP_WriteEntryFileTime(FullEntryFileName,LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate);
-        DoProgress(fEntriesProcessingProgNode,Index,1.0);
       finally
         EntryFileStream.Free;
       end;
     end;
+    
+  DoProgress(fEntriesProcessingProgNode,Index,1.0);
 except
   on E: Exception do
     begin

@@ -5,7 +5,8 @@ unit DART_ProcessingSettings;
 interface
 
 type
-  TDARTArchiveType = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft);
+  TDARTArchiveType = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft,
+                      atSCS = atSCS_sig,atZIP = atZIP_sig);
   TDARTRepairMethod = (rmUnknown,rmRebuild,rmExtract,rmConvert);
 
 const

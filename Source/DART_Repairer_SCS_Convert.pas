@@ -1,4 +1,4 @@
-unit DART_Repairer_ZIP_Convert;
+unit DART_Repairer_SCS_Convert;
 
 {$INCLUDE DART_defs.inc}
 
@@ -6,25 +6,24 @@ interface
 
 uses
   Classes,
-  DART_Repairer_ZIP;
+  DART_Repairer_SCS;
 
 type
-  TDARTRepairer_ZIP_Convert = class(TDARTRepairer_ZIP_ProcessingBase)
+  TDARTRepairer_SCS_Convert = class(TDARTRepairer_SCS_ProcessingBase)
   protected
     fConvertedArchiveStream:  TStream;
     procedure ConvertArchiveStructure; virtual; abstract;
     procedure ConvertArchive; virtual; abstract;
     procedure ArchiveProcessing; override;
-  end;  
+  end;
 
 implementation
 
-procedure TDARTRepairer_ZIP_Convert.ArchiveProcessing;
+procedure TDARTRepairer_SCS_Convert.ArchiveProcessing;
 begin
 inherited;
 ConvertArchiveStructure;
 ConvertArchive;
 end;
-
 
 end.

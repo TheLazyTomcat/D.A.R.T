@@ -177,13 +177,21 @@ const
   DART_BUFFERSIZE_IO    = 1024 * 1024;       // 1MiB, used for I/O operations
   DART_BUFFERSIZE_ENTRY = 1024 * 1024 * 16;  // 16MiB, used for entry data storage
 
-  DART_METHOD_ID_STOP      = 0000;
-  DART_METHOD_ID_MAINPROC  = 0001;
-  DART_METHOD_ID_CHARCHSIG = 0002;
+{
+  Mathod ID format:
 
-   // termination flag values
-   DART_TERMFLAG_TERMINATED = -1;
-   DART_TERMFLAG_CONTINUE   = 0;
+    byte 0 - method number
+    byte 1 - input format (00 = unknown, 01 = ZIP, 02 = SCS$)
+    byte 2 - repair method (00 = unknown, 01 = rebuild, 02 = extract, 03 = convert)
+    byte 3 - repair method specific
+}
+  DART_METHOD_ID_STOP      = $00000000;
+  DART_METHOD_ID_MAINPROC  = $00000001;
+  DART_METHOD_ID_CHARCHSIG = $00000002;
+
+  // termination flag values
+  DART_TERMFLAG_TERMINATED = -1;
+  DART_TERMFLAG_CONTINUE   = 0;
 
 {===============================================================================
     TDARTRepairer - class implementation

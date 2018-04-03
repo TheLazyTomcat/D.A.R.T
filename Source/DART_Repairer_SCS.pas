@@ -43,24 +43,6 @@ var
   PSIDX_C_EntryLoading:          Integer = -1;
   PSIDX_C_EntryDecompression:    Integer = -1;
   PSIDX_C_EntrySaving:           Integer = -1;
-(*
-  PSIDX_C_ArchiveHeaderLoading  = DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading;
-  PSIDX_C_EntriesLoading        = DART_PROGSTAGE_IDX_SCS_EntriesLoading;
-  PSIDX_C_PathsResolving        = DART_PROGSTAGE_IDX_SCS_PathsResolving;
-  PSIDX_C_EntriesProgressPrep   = DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep;
-  PSIDX_C_EntriesProcessing     = DART_PROGSTAGE_IDX_SCS_EntriesProcessing;
-
-  PSIDX_C_PathsRes_Local        = DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
-  PSIDX_C_PathsRes_HelpArchives = DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
-  PSIDX_C_PathsRes_ParseContent = DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent;
-  PSIDX_C_PathsRes_BruteForce   = DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
-  PSIDX_C_PathsRes_Reconstruct  = DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
-
-  PSIDX_C_EntryProcessing       = DART_PROGSTAGE_IDX_SCS_EntryProcessing;
-  PSIDX_C_EntryLoading          = DART_PROGSTAGE_IDX_SCS_EntryLoading;
-  PSIDX_C_EntryDecompression    = DART_PROGSTAGE_IDX_SCS_EntryDecompression;
-  PSIDX_C_EntrySaving           = DART_PROGSTAGE_IDX_SCS_EntrySaving;
-*)
 
 type
   TDARTRepairer_SCS = class(TDARTRepairer)
@@ -107,7 +89,7 @@ type
 
   TDARTRepairer_SCS_ProcessingBase = class(TDARTRepairer_SCS)
   protected
-    procedure SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize); virtual;
+    procedure SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
     procedure SCS_PrepareEntriesProgress; virtual;
     procedure ArchiveProcessing; override;
   public
@@ -123,12 +105,12 @@ uses
   DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP;
 
 const
-  DART_METHOD_ID_SCS_ARCHPROC   = 0200;
-  DART_METHOD_ID_SCS_SGETENTRY  = 0201;
-  DART_METHOD_ID_SCS_SENTRFNHS  = 0202;
-  DART_METHOD_ID_SCS_SSRTENQSEX = 0203;
-  DART_METHOD_ID_SCS_SLDARHEAD  = 0204;
-  DART_METHOD_ID_SCS_SLDPLOCLP  = 0205;
+  DART_METHOD_ID_SCS_ARCHPROC   = $00000200;
+  DART_METHOD_ID_SCS_SGETENTRY  = $00000201;
+  DART_METHOD_ID_SCS_SENTRFNHS  = $00000202;
+  DART_METHOD_ID_SCS_SSRTENQSEX = $00000203;
+  DART_METHOD_ID_SCS_SLDARHEAD  = $00000204;
+  DART_METHOD_ID_SCS_SLDPLOCLP  = $00000205;
 
 procedure TDARTRepairer_SCS.InitializeProcessingSettings;
 begin
@@ -716,7 +698,7 @@ try
         DirectoryList.Clear;
         For i := 0 to Pred(CurrentLevel.Count) do
           LoadPath(CurrentLevel[i],DirectoryList);
-        // remove duplicties
+        // remove duplicities
         For i := Pred(DirectoryList.Count) downto 0 do
           If CurrentLevel.IndexOf(DirectoryList[i]) >= 0 then
             DirectoryList.Delete(i);
@@ -907,7 +889,7 @@ end;
 const
   DART_METHOD_ID_SCS_PROC_ARCHPROC = 0;
 
-procedure TDARTRepairer_SCS_ProcessingBase.SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize);
+procedure TDARTRepairer_SCS_ProcessingBase.SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI);
 var
   EntryFileName:    String;
   EntryFileStream:  TFileStream;
@@ -915,7 +897,7 @@ begin
 If (EntryIdx >= Low(fArchiveStructure.Entries.Arr)) and (EntryIdx < fArchiveStructure.Entries.Count) then
   with fArchiveStructure.Entries.Arr[EntryIdx] do
     begin
-      If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then  // save and only when required
+      If fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then  // save only when required
         begin
           // raw data will be saved to a file
           DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',
@@ -935,7 +917,8 @@ If (EntryIdx >= Low(fArchiveStructure.Entries.Arr)) and (EntryIdx < fArchiveStru
           DART_ForceDirectories(ExtractFileDir(EntryFileName));
           EntryFileStream := TFileStream.Create(StrToRTL(EntryFileName),fmCreate or fmShareDenyWrite);
           try
-            EntryFileStream.WriteBuffer(Data^,Size);
+            ProgressedStreamWrite(EntryFileStream,Data,Size,ProgressInfo);
+            // finalize
             EntryFileStream.Size := EntryFileStream.Position;
           finally
             EntryFileStream.Free;
@@ -968,28 +951,35 @@ try
                           If not(GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
                             DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
                           {
-                            need decompressed data for compressed file or compressed unresolved directory
-                            when CRC32 is ignored, or for resolved directory (CRC32 of new data)
+                            decompression progres is required when:
+                              - entry is a resolved directory (it might need compression, decomp. prog. is used there)
+                              - entry is compressed and original CRC32 is ignored or the entry is not resolved
                           }
-                          If ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
-                            GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) or
-                            (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) then
+                          If (GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and UtilityData.Resolved) or
+                            ((fProcessingSettings.Entry.IgnoreCRC32 or not UtilityData.Resolved) and
+                            GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed)) then
                             DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
                           DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
             rmExtract:  begin
-                          If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                          If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved then
                             DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30);
-                          {$message 'check when implementing'}
-                          // need decompression for compressed file or unresolved entry
+                          {
+                            decompression progres is required when:
+                              - entry is compressed, not resolved and extraction of unresolved entries is active
+                              - entry is compressed and it is a file (not a directory)
+                          }
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
-                             (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or not UtilityData.Resolved) then
+                             (not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) or
+                             (not UtilityData.Resolved and fProcessingSettings.PathResolve.ExtractedUnresolvedEntries)) then
                             DART_PROGSTAGE_IDX_SCS_EntryDecompression := CurrNode.Add(30);
-                          DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
+                          If not UtilityData.Resolved or not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
+                            DART_PROGSTAGE_IDX_SCS_EntrySaving := CurrNode.Add(30);
                         end;
             rmConvert:  begin
                           If not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) then
                             DART_PROGSTAGE_IDX_SCS_EntryLoading := CurrNode.Add(30,DART_PROGSTAGE_IDX_SCS_EntryLoading);
+                          {$message 'check when implementing'}
                           // need decompression for compressed files and unresolved entries
                           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) and
                              ((not GetFlagState(BinPart.Flags,DART_SCS_FLAG_Directory) and fProcessingSettings.Entry.IgnoreCRC32) or

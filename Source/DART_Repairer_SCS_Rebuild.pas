@@ -79,7 +79,7 @@ var
   EntryTable:       TWritableStaticMemoryStream;
   EntryTableCount:  Integer;
 
-  Function WriteEntriestoStream(Stream: TStream): Integer;
+  Function WriteEntriesToStream(Stream: TStream): Integer;
   var
     i:  Integer;
   begin
@@ -112,13 +112,13 @@ else
         EntryTable := TWritableStaticMemoryStream.Create(fBuffer_Entry.Memory,EntryTableSize);
         try
           EntryTable.Seek(0,soBeginning);
-          EntryTableCount := WriteEntriestoStream(EntryTable);
+          EntryTableCount := WriteEntriesToStream(EntryTable);
           fRebuildArchiveStream.WriteBuffer(fBuffer_Entry.Memory^,EntryTableSize);
         finally
           EntryTable.Free;
         end;
       end
-    else EntryTableCount := WriteEntriestoStream(fRebuildArchiveStream);
+    else EntryTableCount := WriteEntriesToStream(fRebuildArchiveStream);
     // fill header with corrected data (erroneous entries discarded)...
     If fArchiveProcessingSettings.Common.IgnoreFileSignature then
       fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
@@ -214,7 +214,8 @@ try
                 DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
               try
                 If not UtilityData.Resolved then
-                  SCS_SaveEntryAsUnresolved(i,DecompressedBuff,DecompressedSize);
+                  SCS_SaveEntryAsUnresolved(i,DecompressedBuff,DecompressedSize,
+                    DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
                 If (BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0) then
                   BinPart.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
               finally
@@ -224,7 +225,8 @@ try
           else
             begin
               If not UtilityData.Resolved then
-                SCS_SaveEntryAsUnresolved(Index,fBuffer_Entry.Memory,BinPart.CompressedSize);
+                SCS_SaveEntryAsUnresolved(Index,fBuffer_Entry.Memory,BinPart.CompressedSize,
+                  DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
               If (BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0) then
                 BinPart.CRC32 := BufferCRC32(fBuffer_Entry.Memory^,BinPart.CompressedSize);
             end;
