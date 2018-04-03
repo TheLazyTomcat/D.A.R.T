@@ -696,7 +696,6 @@ var
   end;
 
 begin
-{$message 'does not properly report progress'}
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,0.0);
 DirectoryList := TAnsiStringList.Create;
 try
@@ -717,6 +716,10 @@ try
         DirectoryList.Clear;
         For i := 0 to Pred(CurrentLevel.Count) do
           LoadPath(CurrentLevel[i],DirectoryList);
+        // remove duplicties
+        For i := Pred(DirectoryList.Count) downto 0 do
+          If CurrentLevel.IndexOf(DirectoryList[i]) >= 0 then
+            DirectoryList.Delete(i);
       until DirectoryList.Count <= 0;
     finally
       EntryLines.Free;
