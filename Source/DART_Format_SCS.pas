@@ -117,6 +117,8 @@ const
 
 //--- Other SCS# constants -----------------------------------------------------
 
+  DART_SCS_DefaultExt = '.scs';
+
   DART_SCS_PathDelim = '/';
 
   DART_SCS_DirMark = '*';

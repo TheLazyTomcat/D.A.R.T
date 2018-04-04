@@ -21,7 +21,6 @@ type
     fPauseControlObject:        TDARTPauseObject;
     fRepairer:                  TDARTRepairer;
     fResultInfo:                TDARTResultInfo;
-    fRepairerCreated:           Boolean;
     fOnArchiveProgress:         TDARTArchiveProgressEvent;
   protected
     procedure sync_DoProgress; virtual;
@@ -69,7 +68,7 @@ If (ProgressFactor <= 0) or (ProgressFactor >= fProgressFactorCoef) or
   begin
     sync_Progress := Progress;  
     fPreviousProgressFactor := ProgressFactor;
-    If ((Progress < 0.0) or (Progress > 1.0)) and fRepairerCreated then
+    If ((Progress < 0.0) or (Progress > 1.0)) and Assigned(fRepairer) then
       fResultInfo := fRepairer.ResultInfo;
     Synchronize(sync_DoProgress);
   end;
@@ -87,9 +86,9 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
       rmRebuild:  fRepairer := TDARTRepairer_SCS_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmExtract:  fRepairer := TDARTRepairer_SCS_Extract.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmConvert:  case fArchiveProcessingSettings.Common.ConvertTo of
-                    atSCS_sig,atSCS_frc:
+                    katSCS:
                       fRepairer := TDARTRepairer_SCS_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
-                    atZIP_sig,atZIP_frc,atZIP_dft:
+                    katZIP:
                       fRepairer := TDARTRepairer_SCS_Convert_ZIP.Create(fPauseControlObject,fArchiveProcessingSettings,True);
                   else
                     raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown target archive type (%d).',
@@ -105,9 +104,9 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
       rmRebuild:  fRepairer := TDARTRepairer_ZIP_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmExtract:  fRepairer := TDARTRepairer_ZIP_Extract.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmConvert:  case fArchiveProcessingSettings.Common.ConvertTo of
-                    atSCS_sig,atSCS_frc:
+                    katSCS:
                       fRepairer := TDARTRepairer_ZIP_Convert_SCS.Create(fPauseControlObject,fArchiveProcessingSettings,True);
-                    atZIP_sig,atZIP_frc,atZIP_dft:
+                    katZIP:
                       fRepairer := TDARTRepairer_ZIP_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
                   else
                     raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown target archive type (%d).',
@@ -122,7 +121,6 @@ else
   raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown archive type (%d).',
                             [Ord(fArchiveProcessingSettings.Common.SelectedArchiveType)]);
 end;
-fRepairerCreated := True;
 end;
 
 //------------------------------------------------------------------------------
@@ -131,8 +129,12 @@ procedure TDARTProcessingThread.Execute;
 begin
 try
   CreateRepairer;
-  fRepairer.OnProgress := ProgressHandler;
-  fRepairer.Run;
+  try
+    fRepairer.OnProgress := ProgressHandler;
+    fRepairer.Run;
+  finally
+    FreeAndNil(fRepairer);
+  end;
 except
   on E: Exception do
     begin
@@ -152,7 +154,7 @@ end;
 constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
 inherited Create(True);
-FreeOnTerminate := True;
+FreeOnTerminate := False;
 sync_Progress := 0.0;
 fProgressFactorCoef := 2000;
 fPreviousProgressFactor := 0;
@@ -161,8 +163,8 @@ fArchiveProcessingSettings := ArchiveProcessingSettings;
 EnsureThreadSafety(fArchiveProcessingSettings);
 fPauseControlObject := TDARTPauseObject.Create;
 // creation of repairer is deffered to when the thread is started
+fRepairer := nil;
 fResultInfo := DART_DefaultResultInfo;
-fRepairerCreated := False;
 fOnArchiveProgress := nil;
 end;
 
@@ -170,8 +172,6 @@ end;
 
 destructor TDARTProcessingThread.Destroy;
 begin
-If fRepairerCreated then
-  fRepairer.Free;
 fPauseControlObject.Free;
 inherited;
 end;

@@ -14,6 +14,7 @@ uses
 ===============================================================================}
 
 //--- Signatures ---------------------------------------------------------------
+
 const
   DART_ZIP_LocalFileHeaderSignature            = UInt32($04034b50);
   DART_ZIP_DataDescriptorSignature             = UInt32($08074b50);
@@ -25,6 +26,7 @@ const
   DART_ZIP_ArchiveSignature = DART_ZIP_LocalFileHeaderSignature;
 
 //--- Local file header --------------------------------------------------------
+
 type
   TDART_ZIP_LocalFileHeaderRecord = packed record
     Signature:              UInt32;
@@ -150,6 +152,8 @@ const
   DART_ZIP_SupportedCompressinMethods = [DART_ZCM_Store,DART_ZCM_Deflate];  // store, deflate  
 
 //--- Other ZIP constants ------------------------------------------------------
+
+  DART_ZIP_DefaultExt = '.zip';
 
   DART_ZIP_PathDelim = '/';
 

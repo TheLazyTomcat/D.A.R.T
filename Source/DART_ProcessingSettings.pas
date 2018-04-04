@@ -5,11 +5,15 @@ unit DART_ProcessingSettings;
 interface
 
 type
-  TDARTArchiveType = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft,
-                      atSCS = atSCS_sig,atZIP = atZIP_sig);
-  TDARTRepairMethod = (rmUnknown,rmRebuild,rmExtract,rmConvert);
+  TDARTKnownArchiveTypes = (katUnknown,katSCS,katZIP);
+  TDARTArchiveType       = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,
+                            atZIP_dft,atSCS = atSCS_sig,atZIP = atZIP_sig);
+  TDARTRepairMethod      = (rmUnknown,rmRebuild,rmExtract,rmConvert);
 
 const
+  DART_KnownArchiveTypeStrings: array[TDARTKnownArchiveTypes] of String =
+    ('Unknown','SCS#','ZIP');
+
   DART_ArchiveTypeStrings: array[TDARTArchiveType] of String =
     ('Unknown','SCS#','SCS# (forced)','ZIP','ZIP (forced)','ZIP (defaulted)');
 
@@ -24,7 +28,7 @@ type
     OriginalArchiveType:    TDARTArchiveType;
     SelectedArchiveType:    TDARTArchiveType;
     RepairMethod:           TDARTRepairMethod;
-    ConvertTo:              TDARTArchiveType;
+    ConvertTo:              TDARTKnownArchiveTypes;
     TargetPath:             String;
     IgnoreArchiveSignature: Boolean;
     InMemoryProcessing:     Boolean;
@@ -130,7 +134,7 @@ const
       OriginalArchiveType:    atUnknown;
       SelectedArchiveType:    atUnknown;
       RepairMethod:           rmRebuild;
-      ConvertTo:              atUnknown;
+      ConvertTo:              katUnknown;
       TargetPath:             '';
       IgnoreArchiveSignature: True;
       InMemoryProcessing:     False;

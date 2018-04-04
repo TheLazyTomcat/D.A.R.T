@@ -4,6 +4,31 @@ unit DART_Repairer;
 
 interface
 
+{
+  Current repairer classes hierarchy:
+
+    TDARTRepairer
+     |- TDARTRepairer_SCS
+     |   |- TDARTRepairer_SCS_ProcessingBase
+     |        |- TDART_Repairer_SCS_Rebuild
+     |        |- TDART_Repairer_SCS_Exctract
+     |        |- TDART_Repairer_SCS_Convert
+     |            |- TDART_Repairer_SCS_Convert_ZIP
+     |
+     |- TDARTRepairer_ZIP
+         |- TDARTRepairer_ZIP_ProcessingBase
+              |- TDART_Repairer_ZIP_Rebuild
+              |- TDART_Repairer_ZIP_Exctract
+              |- TDART_Repairer_ZIP_Convert
+                  |- TDART_Repairer_ZIP_Convert_SCS
+
+  Classes TDARTRepairer_***_ProcessingBase are there to separate calculations
+  that are needed for further processing than just reading and parsing of
+  metadata (which is done in TDARTRepairer_*** classes).
+  These claculations are not needed when a repairer is used for parsing of help
+  archives.
+}
+
 uses
   SysUtils, Classes,
   AuxTypes, ProgressTracker, MemoryBuffer, StrRect,
