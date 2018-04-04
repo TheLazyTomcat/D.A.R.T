@@ -14,6 +14,8 @@ type
   TDARTProcessingThread = class(TThread)
   private
     sync_Progress:              Single;
+    fProgressFactorCoef:        Integer;
+    fPreviousProgressFactor:    Integer;
     fArchiveIndex:              Integer;
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
     fPauseControlObject:        TDARTPauseObject;
@@ -36,6 +38,7 @@ type
     property ArchiveProcessingSettings: TDARTArchiveProcessingSettings read fArchiveProcessingSettings;
     property ResultInfo: TDARTResultInfo read fResultInfo;
   published
+    property ProgressFactorCoefficient: Integer read fProgressFactorCoef write fProgressFactorCoef;
     property ArchiveIndex: Integer read fArchiveIndex;
     property OnArchiveProgress: TDARTArchiveProgressEvent read fOnArchiveProgress write fOnArchiveProgress;
   end;
@@ -56,13 +59,20 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TDARTProcessingThread.ProgressHandler(Sender: TObject; Progress: Single);
+var
+  ProgressFactor: Integer;
 begin
-sync_Progress := Progress;
-If (Progress < 0.0) or (Progress > 1.0) then
-  If fRepairerCreated then
-    fResultInfo := fRepairer.ResultInfo;
-{$message 'somehow limit call frequency'}
-Synchronize(sync_DoProgress);
+// limit number of calls to synchronize
+ProgressFactor := Trunc(Progress * fProgressFactorCoef);
+If (ProgressFactor <= 0) or (ProgressFactor >= fProgressFactorCoef) or
+  (ProgressFactor <> fPreviousProgressFactor) then
+  begin
+    sync_Progress := Progress;  
+    fPreviousProgressFactor := ProgressFactor;
+    If ((Progress < 0.0) or (Progress > 1.0)) and fRepairerCreated then
+      fResultInfo := fRepairer.ResultInfo;
+    Synchronize(sync_DoProgress);
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -143,6 +153,9 @@ constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessin
 begin
 inherited Create(True);
 FreeOnTerminate := True;
+sync_Progress := 0.0;
+fProgressFactorCoef := 2000;
+fPreviousProgressFactor := 0;
 fArchiveIndex := ArchiveIndex;
 fArchiveProcessingSettings := ArchiveProcessingSettings;
 EnsureThreadSafety(fArchiveProcessingSettings);
