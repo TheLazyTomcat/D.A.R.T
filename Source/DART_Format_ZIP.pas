@@ -13,21 +13,19 @@ uses
 --------------------------------------------------------------------------------
 ===============================================================================}
 
-//--- ZIP archive signature ----------------------------------------------------
-
-const
-  DART_ZIP_FileSignature = UInt32($04034b50);
-
 //--- Signatures ---------------------------------------------------------------
-
+const
   DART_ZIP_LocalFileHeaderSignature            = UInt32($04034b50);
   DART_ZIP_DataDescriptorSignature             = UInt32($08074b50);
   DART_ZIP_CentralDirectoryFileHeaderSignature = UInt32($02014b50);
   DART_ZIP_EndOfCentralDirectorySignature      = UInt32($06054b50);
 
-type
-//--- Local file header --------------------------------------------------------
+//--- ZIP archive signature ----------------------------------------------------
 
+  DART_ZIP_ArchiveSignature = DART_ZIP_LocalFileHeaderSignature;
+
+//--- Local file header --------------------------------------------------------
+type
   TDART_ZIP_LocalFileHeaderRecord = packed record
     Signature:              UInt32;
     VersionNeededToExtract: UInt8;

@@ -175,7 +175,7 @@ try
   DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);  
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fConvertedArchiveStream,
-                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
+                       ProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fConvertedArchiveStream.Free;
 end;
@@ -260,7 +260,7 @@ var
                       DoWarning(Format('Entry #%d compressed data stream contains a dictionary ID (0x%.8x).',
                                        [Index,{%H-}PUInt32({%H-}PtrUInt(fBuffer_Entry.Memory) + 2)^]));
                       ProgressedStreamWrite(fConvertedArchiveStream,{%H-}Pointer({%H-}PtrUInt(fBuffer_Entry.Memory) + 6),
-                        LocalHeader.BinPart.CompressedSize - 10,DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                        LocalHeader.BinPart.CompressedSize - 10,ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
                     end
                   else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d compressed data stream contains a dictionary ID (0x%.8x).',
                                [Index,{%H-}PUInt32({%H-}PtrUInt(fBuffer_Entry.Memory) + 2)^]);
@@ -270,7 +270,7 @@ var
             end
           // dictionary ID is not present
           else ProgressedStreamWrite(fConvertedArchiveStream,{%H-}Pointer({%H-}PtrUInt(fBuffer_Entry.Memory) + 2),
-                 LocalHeader.BinPart.CompressedSize - 6,DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                 LocalHeader.BinPart.CompressedSize - 6,ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
         end
       else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d is too small (%d) to be a valid zlib stream.',
                    [Index,LocalHeader.BinPart.CompressedSize]);
@@ -290,7 +290,7 @@ try
   // load compressed data from input archive
   fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
   ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-    DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));
+    ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));
 
   If fArchiveStructure.Entries.Arr[SCS_Index].UtilityData.Resolved then
     begin
@@ -306,7 +306,7 @@ try
                 begin
                   // entry is compressed, decompress data
                   ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,WBITS_ZLIB,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
+                    ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
                   try
                     CentralDirectoryHeader.BinPart.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
                     LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
@@ -333,7 +333,7 @@ try
               If not GetFlagState(fArchiveStructure.Entries.Arr[SCS_Index].BinPart.Flags,DART_SCS_FLAG_Compressed) then
                 // data are not compressed, save them directly
                 ProgressedStreamWrite(fConvertedArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving))
+                  ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving))
               else
                 ManageCompressedEntryData;
             end;
@@ -356,17 +356,17 @@ try
             begin
               // entry is compressed, decompress data
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,WBITS_ZLIB,
-                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
+                ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
               try
                 SCS_SaveEntryAsUnresolved(SCS_Index,DecompressedBuff,DecompressedSize,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                  ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
               finally
                 FreeMem(DecompressedBuff,DecompressedSize);
               end;
             end
           // entry is not compressed, save data
           else SCS_SaveEntryAsUnresolved(SCS_Index,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                 DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                 ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
         end
       else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, it will be dropped.',
                             [SCS_Index,fArchiveStructure.Entries.Arr[SCS_Index].BinPart.Hash]));

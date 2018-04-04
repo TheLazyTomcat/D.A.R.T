@@ -81,8 +81,8 @@ procedure TDARTProcessingThread.CreateRepairer;
 begin
 // select proper repairer according to archive type and requested operation
 case fArchiveProcessingSettings.Common.SelectedArchiveType of
-
-  atSCS_sig,atSCS_frc:            // - - - - - - - - - - - - - - - - - - - - - -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  atSCS_sig,atSCS_frc:
     case fArchiveProcessingSettings.Common.RepairMethod of
       rmRebuild:  fRepairer := TDARTRepairer_SCS_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmExtract:  fRepairer := TDARTRepairer_SCS_Extract.Create(fPauseControlObject,fArchiveProcessingSettings,True);
@@ -99,8 +99,8 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
       raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown repair method (%d).',
                                 [Ord(fArchiveProcessingSettings.Common.RepairMethod)]);
     end;
-
-  atZIP_sig,atZIP_frc,atZIP_dft:  // - - - - - - - - - - - - - - - - - - - - - -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  atZIP_sig,atZIP_frc,atZIP_dft:
     case fArchiveProcessingSettings.Common.RepairMethod of
       rmRebuild:  fRepairer := TDARTRepairer_ZIP_Rebuild.Create(fPauseControlObject,fArchiveProcessingSettings,True);
       rmExtract:  fRepairer := TDARTRepairer_ZIP_Extract.Create(fPauseControlObject,fArchiveProcessingSettings,True);
@@ -117,7 +117,7 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
       raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown repair method (%d).',
                                 [Ord(fArchiveProcessingSettings.Common.RepairMethod)]);
     end;
-    
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -    
 else                             
   raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown archive type (%d).',
                             [Ord(fArchiveProcessingSettings.Common.SelectedArchiveType)]);

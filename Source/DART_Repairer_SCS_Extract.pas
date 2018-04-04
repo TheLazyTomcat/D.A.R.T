@@ -66,24 +66,24 @@ try
           // read (compressed) data from the archive
           fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
           ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-                               DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryLoading));
+                               ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryLoading));
           // process input data according to compression flag
           If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) then
             begin
               // decompress data
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-                WBITS_ZLIB,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryDecompression));
+                WBITS_ZLIB,ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryDecompression));
               try
                 // write decompressed data
                 SCS_SaveEntryAsUnresolved(Index,DecompressedBuff,DecompressedSize,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
+                  ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
               finally
                 FreeMem(DecompressedBuff,DecompressedSize);
               end;
             end
           // entry data are not compressed, write data directly
           else SCS_SaveEntryAsUnresolved(Index,fBuffer_Entry.Memory,BinPart.CompressedSize,
-                 DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
+                 ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
         end
       else DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, it will be skipped.',[Index,BinPart.Hash]));
       // make final progress...
@@ -110,24 +110,24 @@ try
         // read (compressed) data from the archive
         fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
         ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-                             DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryLoading));
+                             ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryLoading));
         // process input data according to compression flag
         If GetFlagState(BinPart.Flags,DART_SCS_FLAG_Compressed) then
           begin
             // entry data are compressed using ZLib (full zlib stream with header)
             ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-              WBITS_ZLIB,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryDecompression));
+              WBITS_ZLIB,ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntryDecompression));
             try
               // write decompressed data into entry output file
               ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,
-                DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
+                ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
             finally
               FreeMem(DecompressedBuff,DecompressedSize);
             end;
           end
         // entry data are not compressed, write data directly to entry output
         else ProgressedStreamWrite(EntryFileStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-               DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
+               ProgressStageInfo(fEntryProcessingProgNode,PSIDX_C_EntrySaving));
         // finalize
         EntryFileStream.Size := EntryFileStream.Position;
       finally

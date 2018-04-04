@@ -64,7 +64,7 @@ try
   DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);  
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,
-                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
+                       ProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fRebuildArchiveStream.Free;
 end;
@@ -134,14 +134,14 @@ try
   // load compressed data
   fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
   ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                       DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
+                       ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
 
   // deciding whether entry data needs to be decompressed for further processing
   If (UtilityData.NeedsCRC32 or UtilityData.NeedsSizes) and (LocalHeader.BinPart.CompressionMethod <> 0) then
     begin
       // data needs to be decompressed for further processing
       ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-                                 WBITS_RAW,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
+                                 WBITS_RAW,ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
       try
         If UtilityData.NeedsCRC32 then
           begin
@@ -185,7 +185,7 @@ try
   fRebuildArchiveStream.WriteBuffer(PAnsiChar(LocalHeader.ExtraField)^,LocalHeader.BinPart.ExtraFieldLength);
   // write entry data
   ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                        DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
+                        ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
   // write data descriptor
   If (LocalHeader.BinPart.GeneralPurposeBitFlag and DART_ZBF_DataDescriptor) <> 0 then
     fRebuildArchiveStream.WriteBuffer(DataDescriptor,SizeOf(TDART_ZIP_DataDescriptorRecord));

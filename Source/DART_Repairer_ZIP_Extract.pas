@@ -120,7 +120,7 @@ try
         // read data from input archive
         fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
         ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                             DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
+                             ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
 
         // process input data according to compression method
         case LocalHeader.BinPart.CompressionMethod of
@@ -128,11 +128,11 @@ try
             begin
               // decompress data
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,DecompressedBuff,DecompressedSize,
-                                         WBITS_RAW,DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
+                                         WBITS_RAW,ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
               try
                 // write decompressed data into entry output archive
                 ProgressedStreamWrite(EntryFileStream,DecompressedBuff,DecompressedSize,
-                                      DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
+                                      ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
               finally
                 FreeMem(DecompressedBuff,DecompressedSize);
               end;
@@ -140,7 +140,7 @@ try
         else
           // no compression, write input data directly to output
           ProgressedStreamWrite(EntryFileStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                                DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
+                                ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntrySaving));
         end;
 
         // finalize

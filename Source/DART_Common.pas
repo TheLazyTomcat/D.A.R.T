@@ -30,7 +30,7 @@ type
 
   TDART_PSI = TDARTProgressStageInfo;
 
-Function DARTProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo; {$IFDEF CanInline}inline;{$ENDIF}
+Function ProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo; {$IFDEF CanInline}inline;{$ENDIF}
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ implementation
 uses
   Windows;
 
-Function DARTProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo;
+Function ProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo;
 begin
 Result.ParentStage := ParentStage;
 Result.StageIndex := StageIndex;

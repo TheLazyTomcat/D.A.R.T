@@ -65,7 +65,7 @@ try
   DoProgress(fProcessingProgNode,PSIDX_C_EntriesProcessing,1.0);
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fRebuildArchiveStream,
-                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
+                       ProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fRebuildArchiveStream.Free;
 end;
@@ -120,7 +120,7 @@ else
     else fArchiveStructure.ArchiveHeader.EntryCount := WriteEntriesToStream(fRebuildArchiveStream);
     // fill header with corrected data (erroneous entries discarded)...
     If fArchiveProcessingSettings.Common.IgnoreArchiveSignature then
-      fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
+      fArchiveStructure.ArchiveHeader.Signature := DART_SCS_ArchiveSignature;
     fArchiveStructure.ArchiveHeader.Unknown := 1;
     If fProcessingSettings.PathResolve.AssumeCityHash then
       fArchiveStructure.ArchiveHeader.HashType := DART_SCS_HASH_City;
@@ -171,12 +171,12 @@ try
         If BinPart.UncompressedSize > DART_SCS_MaxUncompDirEntrySize then
           begin
             ProgressedCompressBuffer(DirBuffer.Memory,DirBuffer.Size,CompressedBuff,CompressedSize,WBITS_ZLIB,
-              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
+              ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
             try
               BinPart.CompressedSize := UInt32(CompressedSize) ;
               SetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
               ProgressedStreamWrite(fRebuildArchiveStream,CompressedBuff,CompressedSize,
-                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
             finally
               FreeMem(CompressedBuff,CompressedSize);
             end;
@@ -186,7 +186,7 @@ try
             BinPart.CompressedSize := BinPart.UncompressedSize;
             ResetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
             ProgressedStreamWrite(fRebuildArchiveStream,DirBuffer.Memory,DirBuffer.Size,
-              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+              ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
           end;
       finally
         DirBuffer.Free;
@@ -202,7 +202,7 @@ try
       // load compressed data from input
       fInputArchiveStream.Seek(BinPart.DataOffset,soBeginning);
       ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-        DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));
+        ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryLoading));
       If ((BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0)) or not UtilityData.Resolved then
         begin
           // a new CRC32 checksum is required or the entry is not resolved (might need extraction)
@@ -210,11 +210,11 @@ try
             begin
               // data needs to be decompressed for CRC32 calculation
               ProgressedDecompressBuffer(fBuffer_Entry.Memory,BinPart.CompressedSize,DecompressedBuff,DecompressedSize,WBITS_ZLIB,
-                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
+                ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
               try
                 If not UtilityData.Resolved then
                   SCS_SaveEntryAsUnresolved(i,DecompressedBuff,DecompressedSize,
-                    DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                    ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
                 If (BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0) then
                   BinPart.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
               finally
@@ -225,7 +225,7 @@ try
             begin
               If not UtilityData.Resolved then
                 SCS_SaveEntryAsUnresolved(Index,fBuffer_Entry.Memory,BinPart.CompressedSize,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+                  ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
               If (BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0) then
                 BinPart.CRC32 := BufferCRC32(fBuffer_Entry.Memory^,BinPart.CompressedSize);
             end;
@@ -234,7 +234,7 @@ try
       BinPart.DataOffset := UInt64(fRebuildArchiveStream.Position);
       // bin part does not need any more changes, save the data to output
       ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-        DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+        ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
     end;
   DoProgress(fEntriesProcessingProgNode,Index,1.0);
 except

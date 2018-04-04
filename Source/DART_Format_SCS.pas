@@ -17,7 +17,7 @@ uses
 //--- SCS# archive signature ---------------------------------------------------
 
 const
-  DART_SCS_FileSignature = UInt32($23534353); // SCS#
+  DART_SCS_ArchiveSignature = UInt32($23534353); // SCS#
 
 //--- Archive header record ----------------------------------------------------
 

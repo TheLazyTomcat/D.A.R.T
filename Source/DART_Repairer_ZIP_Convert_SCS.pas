@@ -117,7 +117,7 @@ DoProgress(fEntriesConvertingProgNode,DART_PROGSTAGE_IDX_ZIP_CONV_SCS_EntriesCop
 // set-up header
 with fSCSArchiveStructure.ArchiveHeader do
   begin
-    Signature := DART_SCS_FileSignature;
+    Signature := DART_SCS_ArchiveSignature;
     Unknown := 1;
     HashType := DART_SCS_HASH_City;
     EntryCount := 0;  // will be filled later
@@ -165,7 +165,7 @@ try
   DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProcessing,1.0);
   If fArchiveProcessingSettings.Common.InMemoryProcessing then
     ProgressedSaveFile(fArchiveProcessingSettings.Common.TargetPath,fConvertedArchiveStream,
-                       DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
+                       ProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Saving));
 finally
   fConvertedArchiveStream.Free;
 end;
@@ -437,12 +437,12 @@ try
         If BinPart.UncompressedSize > DART_SCS_MaxUncompDirEntrySize then
           begin
             ProgressedCompressBuffer(DirBuffer.Memory,DirBuffer.Size,CompressedBuff,CompressedSize,WBITS_ZLIB,
-              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntryDecompression));
+              ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntryDecompression));
             try
               BinPart.CompressedSize := UInt32(CompressedSize) ;
               SetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
               ProgressedStreamWrite(fConvertedArchiveStream,CompressedBuff,CompressedSize,
-                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
+                ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
             finally
               FreeMem(CompressedBuff,CompressedSize);
             end;
@@ -452,7 +452,7 @@ try
             BinPart.CompressedSize := BinPart.UncompressedSize;
             ResetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
             ProgressedStreamWrite(fConvertedArchiveStream,DirBuffer.Memory,DirBuffer.Size,
-              DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
+              ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
           end;
       finally
         DirBuffer.Free;
@@ -516,7 +516,7 @@ try
           // load potentially compressed data
           fInputArchiveStream.Seek(UtilityData.DataOffset,soBeginning);
           ProgressedStreamRead(fInputArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                               DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
+            ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryLoading));
 
           If CentralDirectoryHeader.BinPart.CompressionMethod <> DART_ZCM_Store then
             begin
@@ -535,7 +535,7 @@ try
                 I don't have adler implementation atm., so later...    
               }
                 ProgressedCompressBuffer(DecompressedBuff,DecompressedSize,CompressedBuff,CompressedSize,WBITS_ZLIB,
-                  DARTProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
+                  ProgressStageInfo(fEntryProcessingProgNode,PSIDX_Z_EntryDecompression));
                 try
                   If UtilityData.NeedsCRC32 then
                     BinPart.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
@@ -544,7 +544,7 @@ try
                   SetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
                   // store recompressed data
                   ProgressedStreamWrite(fConvertedArchiveStream,CompressedBuff,CompressedSize,
-                    DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
+                    ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
                 finally
                   FreeMem(CompressedBuff,CompressedSize);
                 end;  
@@ -561,7 +561,7 @@ try
               BinPart.CompressedSize := UInt32(LocalHeader.BinPart.CompressedSize);
               ResetFlagValue(BinPart.Flags,DART_SCS_FLAG_Compressed);
               ProgressedStreamWrite(fConvertedArchiveStream,fBuffer_Entry.Memory,LocalHeader.BinPart.CompressedSize,
-                DARTProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
+                ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_ZIP_EntrySaving));
             end;
         end;
     end;

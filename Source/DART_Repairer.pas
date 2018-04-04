@@ -59,6 +59,9 @@ const
       ExceptionClass:     '';
       ExceptionText:      ''));
 
+procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo); overload;
+
+const
   // progress stages
   DART_PROGSTAGE_IDX_NoProgress = -11;
   DART_PROGSTAGE_IDX_Direct     = -10;
@@ -166,6 +169,16 @@ implementation
 uses
   Windows, Math,
   CRC32, ZLibUtils;
+
+procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo);
+begin
+UniqueString(ResultInfo.RepairerInfo);
+SetLength(ResultInfo.WarningInfo.Warnings.Arr,Length(ResultInfo.WarningInfo.Warnings.Arr));
+UniqueString(ResultInfo.ErrorInfo.FaultObjectClass);
+UniqueString(ResultInfo.ErrorInfo.FaultFunctionName);
+UniqueString(ResultInfo.ErrorInfo.ExceptionClass);
+UniqueString(ResultInfo.ErrorInfo.ExceptionText);
+end;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -601,7 +614,7 @@ try
     try
       If fArchiveProcessingSettings.Common.InMemoryProcessing then
         ProgressedLoadFile(fArchiveProcessingSettings.Common.ArchivePath,fInputArchiveStream,
-          DARTProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Loading));
+          ProgressStageInfo(fProgressTracker,DART_PROGSTAGE_IDX_Loading));
       If fInputArchiveStream.Size <= 0 then
         DoError(DART_METHOD_ID_MAINPROC,'Input archive does not contain any data.');
       If not fArchiveProcessingSettings.Common.IgnoreArchiveSignature then

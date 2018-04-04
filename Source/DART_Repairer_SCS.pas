@@ -435,7 +435,7 @@ If fInputArchiveStream.Size >= SizeOf(TDART_SCS_ArchiveHeader) then
     fInputArchiveStream.Seek(0,soBeginning);
     fInputArchiveStream.ReadBuffer(fArchiveStructure.ArchiveHeader,SizeOf(TDART_SCS_ArchiveHeader));
     If fArchiveProcessingSettings.Common.IgnoreArchiveSignature then
-      fArchiveStructure.ArchiveHeader.Signature := DART_SCS_FileSignature;
+      fArchiveStructure.ArchiveHeader.Signature := DART_SCS_ArchiveSignature;
     If fProcessingSettings.PathResolve.AssumeCityHash then
       fArchiveStructure.ArchiveHeader.HashType := DART_SCS_HASH_City
     else
@@ -752,7 +752,7 @@ var
     HelpArchiveProcSettings.Common.InMemoryProcessing := False;
     // do archive-type-specific processing
     case DART_GetFileSignature(FileName) of
-      DART_SCS_FileSignature:   // - - - - - - - - - - - - - - - - - - - - - - -
+      DART_SCS_ArchiveSignature:  // - - - - - - - - - - - - - - - - - - - - - -
         begin
           // SCS# archive
           // archive signature must be checked because we assume it is SCS# format
@@ -868,7 +868,7 @@ end;
 constructor TDARTRepairer_SCS.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
 begin
 inherited Create(PauseControlObject,ArchiveProcessingSettings,CatchExceptions);
-fExpectedSignature := DART_SCS_FileSignature;
+fExpectedSignature := DART_SCS_ArchiveSignature;
 fEntriesSorted := False;
 end;
 

@@ -781,7 +781,7 @@ end;
 constructor TDARTRepairer_ZIP.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
 begin
 inherited Create(PauseControlObject,ArchiveProcessingSettings,CatchExceptions);
-fExpectedSignature := DART_ZIP_FileSignature;
+fExpectedSignature := DART_ZIP_ArchiveSignature;
 end;
 
 //------------------------------------------------------------------------------
