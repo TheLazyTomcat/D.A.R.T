@@ -18,7 +18,7 @@ type
   TfMainForm = class(TForm)
     lblArchiveList: TLabel;
     lvArchiveList: TListView;
-    btnProcessing: TButton;
+    btnStartProcessing: TButton;
     bvlProgressSplit: TBevel;
     lblOverallProgress: TLabel;
     pbOverallProgress: TProgressBar;
@@ -40,6 +40,8 @@ type
     N3: TMenuItem;
     pmiAL_Tools: TMenuItem;
     oXPManifest: TXPManifest;
+    btnPauseProcessing: TButton;
+    btnStopProcessing: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormDestroy(Sender: TObject);
@@ -52,8 +54,10 @@ type
     procedure pmiAL_ProcessingSettingsClick(Sender: TObject);
     procedure pmiAL_ResultInfoClick(Sender: TObject);
     procedure pmiAL_ClearCompletedClick(Sender: TObject);
-    procedure btnProcessingClick(Sender: TObject);
-    procedure tmrAnimTimerTimer(Sender: TObject);
+    procedure btnStartProcessingClick(Sender: TObject);
+    procedure btnPauseProcessingClick(Sender: TObject);
+    procedure btnStopProcessingClick(Sender: TObject);
+    procedure tmrAnimTimerTimer(Sender: TObject); 
   private
     fDefaultAppTitle:     String;
     fProgressAppTitle:    String;
@@ -82,12 +86,15 @@ uses
   DART_Auxiliary, DART_ProcessingSettings;
 
 const
-{%H-}LIST_COLUMN_Icon   = -1;
-{%H-}LIST_COLUMN_Name   = 0;
-{%H-}LIST_COLUMN_Size   = 1;
-     LIST_COLUMN_Type   = 2;
-     LIST_COLUMN_Method = 3;
-     LIST_COLUMN_State  = 4;
+  ANIM_IMG_First = 6;
+  ANIM_IMG_Count = 7;
+
+//LIST_COLUMN_Icon   = -1;
+//LIST_COLUMN_Name   = 0;
+//LIST_COLUMN_Size   = 1;
+  LIST_COLUMN_Type   = 2;
+  LIST_COLUMN_Method = 3;
+  LIST_COLUMN_State  = 4;
 
 {$IFNDEF FPC}
 procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
@@ -160,36 +167,95 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.OnArchiveProgress(Sender: TObject; ArchiveIndex: Integer);
+var
+  Temp: Integer;
 begin
+If ProcessingManager[ArchiveIndex].ProcessingStatus in [apsProcessing,apsPaused] then
+  begin
+    // entry progress
+    Temp := Trunc(pbArchiveProgress.Max * ProcessingManager[ArchiveIndex].ProgressStageNode.Progress);
+    If Temp <> pbArchiveProgress.Position then
+      begin
+        lvArchiveList.Items[ArchiveIndex].SubItems[LIST_COLUMN_State] :=
+          Format(DART_ArchiveProcessingStatusStrings[ProcessingManager[ArchiveIndex].ProcessingStatus],
+            [ProcessingManager[ArchiveIndex].ProgressStageNode.Progress * 100]);
+        pbArchiveProgress.Position := Temp;
+      end;
+    // overall progress
+    Temp := Trunc(pbOverallProgress.Max * ProcessingManager.Progress);
+    If Temp <> pbOverallProgress.Position then
+      begin
+        pbOverallProgress.Position := Temp;
+        If ProcessingManager.Status in [pmsProcessing,pmsTerminating,pmsPaused,pmsPausedTerminating] then
+          begin
+            Application.Title := Format(fProgressAppTitle,[ProcessingManager.Progress * 100]);
+            Caption := Format(fProgressFormCaption,[ProcessingManager.Progress * 100]);
+            SetTaskbarProgressValue(ProcessingManager.Progress);
+          end;  
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.OnArchiveStatus(Sender: TObject; ArchiveIndex: Integer);
 begin
+lvArchiveList.Items[ArchiveIndex].SubItems[LIST_COLUMN_State] :=
+  Format(DART_ArchiveProcessingStatusStrings[ProcessingManager[ArchiveIndex].ProcessingStatus],
+    [ProcessingManager[ArchiveIndex].ProgressStageNode.Progress * 100]);
+lvArchiveList.Items[ArchiveIndex].ImageIndex := Ord(ProcessingManager[ArchiveIndex].ProcessingStatus);
+If ProcessingManager[ArchiveIndex].ProcessingStatus <> apsProcessing then
+  tmrAnimTimer.Tag := 0;
+tmrAnimTimer.Enabled := ProcessingManager[ArchiveIndex].ProcessingStatus = apsProcessing;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.OnManagerStatus(Sender: TObject);
 begin
+{
+  Possible changes of processing manager states:
+
+    pmsReady              ->  pmsProcessing
+    pmsProcessing         ->  pmsReady
+    pmsProcessing         ->  pmsPaused
+    pmsProcessing         ->  pmsTerminating
+    pmsPaused             ->  pmsProcessing
+    pmsTerminating        ->  pmsReady
+    pmsTerminating        ->  pmsPausedTerminating
+    pmsPausedTerminating  ->  pmsTerminating
+}
 pmArchiveListMenu.OnPopup(nil);
 SetDropAccept(ProcessingManager.Status = pmsReady);
+btnStartProcessing.Visible := ProcessingManager.Status = pmsReady;
+btnPauseProcessing.Visible := ProcessingManager.Status <> pmsReady;
+btnStopProcessing.Visible := ProcessingManager.Status <> pmsReady;
 case ProcessingManager.Status of
-
-//pmsPaused,pmsPausedTerminating
-
+  pmsPaused:      begin
+                    btnPauseProcessing.Caption := 'Resume processing';
+                    SetTaskbarProgressState(tpsPaused);
+                  end;
+  pmsPausedTerminating:
+                  begin
+                    btnPauseProcessing.Caption := 'Resume termination';
+                    SetTaskbarProgressState(tpsPaused);
+                  end;
   pmsReady:       begin
-                    btnProcessing.Caption := 'Start processing';
+                    btnPauseProcessing.Caption := 'Pause processing';
+                    btnStopProcessing.Caption := 'Stop processing';
                     Application.Title := fDefaultAppTitle;
                     Caption := fDefaultFormCaption;
                     SetTaskbarProgressState(tpsNoProgress);
                   end;
   pmsProcessing:  begin
-                    btnProcessing.Caption := 'Stop processing';
+                    btnPauseProcessing.Caption := 'Pause processing';
                     SetTaskbarProgressState(tpsNormal);
                   end;
-  pmsTerminating: btnProcessing.Caption := 'Terminating processing, please wait...';
+  pmsTerminating: begin
+                    btnPauseProcessing.Caption := 'Pause termination';
+                    btnStopProcessing.Caption := 'Terminating, please wait...';
+                    SetTaskbarProgressState(tpsNormal);
+                  end;
 end;
 end;
 
@@ -241,10 +307,16 @@ var
   i:        Integer;
   NewWidth: Integer;
 begin
+// list view
 NewWidth := lvArchiveList.Width - (2 * GetSystemMetrics(SM_CXEDGE)) - GetSystemMetrics(SM_CXVSCROLL);
 For i := 0 to Pred(lvArchiveList.Columns.Count) do
   If i <> 1 then Dec(NewWidth,lvArchiveList.Columns[i].Width);
 lvArchiveList.Columns[1].Width := NewWidth;
+// buttons
+
+btnPauseProcessing.Width := (Width - 24) div 2;
+btnStopProcessing.Left := btnPauseProcessing.Left + btnPauseProcessing.Width + 8;
+btnStopProcessing.Width := (Width - 24) div 2;
 end;
 
 //------------------------------------------------------------------------------
@@ -362,16 +434,60 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfMainForm.btnProcessingClick(Sender: TObject);
+procedure TfMainForm.btnStartProcessingClick(Sender: TObject);
 begin
-//
+If (ProcessingManager.Count > 0) and (ProcessingManager.Status = pmsReady) then
+  ProcessingManager.StartProcessing
+else
+  MessageDlg('There are no files selected for processing.',mtInformation,[mbOK],0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.btnPauseProcessingClick(Sender: TObject);
+begin
+case ProcessingManager.Status of
+  pmsProcessing,pmsTerminating:   ProcessingManager.PauseProcessing;
+  pmsPaused,pmsPausedTerminating: ProcessingManager.ResumeProcessing;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.btnStopProcessingClick(Sender: TObject);
+begin
+case ProcessingManager.Status of
+  pmsPaused,pmsProcessing:
+    ProcessingManager.StopProcessing;
+
+  pmsPausedTerminating,pmsTerminating:
+    begin
+      ProcessingManager.PauseProcessing;
+      If MessageDlg('The program is waiting for the processing thread to be normally terminated.'+ sLineBreak +
+                    'You can initiate forced termination, but it will cause resource leak and other problems.' + sLineBreak +
+                    'In that case, you are strongly advised to restart the program before further use.' + sLineBreak + sLineBreak +
+                    'Are you sure you want to force processing thread to terminate?' ,mtWarning,[mbYes,mbNo],0) = mrYes then
+        ProcessingManager.StopProcessing
+      else
+        ProcessingManager.ResumeProcessing;
+    end;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfMainForm.tmrAnimTimerTimer(Sender: TObject);
 begin
-//
+If ProcessingManager.ProcessedArchiveIndex >= 0 then
+  begin
+    lvArchiveList.Items[ProcessingManager.ProcessedArchiveIndex].ImageIndex :=
+      ANIM_IMG_First + tmrAnimTimer.Tag;
+    If tmrAnimTimer.Tag < ANIM_IMG_Count then
+      tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
+    else
+      tmrAnimTimer.Tag := 0;
+  end;
 end;
+
 
 end.

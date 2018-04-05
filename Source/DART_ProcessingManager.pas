@@ -10,8 +10,8 @@ uses
   DART_ProcessingSettings, DART_Repairer, DART_ProcessingThread;
 
 type
-  TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsProcessing,apsPaused,
-                                  apsSuccess,apsWarning,apsError);
+  TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsPaused, apsSuccess,
+                                  apsWarning,apsError,apsProcessing);
 
 const
   DART_ArchiveProcessingStatusStrings: array[TDARTArchiveProcessingStatus] of String =
