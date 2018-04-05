@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, ComCtrls,
-  AuxTypes, ProgressTracker,
+  AuxTypes, ProgressTracker, SyncThread,
   DART_ProcessingSettings, DART_Repairer, DART_ProcessingThread;
 
 type
@@ -44,6 +44,7 @@ type
   TDARTProcessingManager = class(TObject)
   private
     fVisualListing:     TListView;
+    fSynchronizer:      TSyncThreadSynchronizer;
     fStatus:            TDARTProcessingManagerStatus;
     fArchiveList:       TDARTArchiveList;
     fProgressTracker:   TProgressTracker;
@@ -66,9 +67,10 @@ type
     procedure DeferThreadDestruction(Thread: TThread); virtual;
     procedure RunDeferredThreadDestruction; virtual;
     procedure ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Single); virtual;
+    Function CreateProcessingThread: TDARTProcessingThread;
   public
     class Function SetTargetPathFromSourcePath(var CommonProcSett: TDART_PS_Common): String; virtual;
-    constructor Create(VisualListing: TListView);
+    constructor Create(VisualListing: TListView; VisualApp: Boolean = True);
     destructor Destroy; override;
     Function IndexOf(const ArchivePath: String): Integer; virtual;
     Function Add(const ArchivePath: String): Integer; virtual;
@@ -81,6 +83,7 @@ type
     procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
     procedure EndProcessingAndWait; virtual;
+    procedure Update(Timeout: LongWord); virtual;
     property Pointers[Index: Integer]: PDARTArchiveListItem read GetArchivePtr;
     property Archives[Index: Integer]: TDARTArchiveListItem read GetArchive; default;
   published
@@ -228,7 +231,7 @@ If fStatus in [pmsProcessing,pmsTerminating] then
             Inc(fProcessedArchIdx);
             fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsProcessing;
             DoArchiveStatus(fProcessedArchIdx);
-            fProcessingThread := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings);
+            fProcessingThread := CreateProcessingThread;
             fProcessingThread.OnArchiveProgress := ThreadProgressHandler;
             fProcessingThread.StartProcessing;
           end
@@ -243,6 +246,16 @@ If fStatus in [pmsProcessing,pmsTerminating] then
         DoManagerStatus;
       end;
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTProcessingManager.CreateProcessingThread: TDARTProcessingThread;
+begin
+If Assigned(fSynchronizer) then
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,fSynchronizer.CreateDispatcher)
+else
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,nil);
 end;
 
 //==============================================================================
@@ -280,10 +293,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TDARTProcessingManager.Create(VisualListing: TListView);
+constructor TDARTProcessingManager.Create(VisualListing: TListView; VisualApp: Boolean = True);
 begin
 inherited Create;
 fVisualListing := VisualListing;
+If VisualApp then
+  fSynchronizer := nil
+else
+  fSynchronizer := TSyncThreadSynchronizer.Create;
 fStatus := pmsReady;
 SetLength(fArchiveList.Arr,0);
 fArchiveList.Count := 0;
@@ -303,6 +320,8 @@ destructor TDARTProcessingManager.Destroy;
 begin
 RunDeferredThreadDestruction;
 fProgressTracker.Free;
+If Assigned(fSynchronizer) then
+  fSynchronizer.Free;
 inherited;
 end;
 
@@ -461,7 +480,7 @@ If (fArchiveList.Count > 0) and (fStatus = pmsReady) then
     fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsProcessing;
     DoArchiveStatus(fProcessedArchIdx);
     // create first processing thread
-    fProcessingThread := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings);
+    fProcessingThread := CreateProcessingThread;
     fProcessingThread.OnArchiveProgress := ThreadProgressHandler;
     // set the manager to processing state
     fStatus := pmsProcessing;
@@ -561,6 +580,14 @@ If Assigned(fProcessingThread) then
     fProcessingThread := nil; // the thread should be in defered destruction list by this point
   end;
 RunDeferredThreadDestruction;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTProcessingManager.Update(Timeout: LongWord);
+begin
+If Assigned(fSynchronizer) then
+  fSynchronizer.Update(Timeout);  
 end;
 
 end.

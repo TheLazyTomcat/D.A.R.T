@@ -6,14 +6,16 @@ interface
 
 uses
   Classes,
+  SyncThread,
   DART_PRocessingSettings, DART_Common, DART_Repairer;
 
 type
   TDARTArchiveProgressEvent = procedure(Sender: TObject; ArchiveIndex: Integer; Progress: Single) of object;
 
-  TDARTProcessingThread = class(TThread)
+  TDARTProcessingThread = class(TSyncThread)
   private
     sync_Progress:              Single;
+    fSyncDispatcher:            TSyncThreadDispatcher;
     fProgressFactorCoef:        Integer;
     fPreviousProgressFactor:    Integer;
     fArchiveIndex:              Integer;
@@ -28,7 +30,7 @@ type
     procedure CreateRepairer; virtual;
     procedure Execute; override;
   public
-    constructor Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+    constructor Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; SyncDispatcher: TSyncThreadDispatcher);
     destructor Destroy; override;
     procedure StartProcessing; virtual;
     procedure PauseProcessing; virtual;
@@ -70,7 +72,10 @@ If (ProgressFactor <= 0) or (ProgressFactor >= fProgressFactorCoef) or
     fPreviousProgressFactor := ProgressFactor;
     If ((Progress < 0.0) or (Progress > 1.0)) and Assigned(fRepairer) then
       fResultInfo := fRepairer.ResultInfo;
-    Synchronize(sync_DoProgress);
+    If Assigned(fSyncDispatcher) then
+      Synchronize(sync_DoProgress,fSyncDispatcher)
+    else
+      Synchronize(sync_DoProgress);
   end;
 end;
 
@@ -151,11 +156,12 @@ end;
 
 //==============================================================================
 
-constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; SyncDispatcher: TSyncThreadDispatcher);
 begin
 inherited Create(True);
 FreeOnTerminate := False;
 sync_Progress := 0.0;
+fSyncDispatcher := SyncDispatcher;
 fProgressFactorCoef := 2000;
 fPreviousProgressFactor := 0;
 fArchiveIndex := ArchiveIndex;
@@ -173,6 +179,8 @@ end;
 destructor TDARTProcessingThread.Destroy;
 begin
 fPauseControlObject.Free;
+If Assigned(fSyncDispatcher) then
+  fSyncDispatcher.Free;
 inherited;
 end;
 
