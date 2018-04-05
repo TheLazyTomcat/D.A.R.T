@@ -18,7 +18,7 @@ const
     ('Unknown','SCS#','SCS# (forced)','ZIP','ZIP (forced)','ZIP (defaulted)');
 
   DART_RepairMethodStrings: array[TDARTRepairMethod] of String =
-    ('Unknown','Rebuild archive','Extract archive','Convert archive');
+    ('Unknown','Rebuild archive','Extract archive','Convert archive to %s');
 
 //--- Common processing settings -----------------------------------------------
 

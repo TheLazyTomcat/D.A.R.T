@@ -166,7 +166,8 @@ If Assigned(fVisualListing) then
       SubItems.Add(Item.Name);
       SubItems.Add(SizeToStr(Item.Size));
       SubItems.Add(DART_ArchiveTypeStrings[Item.ProcessingSettings.Common.SelectedArchiveType]);
-      SubItems.Add(DART_RepairMethodStrings[Item.ProcessingSettings.Common.RepairMethod]);
+      SubItems.Add(Format(DART_RepairMethodStrings[Item.ProcessingSettings.Common.RepairMethod],
+        [DART_KnownArchiveTypeStrings[Item.ProcessingSettings.Common.ConvertTo]]));
       SubItems.Add(DART_ArchiveProcessingStatusStrings[Item.ProcessingStatus]);
       ImageIndex := Ord(Item.ProcessingStatus);
     end;

@@ -15,6 +15,8 @@ const
 // file information functions
 Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;
+Function DART_FileExists(const FilePath: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
+Function DART_ExpandFileName(const FilePath: String): String; {$IFDEF CanInline}inline;{$ENDIF}
 
 // working with directories
 Function DART_ForceDirectories(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
@@ -80,6 +82,28 @@ try
 finally
   Free;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_FileExists(const FilePath: String): Boolean;
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+Result := FileExistsUTF8(FilePath);
+{$ELSE}
+Result := FileExists(FilePath);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_ExpandFileName(const FilePath: String): String;
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+Result := ExpandFileNameUTF8(FilePath);
+{$ELSE}
+Result := ExpandFileName(FilePath);
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
