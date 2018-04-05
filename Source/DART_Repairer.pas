@@ -110,7 +110,7 @@ var
    TDARTRepairer - class declaration
 ===============================================================================}
 type
-  TDARTProgressEvent = procedure(Sender: TObject; Progress: Single) of object;
+  TDARTProgressEvent = procedure(Sender: TObject; Progress: Double) of object;
 
   TDARTRepairer = class(TObject)
   private
@@ -146,10 +146,10 @@ type
     procedure AllocateMemoryBuffers; virtual;
     procedure FreeMemoryBuffers; virtual;
     // flow control and progress report methods
-    procedure ForwardedProgressHandler(Sender: TObject; Progress: Single); virtual;
-    procedure DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Data: Single); overload; virtual;
-    procedure DoProgress(ProgressInfo: TDART_PSI; Data: Single); overload; virtual;
-    procedure DoProgress(StageIndex: Integer; Data: Single); overload; virtual;
+    procedure ForwardedProgressHandler(Sender: TObject; Progress: Double); virtual;
+    procedure DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Progress: Double); overload; virtual;
+    procedure DoProgress(ProgressInfo: TDART_PSI; Progress: Double); overload; virtual;
+    procedure DoProgress(StageIndex: Integer; Progress: Double); overload; virtual;
     procedure DoWarning(const WarningText: String); virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String; Values: array of const); overload; virtual;
     procedure DoError(MethodIndex: Integer; const ErrorText: String); overload; virtual;
@@ -163,7 +163,7 @@ type
     procedure ProgressedSaveFile(const FileName: String; Stream: TStream; ProgressInfo: TDART_PSI); virtual;
     procedure ProgressedStreamRead(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
     procedure ProgressedStreamWrite(Stream: TStream; Buffer: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
-    procedure CompressorProgressHandler(Sender: TObject; Progress: Single); virtual;
+    procedure CompressorProgressHandler(Sender: TObject; Progress: Double); virtual;
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     // methods for content parsing
@@ -319,14 +319,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.ForwardedProgressHandler(Sender: TObject; Progress: Single);
+procedure TDARTRepairer.ForwardedProgressHandler(Sender: TObject; Progress: Double);
 begin
 DoProgress(DART_PROGSTAGE_IDX_NoProgress,Progress);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Data: Single);
+procedure TDARTRepairer.DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Progress: Double);
 begin
 If Assigned(fHeartbeat) then InterlockedIncrement(fHeartbeat^);
 fPauseControlObject.WaitFor;
@@ -342,10 +342,10 @@ case StageIndex of
   DART_PROGSTAGE_IDX_NoProgress:;  // do nothing
   DART_PROGSTAGE_IDX_Direct:
     If Assigned(fOnProgress) then
-      fOnProgress(Self,Data);
+      fOnProgress(Self,Progress);
 else
-  If Data > 1.0 then Data := 1.0;
-  ParentStage.SetStageProgress(StageIndex,Data);
+  If Progress > 1.0 then Progress := 1.0;
+  ParentStage.SetStageProgress(StageIndex,Progress);
   If Assigned(fOnProgress) then
     fOnProgress(Self,fProgressTracker.Progress);
 end;
@@ -353,16 +353,16 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-procedure TDARTRepairer.DoProgress(ProgressInfo: TDART_PSI; Data: Single);
+procedure TDARTRepairer.DoProgress(ProgressInfo: TDART_PSI; Progress: Double);
 begin
-DoProgress(ProgressInfo.ParentStage,ProgressInfo.StageIndex,Data);
+DoProgress(ProgressInfo.ParentStage,ProgressInfo.StageIndex,Progress);
 end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-procedure TDARTRepairer.DoProgress(StageIndex: Integer; Data: Single);
+procedure TDARTRepairer.DoProgress(StageIndex: Integer; Progress: Double);
 begin
-DoProgress(fProgressTracker,StageIndex,Data);
+DoProgress(fProgressTracker,StageIndex,Progress);
 end;
 
 //------------------------------------------------------------------------------
@@ -553,7 +553,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer.CompressorProgressHandler(Sender: TObject; Progress: Single);
+procedure TDARTRepairer.CompressorProgressHandler(Sender: TObject; Progress: Double);
 begin
 DoProgress(fCompProgressStageInfo,Progress);
 end;
@@ -705,6 +705,7 @@ fArchiveProcessingSettings := ArchiveProcessingSettings;
 fProgressTracker := TProgressTracker.Create;
 fProgressTracker.ConsecutiveStages := True;
 fProgressTracker.StrictlyGrowing := True;
+fProgressTracker.LimitedRange := True;
 fTerminating := False;
 fExpectedSignature := 0;
 fCompProgressStageInfo := DART_PROGSTAGE_INFO_NoProgress;

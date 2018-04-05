@@ -11,7 +11,7 @@
 
   ©František Milt 2018-04-05
 
-  Version 1.3
+  Version 1.3.1
 
 ===============================================================================}
 unit ProgressTracker;
@@ -33,18 +33,18 @@ interface
 type
   TGrowMode = (gmSlow, gmLinear, gmFast, gmFastAttenuated);
 
-  TProgressEvent    = procedure(Sender: TObject; Progress: Single) of object;
-  TProgressCallback = procedure(Sender: TObject; Progress: Single);
+  TProgressEvent    = procedure(Sender: TObject; Progress: Double) of object;
+  TProgressCallback = procedure(Sender: TObject; Progress: Double);
 
   TProgressTracker = class; // forward declaration
 
   TProgressStage = record
     StageID:          Integer;
-    AbsoluteLength:   Single;
-    RelativeLength:   Single;
-    RelativeStart:    Single;
+    AbsoluteLength:   Double;
+    RelativeLength:   Double;
+    RelativeStart:    Double;
     StageObject:      TProgressTracker;
-    RelativeProgress: Single;
+    RelativeProgress: Double;
   end;
 
   TProgressStages = record
@@ -63,15 +63,15 @@ type
     fConsStagesActiveIdx: Integer;
     fStrictlyGrowing:     Boolean;
     fLimitedRange:        Boolean;
-    fMinProgressDelta:    Single;
-    fPrevProgress:        Single;
-    fProgress:            Single;
+    fMinProgressDelta:    Double;
+    fPrevProgress:        Double;
+    fProgress:            Double;
     fMaximum:             Int64;
     fPosition:            Int64;
     fStageIndex:          Integer;
     fStages:              TProgressStages;
     fGrowMode:            TGrowMode;
-    fGrowFactor:          Single;
+    fGrowFactor:          Double;
     fOnStageProgress:     TProgressEvent;
     fOnTrackerProgress:   TProgressEvent;
     fOnTrackerProgressCB: TProgressCallback;
@@ -79,7 +79,7 @@ type
     fUserIntData:         Integer;
     Function GetUpdating: Boolean;
     procedure SetConsecutiveStages(Value: Boolean);
-    procedure SetProgress(Value: Single);
+    procedure SetProgress(Value: Double);
     procedure SetMaximum(Value: Int64);
     procedure SetPosition(Value: Int64);
     Function GetCapacity: Integer;
@@ -92,7 +92,7 @@ type
     procedure DoStageProgress; virtual;
     procedure DoTrackerProgress; virtual;
     procedure DoProgress; virtual;
-    procedure StageProgressHandler(Sender: TObject; {%H-}Progress: Single); virtual;
+    procedure StageProgressHandler(Sender: TObject; {%H-}Progress: Double); virtual;
     procedure ReindexStages; virtual;
     procedure PrepareNewStage(var NewStage: TProgressStage); virtual;
     property StageEvent: TProgressEvent read fOnStageProgress write fOnStageProgress;
@@ -112,8 +112,8 @@ type
     Function Find(StageID: Integer; out Index: Integer): Boolean; overload; virtual;
     Function Find(StageObject: TProgressTracker; out Stage: TProgressStage): Boolean; overload; virtual;
     Function Find(StageID: Integer; out Stage: TProgressStage): Boolean; overload; virtual;
-    Function Add(AbsoluteLength: Single; StageID: Integer = 0): Integer; virtual;
-    procedure Insert(Index: Integer; AbsoluteLength: Single; StageID: Integer = 0); virtual;
+    Function Add(AbsoluteLength: Double; StageID: Integer = 0): Integer; virtual;
+    procedure Insert(Index: Integer; AbsoluteLength: Double; StageID: Integer = 0); virtual;
     procedure Move(SrcIdx, DstIdx: Integer); virtual;
     procedure Exchange(Idx1, Idx2: Integer); virtual;
     Function Extract(StageObject: TProgressTracker): TProgressTracker; virtual;
@@ -121,12 +121,12 @@ type
     Function Remove(StageID: Integer): Integer; overload; virtual;
     procedure Delete(Index: Integer); virtual;
     procedure Clear; virtual;
-    Function Recalculate(LocalProgressOnly: Boolean): Single; virtual;
+    Function Recalculate(LocalProgressOnly: Boolean): Double; virtual;
     procedure RecalculateStages; virtual;
-    procedure SetStageProgress(Index: Integer; NewValue: Single); virtual;
+    procedure SetStageProgress(Index: Integer; NewValue: Double); virtual;
     procedure SetStageMaximum(Index: Integer; NewValue: Int64); virtual;
     procedure SetStagePosition(Index: Integer; NewValue: Int64); virtual;
-    Function SetStageIDProgress(StageID: Integer; NewValue: Single): Boolean; virtual;
+    Function SetStageIDProgress(StageID: Integer; NewValue: Double): Boolean; virtual;
     Function SetStageIDMaximum(StageID: Integer; NewValue: Int64): Boolean; virtual;
     Function SetStageIDPosition(StageID: Integer; NewValue: Int64): Boolean; virtual;
     property Stages[Index: Integer]: TProgressStage read GetStage; default;
@@ -138,14 +138,14 @@ type
     property ConsecutiveStages: Boolean read fConsecutiveStages write SetConsecutiveStages;
     property StrictlyGrowing: Boolean read fStrictlyGrowing write fStrictlyGrowing;
     property LimitedRange: Boolean read fLimitedRange write fLimitedRange;
-    property MinProgressDelta: Single read fMinProgressDelta write fMinProgressDelta;
-    property Progress: Single read fProgress write SetProgress;
+    property MinProgressDelta: Double read fMinProgressDelta write fMinProgressDelta;
+    property Progress: Double read fProgress write SetProgress;
     property Maximum: Int64 read fMaximum write SetMaximum;
     property Position: Int64 read fPosition write SetPosition;
     property Capacity: Integer read GetCapacity write SetCapacity;
     property Count: Integer read fStages.Count;
     property GrowMode: TGrowMode read fGrowMode write fGrowMode;
-    property GrowFactor: Single read fGrowFactor write fGrowFactor;
+    property GrowFactor: Double read fGrowFactor write fGrowFactor;
     property OnProgressEvent: TProgressEvent read fOnTrackerProgress write fOnTrackerProgress;
     property OnProgress: TProgressEvent read fOnTrackerProgress write fOnTrackerProgress;
     property UserIntData: Integer read fUserIntData write fUserIntData;
@@ -191,7 +191,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TProgressTracker.SetProgress(Value: Single);
+procedure TProgressTracker.SetProgress(Value: Double);
 begin
 If (Value > fProgress) or not fStrictlyGrowing then
   begin
@@ -346,9 +346,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TProgressTracker.StageProgressHandler(Sender: TObject; Progress: Single);
+procedure TProgressTracker.StageProgressHandler(Sender: TObject; Progress: Double);
 var
-  NewRelativeProgress:  Single;
+  NewRelativeProgress:  Double;
 begin
 If CheckIndex((Sender as TProgressTracker).StageIndex) then
   with fStages.Arr[TProgressTracker(Sender).StageIndex] do
@@ -578,7 +578,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TProgressTracker.Add(AbsoluteLength: Single; StageID: Integer = 0): Integer;
+Function TProgressTracker.Add(AbsoluteLength: Double; StageID: Integer = 0): Integer;
 var
   NewStage: TProgressStage;
 begin
@@ -595,7 +595,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TProgressTracker.Insert(Index: Integer; AbsoluteLength: Single; StageID: Integer = 0);
+procedure TProgressTracker.Insert(Index: Integer; AbsoluteLength: Double; StageID: Integer = 0);
 var
   i:        Integer;
   NewStage:  TProgressStage;
@@ -737,10 +737,10 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TProgressTracker.Recalculate(LocalProgressOnly: Boolean): Single;
+Function TProgressTracker.Recalculate(LocalProgressOnly: Boolean): Double;
 var
   i:    Integer;
-  Temp: Single;
+  Temp: Double;
 begin
 If fUpdateCounter <= 0 then
   begin
@@ -818,7 +818,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TProgressTracker.SetStageProgress(Index: Integer; NewValue: Single);
+procedure TProgressTracker.SetStageProgress(Index: Integer; NewValue: Double);
 begin
 If CheckIndex(Index) then
   fStages.Arr[Index].StageObject.Progress := NewValue
@@ -848,7 +848,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TProgressTracker.SetStageIDProgress(StageID: Integer; NewValue: Single): Boolean;
+Function TProgressTracker.SetStageIDProgress(StageID: Integer; NewValue: Double): Boolean;
 var
   Index:  Integer;
 begin

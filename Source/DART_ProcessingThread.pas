@@ -10,11 +10,11 @@ uses
   DART_PRocessingSettings, DART_Common, DART_Repairer;
 
 type
-  TDARTArchiveProgressEvent = procedure(Sender: TObject; ArchiveIndex: Integer; Progress: Single) of object;
+  TDARTArchiveProgressEvent = procedure(Sender: TObject; ArchiveIndex: Integer; Progress: Double) of object;
 
   TDARTProcessingThread = class(TSyncThread)
   private
-    sync_Progress:              Single;
+    sync_Progress:              Double;
     fSyncDispatcher:            TSyncThreadDispatcher;
     fProgressFactorCoef:        Integer;
     fPreviousProgressFactor:    Integer;
@@ -26,7 +26,7 @@ type
     fOnArchiveProgress:         TDARTArchiveProgressEvent;
   protected
     procedure sync_DoProgress; virtual;
-    procedure ProgressHandler(Sender: TObject; Progress: Single); virtual;
+    procedure ProgressHandler(Sender: TObject; Progress: Double); virtual;
     procedure CreateRepairer; virtual;
     procedure Execute; override;
   public
@@ -59,7 +59,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTProcessingThread.ProgressHandler(Sender: TObject; Progress: Single);
+procedure TDARTProcessingThread.ProgressHandler(Sender: TObject; Progress: Double);
 var
   ProgressFactor: Integer;
 begin

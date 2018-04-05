@@ -57,7 +57,7 @@ type
     fOnManagerStatus:   TNotifyEvent;
     Function GetArchivePtr(Index: Integer): PDARTArchiveListItem;
     Function GetArchive(Index: Integer): TDARTArchiveListItem;
-    Function GetProgress: Single;
+    Function GetProgress: Double;
   protected
     Function CheckIndex(Index: Integer): Boolean; virtual;
     procedure DoArchiveProgress(Index: Integer); virtual;
@@ -66,7 +66,7 @@ type
     procedure AddToVisualListing(Item: TDARTArchiveListItem); virtual;
     procedure DeferThreadDestruction(Thread: TThread); virtual;
     procedure RunDeferredThreadDestruction; virtual;
-    procedure ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Single); virtual;
+    procedure ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Double); virtual;
     Function CreateProcessingThread: TDARTProcessingThread;
   public
     class Function SetTargetPathFromSourcePath(var CommonProcSett: TDART_PS_Common): String; virtual;
@@ -90,7 +90,7 @@ type
     property Status: TDARTProcessingManagerStatus read fStatus;
     property Count: Integer read fArchiveList.Count;
     property ProcessedArchiveIndex: Integer read fProcessedArchIdx;
-    property Progress: Single read GetProgress;
+    property Progress: Double read GetProgress;
     property OnArchiveProgress: TDARTArchiveChangeEvent read fOnArchiveProgress write fOnArchiveProgress;
     property OnArchiveStatus: TDARTArchiveChangeEvent read fOnArchiveStatus write fOnArchiveStatus;
     property OnManagerStatus: TNotifyEvent read fOnManagerStatus write fOnManagerStatus;
@@ -123,7 +123,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTProcessingManager.GetProgress: Single;
+Function TDARTProcessingManager.GetProgress: Double;
 begin
 Result := fProgressTracker.Progress;
 end;
@@ -196,7 +196,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTProcessingManager.ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Single);
+procedure TDARTProcessingManager.ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Double);
 begin
 // note the processing thread is stopped when this method is executed
 If fStatus in [pmsProcessing,pmsTerminating] then

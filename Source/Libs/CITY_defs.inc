@@ -16,7 +16,7 @@
 
   Default: inactive
 *)
-{$DEFINE VER_1_0_3}
+{.$DEFINE VER_1_0_3}
 
 {
   AllowCRCExtension

@@ -11,9 +11,9 @@
 
     Utility classes for data (de)compression build on zlib library.
 
-  ©František Milt 2018-01-24
+  ©František Milt 2018-04-05
 
-  Version 1.0.1
+  Version 1.0.2
 
   Dependencies:
     AuxTypes     - github.com/ncs-sniper/Lib.AuxTypes
@@ -126,7 +126,7 @@ type
     fOnOutputEvent:     TZProcessorOutEvent;
     fOnOutputCallback:  TZProcessorOutCallback;
     fUserData:          PtrInt;
-    Function GetCompressionRatio: Single;
+    Function GetCompressionRatio: Double;
     procedure DoOutput(OutSize: TMemSize); virtual;
   public
     procedure Init; virtual;
@@ -134,7 +134,7 @@ type
     procedure Final; virtual;
     property TotalCompressed: UInt64 read fTotalCompressed;
     property TotalUncompressed: UInt64 read fTotalUncompressed;
-    property CompressionRatio: Single read GetCompressionRatio;
+    property CompressionRatio: Double read GetCompressionRatio;
     property OnOutputEvent: TZProcessorOutEvent read fOnOutputEvent write fOnOutputEvent;
     property OnOutputCallback: TZProcessorOutCallback read fOnOutputCallback write fOnOutputCallback;
     property UserData: PtrInt read fUserData write fUserData;
@@ -204,7 +204,7 @@ type
     fTotalCompressed:   UInt64;
     fTotalUncompressed: UInt64;
     fOnProgress:        TNotifyEvent;
-    Function GetCompressionRatio: Single;
+    Function GetCompressionRatio: Double;
     procedure DoProgress; virtual;
   public
     constructor Create;
@@ -212,7 +212,7 @@ type
     procedure Final; virtual; abstract;
     property TotalCompressed: UInt64 read fTotalCompressed;
     property TotalUncompressed: UInt64 read fTotalUncompressed;
-    property CompressionRatio: Single read GetCompressionRatio;
+    property CompressionRatio: Double read GetCompressionRatio;
     property OnProgress: TNotifyEvent read fOnProgress write fOnProgress;
   end;
 
@@ -278,7 +278,7 @@ type
 ================================================================================
 -------------------------------------------------------------------------------}
 
-  TZBufferProgressEvent = procedure(Sender: TObject; Progress: Single) of Object;
+  TZBufferProgressEvent = procedure(Sender: TObject; Progress: Double) of Object;
 
 {===============================================================================
     TZCustomBuffer - class declaration
@@ -293,7 +293,7 @@ type
     fTotalUncompressed: UInt64;
     fExpctdResultSize:  TMemSize;
     fOnProgress:        TZBufferProgressEvent;
-    Function GetCompressionRatio: Single;
+    Function GetCompressionRatio: Double;
     procedure ProcessorHandler(Sender: TObject; Data: Pointer; Size: TMemSize); virtual; abstract;
     procedure DoProgress; virtual; abstract;
     procedure ZInit; virtual; abstract;
@@ -310,7 +310,7 @@ type
     property ResultSize: TMemSize read fResult.Size;
     property TotalCompressed: UInt64 read fTotalCompressed;
     property TotalUncompressed: UInt64 read fTotalUncompressed;
-    property CompressionRatio: Single read GetCompressionRatio;
+    property CompressionRatio: Double read GetCompressionRatio;
     property ExpectedResultSize: TMemSize read fExpctdResultSize write fExpctdResultSize;
     property OnProgress: TZBufferProgressEvent read fOnProgress write fOnProgress;
   end;
@@ -443,7 +443,7 @@ end;
     TZProcessor - protected methods
 -------------------------------------------------------------------------------}
 
-Function TZProcessor.GetCompressionRatio: Single;
+Function TZProcessor.GetCompressionRatio: Double;
 begin
 If fTotalCompressed <> 0 then
   Result := fTotalUncompressed / fTotalCompressed
@@ -670,7 +670,7 @@ end;
     TZCustomStream - protected methods
 -------------------------------------------------------------------------------}
 
-Function TZCustomStream.GetCompressionRatio: Single;
+Function TZCustomStream.GetCompressionRatio: Double;
 begin
 If fTotalCompressed <> 0 then
   Result := fTotalUncompressed / fTotalCompressed
@@ -956,7 +956,7 @@ end;
     TZCustomBuffer - protected methods
 -------------------------------------------------------------------------------}
 
-Function TZCustomBuffer.GetCompressionRatio: Single;
+Function TZCustomBuffer.GetCompressionRatio: Double;
 begin
 If fTotalCompressed <> 0 then
   Result := fTotalUncompressed / fTotalCompressed
