@@ -139,7 +139,7 @@ with fZIPArchiveStructure.EndOfCentralDirectory do
   end;
 // sort converted entries
 SCS_Conv_ZIP_SortConvertedEntries;
-DoProgress(fProcessingProgNode,PSIDX_C_EntriesConverting,0.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesConverting,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -340,9 +340,13 @@ try
         end
       else
         begin
-          // entry does not have a name, mark it as erroneous and remove it from output           
-          DoWarning(Format('Converted entry #%d does not have a name, it will be dropped.',[Index]));
+          // entry does not have a name, mark it as erroneous and remove it from output
           UtilityData.Erroneous := True;
+        {
+          The warning is disabled because entry with no name is present in every SCS# archive - the root.
+          It stays here for completeness and future reference.
+        }
+          //DoWarning(Format('Converted entry #%d does not have a name, it will be dropped.',[Index]));
         end;
     end
   else

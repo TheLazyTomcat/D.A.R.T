@@ -377,14 +377,17 @@ If fStatus = pmsReady then
               ProcessingSettings.Common.OriginalArchiveType := atZIP_dft;
             end;
             ProcessingSettings.Common.SelectedArchiveType := ProcessingSettings.Common.OriginalArchiveType;
-            // set conversion as default repair method for SCS# archives, rebuild for others
+            // set conversion to zip as a default repair method for SCS# archives, rebuild for others
             case ProcessingSettings.Common.SelectedArchiveType of
               atSCS_sig,atSCS_frc:
-                ProcessingSettings.Common.RepairMethod := rmConvert;
+                begin
+                  ProcessingSettings.Common.RepairMethod := rmConvert;
+                  ProcessingSettings.Common.ConvertTo := katZIP;
+                end;
             else
               ProcessingSettings.Common.RepairMethod := rmRebuild;
+              ProcessingSettings.Common.ConvertTo := katUnknown;
             end;
-            ProcessingSettings.Common.ConvertTo := katUnknown;
             SetTargetPathFromSourcePath(ProcessingSettings.Common);
             ProcessingSettings.Auxiliary.InMemoryProcessingAllowed := Size <= fMemoryLimit;
           end;

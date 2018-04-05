@@ -373,7 +373,7 @@ inherited;
 fResultInfo.ResultState := rsWarning;
 with fResultInfo.WarningInfo do
   begin
-    If Length(fResultInfo.WarningInfo.Warnings.Arr) >= fResultInfo.WarningInfo.Warnings.Count then
+    If fResultInfo.WarningInfo.Warnings.Count >= Length(fResultInfo.WarningInfo.Warnings.Arr) then
       SetLength(fResultInfo.WarningInfo.Warnings.Arr,Length(fResultInfo.WarningInfo.Warnings.Arr) + 128); 
     Warnings.Arr[Warnings.Count] := WarningText;
     Inc(Warnings.Count);
