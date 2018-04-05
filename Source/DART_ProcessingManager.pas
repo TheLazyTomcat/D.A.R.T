@@ -10,13 +10,13 @@ uses
   DART_ProcessingSettings, DART_Repairer, DART_ProcessingThread;
 
 type
-  TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsPaused, apsSuccess,
+  TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsPaused,apsSuccess,
                                   apsWarning,apsError,apsProcessing);
 
 const
   DART_ArchiveProcessingStatusStrings: array[TDARTArchiveProcessingStatus] of String =
-    ('Unknown','Ready','Processing... %.0f%%','Paused... %.0f%%','Successfuly completed',
-     'Completed with warnings','Error');
+    ('Unknown','Ready','Paused... %.0f%%','Successfuly completed',
+     'Completed with warnings','Error','Processing... %.0f%%');
 
 type
   TDARTArchiveListItem = record

@@ -87,7 +87,7 @@ uses
 
 const
   ANIM_IMG_First = 6;
-  ANIM_IMG_Count = 7;
+  ANIM_IMG_Count = 8;
 
 //LIST_COLUMN_Icon   = -1;
 //LIST_COLUMN_Name   = 0;
@@ -312,8 +312,7 @@ NewWidth := lvArchiveList.Width - (2 * GetSystemMetrics(SM_CXEDGE)) - GetSystemM
 For i := 0 to Pred(lvArchiveList.Columns.Count) do
   If i <> 1 then Dec(NewWidth,lvArchiveList.Columns[i].Width);
 lvArchiveList.Columns[1].Width := NewWidth;
-// buttons
-
+// buttons 
 btnPauseProcessing.Width := (Width - 24) div 2;
 btnStopProcessing.Left := btnPauseProcessing.Left + btnPauseProcessing.Width + 8;
 btnStopProcessing.Width := (Width - 24) div 2;
@@ -482,7 +481,7 @@ If ProcessingManager.ProcessedArchiveIndex >= 0 then
   begin
     lvArchiveList.Items[ProcessingManager.ProcessedArchiveIndex].ImageIndex :=
       ANIM_IMG_First + tmrAnimTimer.Tag;
-    If tmrAnimTimer.Tag < ANIM_IMG_Count then
+    If tmrAnimTimer.Tag < Pred(ANIM_IMG_Count) then
       tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
     else
       tmrAnimTimer.Tag := 0;
