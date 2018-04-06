@@ -475,7 +475,7 @@ DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,1.0);
 SetLength(fArchiveStructure.Entries.Arr,fArchiveStructure.ArchiveHeader.EntryCount);
 fArchiveStructure.Entries.Count := Length(fArchiveStructure.Entries.Arr);
 fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntryTableOffset,soBeginning);
-If fProcessingSettings.EntryTabInMem then
+If fProcessingSettings.EntryTabInMem and not fArchiveProcessingSettings.Common.InMemoryProcessing then
   begin
     // load entire entry table to memory to speed things up
     ReallocBufferKeep(fBuffer_Entry,fArchiveStructure.ArchiveHeader.EntryCount * SizeOf(TDART_SCS_EntryRecord));

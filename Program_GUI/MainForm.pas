@@ -83,7 +83,8 @@ implementation
 uses
   ShellAPI,
   StrRect, WinFileInfo, TaskbarProgress,
-  DART_Auxiliary, DART_ProcessingSettings;
+  DART_Auxiliary, DART_ProcessingSettings,
+  ResultInfoForm;
 
 const
   ANIM_IMG_First = 6;
@@ -421,6 +422,7 @@ begin
 If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
   If ProcessingManager[lvArchiveList.Selected.Index].ProcessingStatus in [apsSuccess,apsWarning,apsError] then
     //fResultInfoForm.ShowResultInformation(ProcessingManager[lvArchiveList.ItemIndex]);
+    fResultInfoForm.ShowModal;
 end;
 
 //------------------------------------------------------------------------------

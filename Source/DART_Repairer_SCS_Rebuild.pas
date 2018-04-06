@@ -103,7 +103,7 @@ else
   begin
     // write actual header and entry table
     fRebuildArchiveStream.Seek(DART_SCS_DefaultEntryTableOffset,soBeginning);
-    If fProcessingSettings.EntryTabInMem then
+    If fProcessingSettings.EntryTabInMem and not fArchiveProcessingSettings.Common.InMemoryProcessing then
       begin
         // build entire entry table in memory and write it as one block
         ReallocBufferKeep(fBuffer_Entry,EntryTableSize);
