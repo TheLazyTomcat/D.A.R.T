@@ -130,15 +130,16 @@ end;
 procedure TfMainForm.LoadCopyrightInfo;
 begin
 with TWinFileInfo.Create(WFI_LS_LoadVersionInfo or WFI_LS_LoadFixedFileInfo or WFI_LS_DecodeFixedFileInfo) do
-  begin
-    sbStatusBar.Panels[0].Text :=
-      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
-      VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' (' +
-      {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64 '{$ELSE}+ '32 '{$ENDIF} +
-      '#' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
-      {$IFDEF Debug}+ ' debug'{$ENDIF} + ')';
-    Free;
-  end;
+try
+  sbStatusBar.Panels[0].Text :=
+    VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'LegalCopyright'] + ', version ' +
+    VersionInfoValues[VersionInfoTranslations[0].LanguageStr,'ProductVersion'] + ' (' +
+    {$IFDEF FPC}'L'{$ELSE}'D'{$ENDIF}{$IFDEF x64}+ '64 '{$ELSE}+ '32 '{$ENDIF} +
+    '#' + IntToStr(VersionInfoFixedFileInfoDecoded.FileVersionMembers.Build)
+    {$IFDEF Debug}+ ' debug'{$ENDIF} + ')';
+finally
+  Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -421,8 +422,7 @@ procedure TfMainForm.pmiAL_ResultInfoClick(Sender: TObject);
 begin
 If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
   If ProcessingManager[lvArchiveList.Selected.Index].ProcessingStatus in [apsSuccess,apsWarning,apsError] then
-    //fResultInfoForm.ShowResultInformation(ProcessingManager[lvArchiveList.ItemIndex]);
-    fResultInfoForm.ShowModal;
+    fResultInfoForm.ShowResultInformation(ProcessingManager[lvArchiveList.ItemIndex]);
 end;
 
 //------------------------------------------------------------------------------
@@ -489,6 +489,5 @@ If ProcessingManager.ProcessedArchiveIndex >= 0 then
       tmrAnimTimer.Tag := 0;
   end;
 end;
-
 
 end.

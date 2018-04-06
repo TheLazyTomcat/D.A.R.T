@@ -137,7 +137,6 @@ end;
 
 procedure TDARTRepairer_SCS_Rebuild.SCS_WriteEntry(Index: Integer);
 var
-  i:                Integer;
   DirBuffer:        TMemoryStream;
   CompressedBuff:   Pointer;
   CompressedSize:   TMemSize;
@@ -213,7 +212,7 @@ try
                 ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntryDecompression));
               try
                 If not UtilityData.Resolved then
-                  SCS_SaveEntryAsUnresolved(i,DecompressedBuff,DecompressedSize,
+                  SCS_SaveEntryAsUnresolved(Index,DecompressedBuff,DecompressedSize,
                     ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
                 If (BinPart.UncompressedSize <> 0) and SameCRC32(BinPart.CRC32,0) then
                   BinPart.CRC32 := BufferCRC32(DecompressedBuff^,DecompressedSize);
