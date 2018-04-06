@@ -315,9 +315,9 @@ For i := 0 to Pred(lvArchiveList.Columns.Count) do
   If i <> 1 then Dec(NewWidth,lvArchiveList.Columns[i].Width);
 lvArchiveList.Columns[1].Width := NewWidth;
 // buttons 
-btnPauseProcessing.Width := (Width - 24) div 2;
+btnPauseProcessing.Width := (ClientWidth - 24) div 2;
 btnStopProcessing.Left := btnPauseProcessing.Left + btnPauseProcessing.Width + 8;
-btnStopProcessing.Width := (Width - 24) div 2;
+btnStopProcessing.Width := (ClientWidth - 24) div 2;
 end;
 
 //------------------------------------------------------------------------------

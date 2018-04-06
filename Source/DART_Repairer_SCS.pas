@@ -172,11 +172,14 @@ try
   // local
   DART_PROGSTAGE_IDX_SCS_PathsRes_Local := fPathsResolveProcNode.Add(20);
   // help archives
-  DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives := fPathsResolveProcNode.Add(20);
+  If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
+    DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives := fPathsResolveProcNode.Add(20);
   // parse content
-  DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
+  If fProcessingSettings.PathResolve.ParseContent then
+    DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
   // brute force
-  DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce := fPathsResolveProcNode.Add(30);
+  If fProcessingSettings.PathResolve.BruteForce then
+    DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce := fPathsResolveProcNode.Add(30);
   // reconstruct dirs
   DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct := fPathsResolveProcNode.Add(10);
   // assign obtained indices to shorter-named variables
@@ -471,7 +474,7 @@ var
   end;
 
 begin
-DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,1.0);
+DoProgress(fProcessingProgNode,PSIDX_C_EntriesLoading,0.0);
 SetLength(fArchiveStructure.Entries.Arr,fArchiveStructure.ArchiveHeader.EntryCount);
 fArchiveStructure.Entries.Count := Length(fArchiveStructure.Entries.Arr);
 fInputArchiveStream.Seek(fArchiveStructure.ArchiveHeader.EntryTableOffset,soBeginning);
@@ -546,6 +549,7 @@ var
   PathDeconstructor:  TDARTPathDeconstructor;
   i,j:                Integer;
 begin
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,0.0);
 PathDeconstructor := TDARTPathDeconstructor.Create(DART_SCS_PathDelim);
 try
   // deconstruct path of all resolved entries
@@ -580,6 +584,7 @@ try
 finally
   PathDeconstructor.Free;
 end;
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
 end;
 
 //------------------------------------------------------------------------------
