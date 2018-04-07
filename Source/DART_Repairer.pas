@@ -328,7 +328,8 @@ end;
 
 procedure TDARTRepairer.DoProgress(ParentStage: TProgressTracker; StageIndex: Integer; Progress: Double);
 begin
-If Assigned(fHeartbeat) then InterlockedIncrement(fHeartbeat^);
+If Assigned(fHeartbeat) then
+  InterlockedIncrement(fHeartbeat^);
 fPauseControlObject.WaitFor;
 If Terminated then
   begin

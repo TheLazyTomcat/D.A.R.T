@@ -11,12 +11,14 @@ uses
 
 type
   TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsPaused,apsSuccess,
-                                  apsWarning,apsError,apsProcessing);
+                                  apsWarning,apsError,apsProcessing,apsHeartbeat,
+                                  apsUnresponsive);
 
 const
   DART_ArchiveProcessingStatusStrings: array[TDARTArchiveProcessingStatus] of String =
     ('Unknown','Ready','Paused... %.0f%%','Successfuly completed',
-     'Completed with warnings','Error','Processing... %.0f%%');
+     'Completed with warnings','Error','Processing... %.0f%%','Heartbeating...',
+     'Unresponsive');
 
 type
   TDARTArchiveListItem = record
@@ -43,18 +45,22 @@ type
 type
   TDARTProcessingManager = class(TObject)
   private
-    fVisualListing:     TListView;
-    fSynchronizer:      TSyncThreadSynchronizer;
-    fStatus:            TDARTProcessingManagerStatus;
-    fArchiveList:       TDARTArchiveList;
-    fProgressTracker:   TProgressTracker;
-    fMemoryLimit:       TMemSize;
-    fProcessedArchIdx:  Integer;
-    fProcessingThread:  TDARTProcessingThread;
-    fDefferedDestThrds: array of TThread;
-    fOnArchiveProgress: TDARTArchiveChangeEvent;
-    fOnArchiveStatus:   TDARTArchiveChangeEvent;
-    fOnManagerStatus:   TNotifyEvent;
+    fVisualListing:       TListView;
+    fSynchronizer:        TSyncThreadSynchronizer;
+    fHeartbeat:           Integer;
+    fHeartbeatCounter:    Integer;
+    fHeartbeatActThrsld:  Integer;
+    fHeartbeatFailThrsld: Integer;
+    fStatus:              TDARTProcessingManagerStatus;
+    fArchiveList:         TDARTArchiveList;
+    fProgressTracker:     TProgressTracker;
+    fMemoryLimit:         TMemSize;
+    fProcessedArchIdx:    Integer;
+    fProcessingThread:    TDARTProcessingThread;
+    fDefferedDestThrds:   array of TThread;
+    fOnArchiveProgress:   TDARTArchiveChangeEvent;
+    fOnArchiveStatus:     TDARTArchiveChangeEvent;
+    fOnManagerStatus:     TNotifyEvent;
     Function GetArchivePtr(Index: Integer): PDARTArchiveListItem;
     Function GetArchive(Index: Integer): TDARTArchiveListItem;
     Function GetProgress: Double;
@@ -84,9 +90,12 @@ type
     procedure StopProcessing; virtual;
     procedure EndProcessingAndWait; virtual;
     procedure Update(Timeout: LongWord); virtual;
+    Function HeartbeatCheck: Boolean; virtual;
     property Pointers[Index: Integer]: PDARTArchiveListItem read GetArchivePtr;
     property Archives[Index: Integer]: TDARTArchiveListItem read GetArchive; default;
   published
+    property HeartbeatActivationThreshold: Integer read fHeartbeatActThrsld write fHeartbeatActThrsld;
+    property HeartbeatFailureThreshold: Integer read fHeartbeatFailThrsld write fHeartbeatFailThrsld;
     property Status: TDARTProcessingManagerStatus read fStatus;
     property Count: Integer read fArchiveList.Count;
     property ProcessedArchiveIndex: Integer read fProcessedArchIdx;
@@ -200,8 +209,14 @@ end;
 procedure TDARTProcessingManager.ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Double);
 begin
 // note the processing thread is stopped when this method is executed
+If fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus in [apsHeartbeat,apsUnresponsive] then
+  begin
+    fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsProcessing;
+    OnArchiveStatus(Self,fProcessedArchIdx);
+  end;
 If fStatus in [pmsProcessing,pmsTerminating] then
   begin
+    fHeartbeatCounter := 0;
     If (Progress >= 0.0) and (Progress <= 1.0) then
       begin // normal progress
         fArchiveList.Arr[ArchiveIndex].ProgressStageNode.Progress := Progress;
@@ -254,9 +269,9 @@ end;
 Function TDARTProcessingManager.CreateProcessingThread: TDARTProcessingThread;
 begin
 If Assigned(fSynchronizer) then
-  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,fSynchronizer.CreateDispatcher)
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,@fHeartbeat,fSynchronizer.CreateDispatcher)
 else
-  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,nil);
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,@fHeartbeat,nil);
 end;
 
 //==============================================================================
@@ -302,6 +317,10 @@ If VisualApp then
   fSynchronizer := nil
 else
   fSynchronizer := TSyncThreadSynchronizer.Create;
+fHeartbeat := 0;
+fHeartbeatCounter := 0;
+fHeartbeatActThrsld := 10;
+fHeartbeatFailThrsld := 20;
 fStatus := pmsReady;
 SetLength(fArchiveList.Arr,0);
 fArchiveList.Count := 0;
@@ -476,6 +495,9 @@ begin
 RunDeferredThreadDestruction;
 If (fArchiveList.Count > 0) and (fStatus = pmsReady) then
   begin
+    // reset heartbeat
+    fHeartbeat := 0;
+    fHeartbeatCounter := 0;
     // reset progress
     For i := fProgressTracker.LowIndex to fProgressTracker.HighIndex do
       fProgressTracker.SetStageProgress(i,0.0);   
@@ -580,8 +602,23 @@ If Assigned(fProcessingThread) then
     DoManagerStatus;
     fProcessingThread.StopProcessing;   // does not stop the thread, only sets a flag
     fProcessingThread.ResumeProcessing; // in case it is paused
+  {
+    Following line might hung if there is problem in processing.
+
+    There is a posibility to use a WinAPI wait function, and if it times-out
+    then the thread would be forcefully terminated using TerminateThread
+    function.
+
+    There is big problem with that - processing thread will, in 100% of cases,
+    be waiting for message processing for synchronized progress by this point.
+    This message processing never occurrs since the main thread is waiting here.
+    This results in simple fact - the wait function would allways time-out,
+    meaning the processing thread is hard-killed everytime. Not good.
+
+    I will be searching for solution.
+  }
     fProcessingThread.WaitFor;
-    fProcessingThread := nil; // the thread should be in defered destruction list by this point
+    fProcessingThread := nil;   // the thread should be in defered destruction list by this point
   end;
 RunDeferredThreadDestruction;
 end;
@@ -592,6 +629,47 @@ procedure TDARTProcessingManager.Update(Timeout: LongWord);
 begin
 If Assigned(fSynchronizer) then
   fSynchronizer.Update(Timeout);  
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTProcessingManager.HeartbeatCheck: Boolean;
+begin
+If fStatus = pmsProcessing then
+  begin
+    If InterlockedExchange(fHeartbeat,0) = 0 then
+      begin
+        // there was no progress done since last heartbeat
+        Inc(fHeartbeatCounter);
+        case fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus of
+          apsProcessing:
+            If fHeartbeatCounter >= fHeartbeatActThrsld then
+              begin
+                fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsHeartbeat;
+                OnArchiveStatus(Self,fProcessedArchIdx);
+              end;
+          apsHeartbeat:
+            If fHeartbeatCounter >= fHeartbeatFailThrsld then
+              begin
+                fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsUnresponsive;
+                OnArchiveStatus(Self,fProcessedArchIdx);
+              end;
+        end;
+        Result := False;
+      end
+    else
+      begin
+        fHeartbeatCounter := 0;
+        // there was some progress or current file is not in processing mode
+        If fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus in [apsHeartbeat,apsUnresponsive] then
+          begin
+            fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsProcessing;
+            OnArchiveStatus(Self,fProcessedArchIdx);
+          end;
+        Result := True;
+      end;
+  end
+else Result := True;
 end;
 
 end.

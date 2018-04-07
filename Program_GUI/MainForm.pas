@@ -25,6 +25,7 @@ type
     lblArchiveProgress: TLabel;
     pbArchiveProgress: TProgressBar;
     sbStatusBar: TStatusBar;
+    tmrHearbeatTimer: TTimer;    
     tmrAnimTimer: TTimer;    
     ilArchiveList: TImageList;
     diaOpenArchive: TOpenDialog;
@@ -57,7 +58,8 @@ type
     procedure btnStartProcessingClick(Sender: TObject);
     procedure btnPauseProcessingClick(Sender: TObject);
     procedure btnStopProcessingClick(Sender: TObject);
-    procedure tmrAnimTimerTimer(Sender: TObject); 
+    procedure tmrHearbeatTimerTimer(Sender: TObject);    
+    procedure tmrAnimTimerTimer(Sender: TObject);
   private
     fDefaultAppTitle:     String;
     fProgressAppTitle:    String;
@@ -87,8 +89,10 @@ uses
   ResultInfoForm;
 
 const
-  ANIM_IMG_First = 6;
-  ANIM_IMG_Count = 8;
+  ANIM_IMG_Processing_First = 9;
+  ANIM_IMG_Processing_Count = 8;
+  ANIM_IMG_Heartbeat_First  = 17;
+  ANIM_IMG_Heartbeat_Count  = 5;
 
 //LIST_COLUMN_Icon   = -1;
 //LIST_COLUMN_Name   = 0;
@@ -206,9 +210,10 @@ lvArchiveList.Items[ArchiveIndex].SubItems[LIST_COLUMN_State] :=
   Format(DART_ArchiveProcessingStatusStrings[ProcessingManager[ArchiveIndex].ProcessingStatus],
     [ProcessingManager[ArchiveIndex].ProgressStageNode.Progress * 100]);
 lvArchiveList.Items[ArchiveIndex].ImageIndex := Ord(ProcessingManager[ArchiveIndex].ProcessingStatus);
-If ProcessingManager[ArchiveIndex].ProcessingStatus <> apsProcessing then
-  tmrAnimTimer.Tag := 0;
-tmrAnimTimer.Enabled := ProcessingManager[ArchiveIndex].ProcessingStatus = apsProcessing;
+tmrAnimTimer.Tag := 0;
+tmrAnimTimer.Enabled := ProcessingManager[ArchiveIndex].ProcessingStatus in [apsProcessing,apsHeartbeat];
+If tmrAnimTimer.Enabled then
+  tmrAnimTimer.OnTimer(nil);
 end;
 
 //------------------------------------------------------------------------------
@@ -278,6 +283,7 @@ ProcessingManager := TDARTProcessingManager.Create(lvArchiveList,True);
 ProcessingManager.OnArchiveProgress := OnArchiveProgress;
 ProcessingManager.OnArchiveStatus := OnArchiveStatus;
 ProcessingManager.OnManagerStatus := OnManagerStatus;
+tmrHearbeatTimer.Enabled := True;
 OnManagerStatus(nil);
 diaOpenArchive.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
 pmiAL_ProcessingSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
@@ -477,16 +483,34 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TfMainForm.tmrHearbeatTimerTimer(Sender: TObject);
+begin
+ProcessingManager.HeartbeatCheck;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TfMainForm.tmrAnimTimerTimer(Sender: TObject);
 begin
 If ProcessingManager.ProcessedArchiveIndex >= 0 then
-  begin
-    lvArchiveList.Items[ProcessingManager.ProcessedArchiveIndex].ImageIndex :=
-      ANIM_IMG_First + tmrAnimTimer.Tag;
-    If tmrAnimTimer.Tag < Pred(ANIM_IMG_Count) then
-      tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
-    else
-      tmrAnimTimer.Tag := 0;
+  case ProcessingManager[ProcessingManager.ProcessedArchiveIndex].ProcessingStatus of
+    apsProcessing:
+      begin
+        If tmrAnimTimer.Tag > Pred(ANIM_IMG_Processing_Count) then
+          tmrAnimTimer.Tag := 0;
+        lvArchiveList.Items[ProcessingManager.ProcessedArchiveIndex].ImageIndex :=
+          ANIM_IMG_Processing_First + tmrAnimTimer.Tag;
+        tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
+      end;
+    apsHeartbeat:
+      begin
+        If tmrAnimTimer.Tag > Pred(ANIM_IMG_Heartbeat_Count * 2) then
+          tmrAnimTimer.Tag := 0;
+        If tmrAnimTimer.Tag <= Pred(ANIM_IMG_Heartbeat_Count) then
+          lvArchiveList.Items[ProcessingManager.ProcessedArchiveIndex].ImageIndex :=
+          ANIM_IMG_Heartbeat_First + tmrAnimTimer.Tag;
+        tmrAnimTimer.Tag := tmrAnimTimer.Tag + 1
+      end;
   end;
 end;
 

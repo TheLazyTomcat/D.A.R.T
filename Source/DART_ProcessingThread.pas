@@ -21,6 +21,7 @@ type
     fArchiveIndex:              Integer;
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
     fPauseControlObject:        TDARTPauseObject;
+    fHeartbeat:                 PInteger;
     fRepairer:                  TDARTRepairer;
     fResultInfo:                TDARTResultInfo;
     fOnArchiveProgress:         TDARTArchiveProgressEvent;
@@ -30,7 +31,7 @@ type
     procedure CreateRepairer; virtual;
     procedure Execute; override;
   public
-    constructor Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; SyncDispatcher: TSyncThreadDispatcher);
+    constructor Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; Heartbeat: PInteger; SyncDispatcher: TSyncThreadDispatcher);
     destructor Destroy; override;
     procedure StartProcessing; virtual;
     procedure PauseProcessing; virtual;
@@ -126,6 +127,7 @@ else
   raise Exception.CreateFmt('TDARTProcessingThread.Create: Unknown archive type (%d).',
                             [Ord(fArchiveProcessingSettings.Common.SelectedArchiveType)]);
 end;
+fRepairer.Heartbeat := fHeartbeat;
 end;
 
 //------------------------------------------------------------------------------
@@ -156,7 +158,7 @@ end;
 
 //==============================================================================
 
-constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; SyncDispatcher: TSyncThreadDispatcher);
+constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; Heartbeat: PInteger; SyncDispatcher: TSyncThreadDispatcher);
 begin
 inherited Create(True);
 FreeOnTerminate := False;
@@ -168,6 +170,7 @@ fArchiveIndex := ArchiveIndex;
 fArchiveProcessingSettings := ArchiveProcessingSettings;
 EnsureThreadSafety(fArchiveProcessingSettings);
 fPauseControlObject := TDARTPauseObject.Create;
+fHeartbeat := Heartbeat;
 // creation of repairer is deffered to when the thread is started
 fRepairer := nil;
 fResultInfo := DART_DefaultResultInfo;

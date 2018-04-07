@@ -30,9 +30,6 @@ Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): An
 // system information functions
 Function DART_GetAvailableMemory: UInt64;
 
-// interlocked functions
-// todo
-
 implementation
 
 uses
