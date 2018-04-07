@@ -6,8 +6,7 @@ interface
 
 type
   TDARTKnownArchiveTypes = (katUnknown,katSCS,katZIP);
-  TDARTArchiveType       = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,
-                            atZIP_dft,atSCS = atSCS_sig,atZIP = atZIP_sig);
+  TDARTArchiveType       = (atUnknown,atSCS_sig,atSCS_frc,atZIP_sig,atZIP_frc,atZIP_dft);
   TDARTRepairMethod      = (rmUnknown,rmRebuild,rmExtract,rmConvert);
 
 const

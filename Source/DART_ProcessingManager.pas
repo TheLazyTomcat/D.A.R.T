@@ -47,10 +47,6 @@ type
   private
     fVisualListing:       TListView;
     fSynchronizer:        TSyncThreadSynchronizer;
-    fHeartbeat:           Integer;
-    fHeartbeatCounter:    Integer;
-    fHeartbeatActThrsld:  Integer;
-    fHeartbeatFailThrsld: Integer;
     fStatus:              TDARTProcessingManagerStatus;
     fArchiveList:         TDARTArchiveList;
     fProgressTracker:     TProgressTracker;
@@ -58,6 +54,10 @@ type
     fProcessedArchIdx:    Integer;
     fProcessingThread:    TDARTProcessingThread;
     fDefferedDestThrds:   array of TThread;
+    fHeartbeat:           Integer;
+    fHeartbeatCounter:    Integer;
+    fHeartbeatActThrsld:  Integer;
+    fHeartbeatFailThrsld: Integer;
     fOnArchiveProgress:   TDARTArchiveChangeEvent;
     fOnArchiveStatus:     TDARTArchiveChangeEvent;
     fOnManagerStatus:     TNotifyEvent;
@@ -94,12 +94,12 @@ type
     property Pointers[Index: Integer]: PDARTArchiveListItem read GetArchivePtr;
     property Archives[Index: Integer]: TDARTArchiveListItem read GetArchive; default;
   published
-    property HeartbeatActivationThreshold: Integer read fHeartbeatActThrsld write fHeartbeatActThrsld;
-    property HeartbeatFailureThreshold: Integer read fHeartbeatFailThrsld write fHeartbeatFailThrsld;
     property Status: TDARTProcessingManagerStatus read fStatus;
     property Count: Integer read fArchiveList.Count;
     property ProcessedArchiveIndex: Integer read fProcessedArchIdx;
     property Progress: Double read GetProgress;
+    property HeartbeatActivationThreshold: Integer read fHeartbeatActThrsld write fHeartbeatActThrsld;
+    property HeartbeatFailureThreshold: Integer read fHeartbeatFailThrsld write fHeartbeatFailThrsld;
     property OnArchiveProgress: TDARTArchiveChangeEvent read fOnArchiveProgress write fOnArchiveProgress;
     property OnArchiveStatus: TDARTArchiveChangeEvent read fOnArchiveStatus write fOnArchiveStatus;
     property OnManagerStatus: TNotifyEvent read fOnManagerStatus write fOnManagerStatus;
@@ -317,10 +317,6 @@ If VisualApp then
   fSynchronizer := nil
 else
   fSynchronizer := TSyncThreadSynchronizer.Create;
-fHeartbeat := 0;
-fHeartbeatCounter := 0;
-fHeartbeatActThrsld := 10;
-fHeartbeatFailThrsld := 20;
 fStatus := pmsReady;
 SetLength(fArchiveList.Arr,0);
 fArchiveList.Count := 0;
@@ -329,6 +325,10 @@ fProgressTracker.ConsecutiveStages := True;
 fMemoryLimit := Trunc(DART_GetAvailableMemory * 0.25);
 fProcessedArchIdx := -1;
 fProcessingThread := nil;
+fHeartbeat := 0;
+fHeartbeatCounter := 0;
+fHeartbeatActThrsld := 10;
+fHeartbeatFailThrsld := 20;
 fOnArchiveProgress := nil;
 fOnArchiveStatus := nil;
 fOnManagerStatus := nil;
@@ -401,8 +401,13 @@ If fStatus = pmsReady then
             case ProcessingSettings.Common.SelectedArchiveType of
               atSCS_sig,atSCS_frc:
                 begin
-                  ProcessingSettings.Common.RepairMethod := rmConvert;
+                  ProcessingSettings.Common.RepairMethod := rmRebuild;
                   ProcessingSettings.Common.ConvertTo := katZIP;
+                end;
+              atZIP_sig,atZIP_frc,atZIP_dft:
+                begin
+                  ProcessingSettings.Common.RepairMethod := rmRebuild;
+                  ProcessingSettings.Common.ConvertTo := katSCS;
                 end;
             else
               ProcessingSettings.Common.RepairMethod := rmRebuild;

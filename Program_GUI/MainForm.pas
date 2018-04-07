@@ -86,7 +86,7 @@ uses
   ShellAPI,
   StrRect, WinFileInfo, TaskbarProgress,
   DART_Auxiliary, DART_ProcessingSettings,
-  ResultInfoForm;
+  ResultInfoForm, ProcSettingsForm;
 
 const
   ANIM_IMG_Processing_First = 9;
@@ -414,11 +414,12 @@ procedure TfMainForm.pmiAL_ProcessingSettingsClick(Sender: TObject);
 begin
 If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
   begin
-    //fProcSettingsForm.ShowProcessingSettings(FileManager.Pointers[lvFiles.ItemIndex]^.ProcessingSettings);
+    fProcSettingsForm.ShowProcessingSettings(ProcessingManager.Pointers[lvArchiveList.ItemIndex]^.ProcessingSettings);
     lvArchiveList.Items[lvArchiveList.ItemIndex].SubItems[LIST_COLUMN_Type] :=
       DART_ArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.SelectedArchiveType];
     lvArchiveList.Items[lvArchiveList.ItemIndex].SubItems[LIST_COLUMN_Method] :=
-      DART_RepairMethodStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.RepairMethod];
+      Format(DART_RepairMethodStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.RepairMethod],
+             [DART_KnownArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.ConvertTo]]);
   end;
 end;
 
