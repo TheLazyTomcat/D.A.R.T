@@ -123,7 +123,11 @@ If cbForceArchiveType.Checked then
     atSCS_frc:  cmbForcedArchiveType.ItemIndex := 0;
     atZIP_frc:  cmbForcedArchiveType.ItemIndex := 1;
   end
-else cmbForcedArchiveType.ItemIndex := 0;
+else
+  begin
+    If cmbForcedArchiveType.ItemIndex < 0 then
+      cmbForcedArchiveType.ItemIndex := 0;
+  end;
 case fArchiveProcessingSettings.Common.RepairMethod of
   rmRebuild:  rbRebuild.Checked := True;
   rmExtract:  rbExtract.Checked := True;
@@ -151,6 +155,8 @@ If Assigned(fActiveArchiveSettingsFrame) then
   begin
     If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then
       TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame).ShowProcessingSettings(fArchiveProcessingSettings);
+    If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_SCS then
+      TfrmProcSettingsFrame_SCS(fActiveArchiveSettingsFrame).ShowProcessingSettings(fArchiveProcessingSettings);
   end;
 end;
 
@@ -177,6 +183,8 @@ If Assigned(fActiveArchiveSettingsFrame) then
   begin
     If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then
       TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame).RetrieveProcessingSettings(fArchiveProcessingSettings);
+    If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_SCS then
+      TfrmProcSettingsFrame_SCS(fActiveArchiveSettingsFrame).RetrieveProcessingSettings(fArchiveProcessingSettings);
   end;
 end;
 
@@ -193,11 +201,20 @@ If Assigned(fActiveArchiveSettingsFrame) then
         atZIP_sig,atZIP_frc,atZIP_dft:
           If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then Exit;
       end;
+    FormToSettings;
     fActiveArchiveSettingsFrame.Free;
   end;
 case fArchiveProcessingSettings.Common.SelectedArchiveType of
   atSCS_sig,atSCS_frc:
-    fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_SCS.Create(Self);
+    begin
+      fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_SCS.Create(Self);
+      with TfrmProcSettingsFrame_SCS(fActiveArchiveSettingsFrame) do
+        begin
+          OnOptionDescription := FrameOptionDescriptionHandler;
+          Initialize;
+          ShowProcessingSettings(fArchiveProcessingSettings);
+        end;
+    end;
   atZIP_sig,atZIP_frc,atZIP_dft:
     begin
       fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_ZIP.Create(Self);
@@ -214,6 +231,7 @@ end;
 fActiveArchiveSettingsFrame.Left := 0;
 fActiveArchiveSettingsFrame.Top := 0;
 fActiveArchiveSettingsFrame.Parent := scbArchiveSettings;
+SettingsToForm;
 end;
 
 //------------------------------------------------------------------------------
@@ -271,15 +289,7 @@ end;
 procedure TfProcSettingsForm.OptionMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
 If Sender is TControl then
-  If meOptionDecription.Tag <> TControl(Sender).Tag then
-    begin
-      meOptionDecription.Tag := TControl(Sender).Tag;
-      //If (TControl(Sender).Tag >= Low(fSettingsDescriptions)) and
-      //   (TControl(Sender).Tag <= High(fSettingsDescriptions)) then
-      //  meSettingDescription.Text := fSettingsDescriptions[TControl(Sender).Tag]
-      //else
-        meOptionDecription.Text := 'unknown #' + IntToStr(TControl(Sender).Tag);
-    end;
+  FrameOptionDescriptionHandler(Self,TControl(Sender).Tag);
 end;
 
 //------------------------------------------------------------------------------

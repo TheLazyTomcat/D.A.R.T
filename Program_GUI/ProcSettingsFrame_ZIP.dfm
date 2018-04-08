@@ -20,6 +20,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     ParentColor = True
     TabOrder = 0
     object gbGeneral: TGroupBox
+      Tag = 100
       Left = 0
       Top = 0
       Width = 561
@@ -40,6 +41,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
       end
     end
     object gbEndOfCentralDirectory: TGroupBox
+      Tag = 200
       Left = 0
       Top = 56
       Width = 561
@@ -122,6 +124,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
       end
     end
     object gbCentralDirectoryHeaders: TGroupBox
+      Tag = 300
       Left = 0
       Top = 168
       Width = 561
@@ -285,6 +288,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
       end
     end
     object gbLocalHeaders: TGroupBox
+      Tag = 400
       Left = 0
       Top = 320
       Width = 561
