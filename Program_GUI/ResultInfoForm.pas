@@ -41,13 +41,12 @@ meResultInfo.Lines.BeginUpdate;
 try
   // basic info and settings
   meResultInfo.Clear;
-  meResultInfo.Lines.Add('      Archive: ' + ArchiveInfo.Name);
-  meResultInfo.Lines.Add(Format('         Size: %s (%d bytes)',[SizeToStr(ArchiveInfo.Size),ArchiveInfo.Size]));
-  meResultInfo.Lines.Add('Original type: ' +
-    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.OriginalArchiveType]);
-  meResultInfo.Lines.Add('Selected type: ' +
-    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.SelectedArchiveType]);
-  meResultInfo.Lines.Add(Format('     Repairer: %s (%s)',[ArchiveInfo.ResultInfo.RepairerInfo,VersionStr]));
+  meResultInfo.Lines.Add('Archive file: ' + ArchiveInfo.Name);
+  meResultInfo.Lines.Add(Format('Archive size: %s (%d bytes)',[SizeToStr(ArchiveInfo.Size),ArchiveInfo.Size]));
+  meResultInfo.Lines.Add(Format('Archive type: %s (%s)',[
+    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.SelectedArchiveType],
+    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.OriginalArchiveType]]));
+  meResultInfo.Lines.Add(Format('    Repairer: %s (%s)',[ArchiveInfo.ResultInfo.RepairerInfo,VersionStr]));
   // additional info (warning or error messages)
   case ArchiveInfo.ResultInfo.ResultState of
     rsNormal:   lblProcessingResult.Caption := 'Processing completed successfuly';
