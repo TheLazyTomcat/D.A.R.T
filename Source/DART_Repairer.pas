@@ -223,9 +223,11 @@ const
     byte 2 - repair method (00 = unknown, 01 = rebuild, 02 = extract, 03 = convert)
     byte 3 - repair method specific
 }
-  DART_METHOD_ID_STOP      = $00000000;
-  DART_METHOD_ID_MAINPROC  = $00000001;
-  DART_METHOD_ID_CHARCHSIG = $00000002;
+  DART_METHOD_ID_STOP       = $00000000;
+  DART_METHOD_ID_MAINPROC   = $00000001;
+  DART_METHOD_ID_CHARCHSIG  = $00000002;
+  DART_METHOD_ID_PROGDECOMP = $00000003;
+  DART_METHOD_ID_PROGCOMP   = $00000004;
 
   // termination flag values
   DART_TERMFLAG_TERMINATED = -1;
@@ -563,16 +565,23 @@ end;
 
 procedure TDARTRepairer.ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI);
 begin
-fCompProgressStageInfo := ProgressInfo;
-with TZDecompressionBuffer.Create(InBuff,InSize,WindowBits) do
 try
-  FreeResult := False;
-  OnProgress := CompressorProgressHandler;
-  Process;
-  OutBuff := ResultMemory;
-  OutSize := ResultSize;
-finally
-  Free;
+  fCompProgressStageInfo := ProgressInfo;
+  with TZDecompressionBuffer.Create(InBuff,InSize,WindowBits) do
+  try
+    FreeResult := False;
+    OnProgress := CompressorProgressHandler;
+    Process;
+    OutBuff := ResultMemory;
+    OutSize := ResultSize;
+  finally
+    Free;
+  end;
+except
+  on E: EZError do
+    DoError(DART_METHOD_ID_PROGDECOMP,'zlib error: %s',[E.Message]);
+  else
+    raise;
 end;
 end;
 
@@ -580,16 +589,23 @@ end;
 
 procedure TDARTRepairer.ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI);
 begin
-fCompProgressStageInfo := ProgressInfo;
-with TZCompressionBuffer.Create(InBuff,InSize,zclDefault,WindowBits) do
 try
-  FreeResult := False;
-  OnProgress := CompressorProgressHandler;
-  Process;
-  OutBuff := ResultMemory;
-  OutSize := ResultSize;
-finally
-  Free;
+  fCompProgressStageInfo := ProgressInfo;
+  with TZCompressionBuffer.Create(InBuff,InSize,zclDefault,WindowBits) do
+  try
+    FreeResult := False;
+    OnProgress := CompressorProgressHandler;
+    Process;
+    OutBuff := ResultMemory;
+    OutSize := ResultSize;
+  finally
+    Free;
+  end;
+except
+  on E: EZError do
+    DoError(DART_METHOD_ID_PROGCOMP,'zlib error: %s',[E.Message]);
+  else
+    raise;
 end;
 end;
 
@@ -678,9 +694,11 @@ end;
 class Function TDARTRepairer.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
 case MethodIndex of
-  DART_METHOD_ID_STOP:      Result := 'Stop*';
-  DART_METHOD_ID_MAINPROC:  Result := 'MainProcessing';
-  DART_METHOD_ID_CHARCHSIG: Result := 'CheckArchiveSignature';
+  DART_METHOD_ID_STOP:        Result := 'Stop*';
+  DART_METHOD_ID_MAINPROC:    Result := 'MainProcessing';
+  DART_METHOD_ID_CHARCHSIG:   Result := 'CheckArchiveSignature';
+  DART_METHOD_ID_PROGDECOMP:  Result := 'ProgressedDecompressBuffer';
+  DART_METHOD_ID_PROGCOMP:    Result := 'ProgressedCompressBuffer';
 else
   Result := 'unknown method';
 end;
