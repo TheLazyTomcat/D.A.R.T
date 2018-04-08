@@ -505,7 +505,13 @@ If (fArchiveList.Count > 0) and (fStatus = pmsReady) then
     fHeartbeatCounter := 0;
     // reset progress
     For i := fProgressTracker.LowIndex to fProgressTracker.HighIndex do
-      fProgressTracker.SetStageProgress(i,0.0);   
+      fProgressTracker.SetStageProgress(i,0.0);
+    // reset processing status of all archives
+    For i := Low(fArchiveList.Arr) to Pred(fArchiveList.Count) do
+      begin
+        fArchiveList.Arr[i].ProcessingStatus := apsReady;
+        DoArchiveStatus(i);
+      end;
     fProcessedArchIdx := Low(fArchiveList.Arr);
     fArchiveList.Arr[fProcessedArchIdx].ProgressStageNode.Progress := 0.0;
     fArchiveList.Arr[fProcessedArchIdx].ProcessingStatus := apsProcessing;

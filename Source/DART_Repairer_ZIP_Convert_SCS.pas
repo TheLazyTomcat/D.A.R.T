@@ -492,22 +492,14 @@ try
               // store obtained compressed size
               DataDescriptor.CompressedSize := LocalHeader.BinPart.CompressedSize;
               CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
-            end;
-
-          // assume original compression method if required
-          If fProcessingSettings.AssumeCompressionMethods then
-            begin
-              If (LocalHeader.BinPart.CompressedSize > 0) and (LocalHeader.BinPart.CompressionMethod <> DART_ZCM_Store) then
-                begin
-                  // compressed entry has non-zero size and stored compression method
-                  // differs from 0 (store) =>  assuming compression method 8 (deflate)
-                  LocalHeader.BinPart.CompressionMethod := DART_ZCM_Deflate;
-                  CentralDirectoryHeader.BinPart.CompressionMethod := DART_ZCM_Deflate;
-                end
-              else
+              // correct for 0-size entries
+              If LocalHeader.BinPart.CompressedSize = 0 then
                 begin
                   LocalHeader.BinPart.CompressionMethod := DART_ZCM_Store;
                   CentralDirectoryHeader.BinPart.CompressionMethod := DART_ZCM_Store;
+                  LocalHeader.BinPart.UncompressedSize := 0;
+                  DataDescriptor.UncompressedSize := 0;
+                  CentralDirectoryHeader.BinPart.UncompressedSize := 0;
                 end;
             end;
 

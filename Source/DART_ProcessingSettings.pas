@@ -82,7 +82,7 @@ type
   end;
 
   TDART_PS_ZIP = record
-    AssumeCompressionMethods: Boolean;
+    AssumeCompressionMethod:  Boolean;
     EndOfCentralDirectory:    TDART_PS_ZIP_EndOfCentralDirectory;
     CentralDirectory:         TDART_PS_ZIP_CentralDirectory;
     LocalHeader:              TDART_PS_ZIP_LocalHeader;
@@ -139,7 +139,7 @@ const
       InMemoryProcessing:     False;
       IgnoreErroneousEntries: False);
     ZIP: (
-      AssumeCompressionMethods: False;
+      AssumeCompressionMethod:  False;
       EndOfCentralDirectory: (
         IgnoreEndOfCentralDirectory:  False;
         IgnoreDiskSplit:              True;
@@ -215,10 +215,55 @@ end;
 
 procedure RectifyZIPProcessingSettings(var ZIP_PS: TDART_PS_ZIP);
 begin
-If ZIP_PS.CentralDirectory.IgnoreCentralDirectory or ZIP_PS.CentralDirectory.IgnoreLocalHeaderOffset then
+{
+  Central directory and local headers cannot be both ignored, the data must be
+  obtained somewhere. Central directory has more data, so it is preferred.
+}
+If ZIP_PS.LocalHeader.IgnoreLocalHeaders and ZIP_PS.CentralDirectory.IgnoreCentralDirectory then
+  ZIP_PS.CentralDirectory.IgnoreCentralDirectory := False;
+{
+  When local headers are ignored, data in them are constructed from central
+  directory. Especially field IgnoreLocalHeaderOffset is important, since it
+  is used to calcualte offset of actual data, which is important in further
+  processing.
+
+  If either central directory or IgnoreLocalHeaderOffset is ignored, this
+  construction cannot happen because IgnoreLocalHeaderOffset is not properly
+  initialized.
+
+  Therefore, if any of the two mentioned is ignored, local headers must not be
+  ignored and must be loaded.
+}
+If ZIP_PS.CentralDirectory.IgnoreCentralDirectory or
+   ZIP_PS.CentralDirectory.IgnoreLocalHeaderOffset then
   ZIP_PS.LocalHeader.IgnoreLocalHeaders := False;
-If ZIP_PS.CentralDirectory.IgnoreCentralDirectory then
+{
+  For proper processing of entries, it is important to somehow obtain sizes
+  of each entry (both compressed and uncompressed sizes).
+
+  It is possible to get these values indirectly as long as the compression
+  method is known (compressed size can be guessed from data, uncompressed size
+  can be obtained by actually decompressing the data, or, for uncompressed
+  entries, it is the same as compressed size).
+
+  This means that at least one of the following four values has be obtained
+  from the archive, and must not be ignored: central directory sizes or
+  compression method, local header sizes or compresson method.
+
+  Also, if central directory is ignored, it means entry file name must be
+  obtained form local header, and therefore that field cannot be ignored.
+}
+If ZIP_PS.LocalHeader.IgnoreLocalHeaders then
   begin
+    // local headers are ignored
+    If ZIP_PS.CentralDirectory.IgnoreCompressionMethod then
+      ZIP_PS.CentralDirectory.IgnoreSizes := False;
+    If ZIP_PS.CentralDirectory.IgnoreSizes then
+      ZIP_PS.CentralDirectory.IgnoreCompressionMethod := False;
+  end
+else If ZIP_PS.CentralDirectory.IgnoreCentralDirectory then
+  begin
+    // cenral directory ignored (local headers not ignored)
     If ZIP_PS.LocalHeader.IgnoreCompressionMethod then
       ZIP_PS.LocalHeader.IgnoreSizes := False;
     If ZIP_PS.LocalHeader.IgnoreSizes then
@@ -227,9 +272,9 @@ If ZIP_PS.CentralDirectory.IgnoreCentralDirectory then
   end
 else
   begin
-    If ZIP_PS.CentralDirectory.IgnoreCompressionMethod then
-      ZIP_PS.CentralDirectory.IgnoreSizes := False;
-    If ZIP_PS.CentralDirectory.IgnoreSizes then
+    // both central directory and local headers not ignored
+    If ZIP_PS.CentralDirectory.IgnoreCompressionMethod and ZIP_PS.CentralDirectory.IgnoreSizes and
+      ZIP_PS.LocalHeader.IgnoreCompressionMethod and ZIP_PS.LocalHeader.IgnoreSizes then
       ZIP_PS.CentralDirectory.IgnoreCompressionMethod := False;
   end;
 end;

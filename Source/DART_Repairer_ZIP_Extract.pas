@@ -97,17 +97,15 @@ try
                   // CD or EOCD not found, assuming entry data are continuing to EOF
                   LocalHeader.BinPart.CompressedSize := UInt32(fInputArchiveStream.Size - UtilityData.DataOffset);
               end;
-          end;
-
-        // assume compression method if required
-        If fProcessingSettings.AssumeCompressionMethods then
-          begin
-            If (LocalHeader.BinPart.CompressedSize > 0) and (LocalHeader.BinPart.CompressionMethod <> DART_ZCM_Store) then
-              // compressed entry has non-zero size and stored compression method
-              // differs from 0 (store) =>  assuming compression method 8 (deflate)
-              LocalHeader.BinPart.CompressionMethod := DART_ZCM_Deflate
-            else
+          // correct for 0-size entries
+          If LocalHeader.BinPart.CompressedSize = 0 then
+           begin
               LocalHeader.BinPart.CompressionMethod := DART_ZCM_Store;
+              CentralDirectoryHeader.BinPart.CompressionMethod := DART_ZCM_Store;
+              LocalHeader.BinPart.UncompressedSize := 0;
+              DataDescriptor.UncompressedSize := 0;
+              CentralDirectoryHeader.BinPart.UncompressedSize := 0;
+            end;
           end;
 
         // store offset of entry local header it has in input (needed for progress)

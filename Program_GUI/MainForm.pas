@@ -210,6 +210,7 @@ lvArchiveList.Items[ArchiveIndex].SubItems[LIST_COLUMN_State] :=
   Format(DART_ArchiveProcessingStatusStrings[ProcessingManager[ArchiveIndex].ProcessingStatus],
     [ProcessingManager[ArchiveIndex].ProgressStageNode.Progress * 100]);
 lvArchiveList.Items[ArchiveIndex].ImageIndex := Ord(ProcessingManager[ArchiveIndex].ProcessingStatus);
+lvArchiveList.Items[ArchiveIndex].MakeVisible(False);
 tmrAnimTimer.Tag := 0;
 tmrAnimTimer.Enabled := ProcessingManager[ArchiveIndex].ProcessingStatus in [apsProcessing,apsHeartbeat];
 If tmrAnimTimer.Enabled then

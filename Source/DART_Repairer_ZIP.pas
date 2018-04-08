@@ -55,6 +55,7 @@ type
     procedure ZIP_ReconstructLocalHeaders; virtual;
     procedure ZIP_ReconstructCentralDirectoryHeaders; virtual;
     procedure ZIP_ReconstructEndOfCentralDirectory; virtual;
+    procedure ZIP_ReconstructFinal; virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
@@ -224,11 +225,12 @@ If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory the
   end;
 If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
   ZIP_LoadCentralDirectory;
-ZIP_LoadLocalHeaders;
-If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-  ZIP_ReconstructLocalHeaders;
+If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+  ZIP_LoadLocalHeaders;
+ZIP_ReconstructLocalHeaders;
 ZIP_ReconstructCentralDirectoryHeaders;
 ZIP_ReconstructEndOfCentralDirectory;
+ZIP_ReconstructFinal;
 If fArchiveStructure.Entries.Count <= 0 then
   DoError(DART_METHOD_ID_ZIP_ARCHPROC,'Input archive does not contain any valid entries.');
 end;
@@ -315,17 +317,18 @@ var
           end;
         If fProcessingSettings.CentralDirectory.ClearEncryptionFlags then
           BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not UInt16(DART_ZBF_Encrypted or DART_ZBF_StrongEncryption);
-        If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
+        If not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
           begin
-            If BinPart.CompressedSize = BinPart.UncompressedSize then
-              BinPart.CompressionMethod := DART_ZCM_Store
+            If fProcessingSettings.AssumeCompressionMethod then
+              begin
+                If BinPart.CompressionMethod <> DART_ZCM_Store then
+                  BinPart.CompressionMethod := DART_ZCM_Deflate;
+              end
             else
-              BinPart.CompressionMethod := DART_ZCM_Deflate;
-          end
-        else
-          begin
-            If not (BinPart.CompressionMethod in DART_ZIP_SupportedCompressinMethods) and not fProcessingSettings.AssumeCompressionMethods then
-              DoError(DART_METHOD_ID_ZIP_ZLCDH,'Unknown compression method (%d) in central directory header for entry #%d.',[BinPart.CompressionMethod,Index]);
+              begin
+                If not(BinPart.CompressionMethod in DART_ZIP_SupportedCompressinMethods) then
+                  DoError(DART_METHOD_ID_ZIP_ZLCDH,'Unknown compression method (%d) in central directory header for entry #%d.',[BinPart.CompressionMethod,Index]);
+              end;
           end;
         If fProcessingSettings.CentralDirectory.IgnoreModTime then
           BinPart.LastModFileTime := DateTimeToFileDate(Now) and $FFFF;
@@ -337,22 +340,26 @@ var
           begin
             BinPart.CompressedSize := 0;
             BinPart.UncompressedSize := 0;
+          end
+        else
+          begin
+            If fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
+              begin
+                If BinPart.CompressedSize <> BinPart.UncompressedSize then
+                  begin
+                    If BinPart.CompressedSize = 0 then
+                      begin
+                        BinPart.CompressionMethod := DART_ZCM_Store;
+                        BinPart.UncompressedSize := BinPart.CompressedSize
+                      end
+                    else BinPart.CompressionMethod := DART_ZCM_Deflate;
+                  end
+                else BinPart.CompressionMethod := DART_ZCM_Store
+              end;
           end;
-        If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
-          BinPart.RelativeOffsetOfLocalHeader := 0;
         // load file name
         SetLength(FileName,BinPart.FilenameLength);
         fInputArchiveStream.ReadBuffer(PAnsiChar(FileName)^,BinPart.FileNameLength);
-        // file attributes must be done here, not sooner, because file name is required
-        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
-          BinPart.InternalFileAttributes := 0;
-        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
-          begin
-            If ExtractFileName(AnsiReplaceStr(FileName,DART_ZIP_PathDelim,PathDelim)) <> '' then
-              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
-            else
-              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
-          end;
         // load extra field
         If fProcessingSettings.CentralDirectory.IgnoreExtraField then
           begin
@@ -375,7 +382,21 @@ var
             SetLength(FileComment,BinPart.FileCommentLength);
             fInputArchiveStream.ReadBuffer(PAnsiChar(FileComment)^,BinPart.FileCommentLength);
           end;
-    end;  
+        If fProcessingSettings.EndOfCentralDirectory.IgnoreDiskSplit then
+          BinPart.DiskNumberStart := 0;  
+        // file attributes
+        If fProcessingSettings.CentralDirectory.IgnoreInternalFileAttributes then
+          BinPart.InternalFileAttributes := 0;
+        If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
+          begin
+            If ExtractFileName(AnsiReplaceStr(FileName,DART_ZIP_PathDelim,PathDelim)) <> '' then
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
+            else
+              BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+          end;
+        If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset then
+          BinPart.RelativeOffsetOfLocalHeader := 0;
+      end;  
   end;
 
 begin
@@ -452,17 +473,18 @@ var
           end;
         If fProcessingSettings.LocalHeader.ClearEncryptionFlags then
           BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not Word(DART_ZBF_Encrypted or DART_ZBF_StrongEncryption);
-        If fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
+        If not fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
           begin
-            If BinPart.CompressedSize = BinPart.UncompressedSize then
-              BinPart.CompressionMethod := DART_ZCM_Store
+            If fProcessingSettings.AssumeCompressionMethod then
+              begin
+                If BinPart.CompressionMethod <> DART_ZCM_Store then
+                  BinPart.CompressionMethod := DART_ZCM_Deflate;
+              end
             else
-              BinPart.CompressionMethod := DART_ZCM_Deflate;
-          end
-        else  
-          begin
-            If not (BinPart.CompressionMethod in DART_ZIP_SupportedCompressinMethods) and not fProcessingSettings.AssumeCompressionMethods then
-              DoError(DART_METHOD_ID_ZIP_ZLLHH,'Unknown compression method (%d) in local header for entry #%d.',[BinPart.CompressionMethod,Index]);
+              begin
+                If not (BinPart.CompressionMethod in DART_ZIP_SupportedCompressinMethods) then
+                  DoError(DART_METHOD_ID_ZIP_ZLLHH,'Unknown compression method (%d) in local header for entry #%d.',[BinPart.CompressionMethod,Index]);
+              end;
           end;
         If fProcessingSettings.LocalHeader.IgnoreModTime then
           BinPart.LastModFileTime := DateTimeToFileDate(Now) and $FFFF;
@@ -503,6 +525,7 @@ var
         If ((BinPart.GeneralPurposeBitFlag and DART_ZBF_DataDescriptor) <> 0) and
           not fProcessingSettings.LocalHeader.IgnoreDataDescriptor then
           begin
+            // read data descriptor
             If fProcessingSettings.LocalHeader.IgnoreSizes then
               DescriptorOffset := FindSignature(DART_ZIP_DataDescriptorSignature,DART_PROGSTAGE_INFO_NoProgress,
                                                 fInputArchiveStream.Position,False)
@@ -538,98 +561,75 @@ var
           end
         else
           begin
+            // do not read data descriptor
             BinPart.GeneralPurposeBitFlag := BinPart.GeneralPurposeBitFlag and not DART_ZBF_DataDescriptor;
-            CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag and not
-                                                                    DART_ZBF_DataDescriptor;
+            CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag :=
+              CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag and not DART_ZBF_DataDescriptor;
           end;
-      end;
-  end;
-
-  // copy selected data from central directory to local file headers
-  procedure CopyCentralToLocal(Index: Integer);
-  begin
-    with fArchiveStructure.Entries.Arr[Index] do
-      begin
-        LocalHeader.BinPart.Signature := DART_ZIP_LocalFileHeaderSignature;
-        LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
-        LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
-        LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
-        LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
-        LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
-        LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
-        LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
-        LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
-        LocalHeader.BinPart.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
-        LocalHeader.BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
-        LocalHeader.BinPart.ExtraFieldLength := CentralDirectoryHeader.BinPart.ExtraFieldLength;
-        LocalHeader.FileName := CentralDirectoryHeader.FileName;
-        LocalHeader.ExtraField := CentralDirectoryHeader.ExtraField;
-        UtilityData.DataOffset := Int64(CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader) +
-                                  SizeOf(TDART_ZIP_LocalFileHeaderRecord) +
-                                  LocalHeader.BinPart.FileNameLength +
-                                  LocalHeader.BinPart.ExtraFieldLength;
+        // following is deffered here for cases where sizes are loaded from data decriptor  
+        If not fProcessingSettings.LocalHeader.IgnoreSizes and fProcessingSettings.LocalHeader.IgnoreCompressionMethod then
+            begin
+              If BinPart.CompressedSize <> BinPart.UncompressedSize then
+                begin
+                  If BinPart.CompressedSize = 0 then
+                    begin
+                      BinPart.CompressionMethod := DART_ZCM_Store;
+                      BinPart.UncompressedSize := BinPart.CompressedSize
+                    end
+                  else BinPart.CompressionMethod := DART_ZCM_Deflate;
+                end
+              else BinPart.CompressionMethod := DART_ZCM_Store
+            end;
       end;
   end;
 
 begin
 DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,0.0);
-If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+If fArchiveStructure.Entries.Count > 0 then
   begin
-    // local headers are not loaded from the archive, they are instead
-    // constructed from data stored in central directory
+    // entries are already prepared from central directory
+    fInputArchiveStream.Seek(0,soBeginning);
     For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-      CopyCentralToLocal(i);
+      with fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader do
+        begin
+          If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
+            fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+            begin
+              // position of local header for given CD entry is not known,
+              // search for next local header from current position
+              WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                             fInputArchiveStream.Position,False);
+              If WorkingOffset >= 0 then
+                begin
+                  BinPart.RelativeOffsetOfLocalHeader := UInt32(WorkingOffset);
+                  fInputArchiveStream.Seek(WorkingOffset,soBeginning);
+                end
+              else DoError(DART_METHOD_ID_ZIP_ZLLH,'No local header found for entry #%d.',[i]);
+            end
+          else fInputArchiveStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soBeginning);
+          LoadLocalHeader(i);
+          DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,(i + 1) / fArchiveStructure.Entries.Count);
+          If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and
+             not AnsiSameText(FileName,fArchiveStructure.Entries.Arr[i].LocalHeader.FileName) then
+            DoError(DART_METHOD_ID_ZIP_ZLLH,'Mismatch in local and central directory file name for entry #%d ("%s").',[i,AnsiToStr(FileName)]);
+        end;
   end
 else
   begin
-    // load local headers from the archive
-    If fArchiveStructure.Entries.Count > 0 then
-      begin
-        // entries are already prepared from central directory
-        fInputArchiveStream.Seek(0,soBeginning);
-        For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-          with fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader do
-            begin
-              If fProcessingSettings.CentralDirectory.IgnoreLocalHeaderOffset or
-                fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-                begin
-                  // position of local header for given CD entry is not known,
-                  // search for next local header from current position
-                  WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
-                                                 fInputArchiveStream.Position,False);
-                  If WorkingOffset >= 0 then
-                    begin
-                      BinPart.RelativeOffsetOfLocalHeader := UInt32(WorkingOffset);
-                      fInputArchiveStream.Seek(WorkingOffset,soBeginning);
-                    end
-                  else DoError(DART_METHOD_ID_ZIP_ZLLH,'No local header found for entry #%d.',[i]);
-                end
-              else fInputArchiveStream.Seek(BinPart.RelativeOffsetOfLocalHeader,soBeginning);
-              LoadLocalHeader(i);
-              DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,(i + 1) / fArchiveStructure.Entries.Count);
-              If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
-                If not AnsiSameText(FileName,fArchiveStructure.Entries.Arr[i].LocalHeader.FileName) then
-                  DoError(DART_METHOD_ID_ZIP_ZLLH,'Mismatch in local and central directory file name for entry #%d (%s; %s).',
-                    [i,AnsiToStr(FileName),AnsiToStr(fArchiveStructure.Entries.Arr[i].LocalHeader.FileName)]);
-            end;
-      end
-    else
-      begin
-        // no entries are loaded yet, search for local headers and load them
-        WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
-        If WorkingOffset >= 0 then
-          repeat
-            If fArchiveStructure.Entries.Count > Length(fArchiveStructure.Entries.Arr) then
-              SetLength(fArchiveStructure.Entries.Arr,Length(fArchiveStructure.Entries.Arr) + 1024);
-            fArchiveStructure.Entries.Arr[fArchiveStructure.Entries.Count].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
-            fInputArchiveStream.Seek(WorkingOffset,soBeginning);
-            DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,WorkingOffset / fInputArchiveStream.Size);
-            LoadLocalHeader(fArchiveStructure.Entries.Count);
-            WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
-                                           fInputArchiveStream.Position,False);
-            Inc(fArchiveStructure.Entries.Count);
-          until WorkingOffset < 0;
-      end;
+    // no entries are loaded yet, search for local headers and load them
+    WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress);
+    If WorkingOffset >= 0 then
+      repeat
+        If fArchiveStructure.Entries.Count >= Length(fArchiveStructure.Entries.Arr) then
+          SetLength(fArchiveStructure.Entries.Arr,Length(fArchiveStructure.Entries.Arr) + 1024);
+        fArchiveStructure.Entries.Arr[fArchiveStructure.Entries.Count].CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader := WorkingOffset;
+        fInputArchiveStream.Seek(WorkingOffset,soBeginning);
+        DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,WorkingOffset / fInputArchiveStream.Size);
+        LoadLocalHeader(fArchiveStructure.Entries.Count);
+        WorkingOffset := FindSignature(DART_ZIP_LocalFileHeaderSignature,DART_PROGSTAGE_INFO_NoProgress,
+                                       fInputArchiveStream.Position,False);
+        Inc(fArchiveStructure.Entries.Count);
+      until WorkingOffset < 0;
   end;
 DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,1.0);
 end;
@@ -640,34 +640,84 @@ procedure TDARTRepairer_ZIP.ZIP_ReconstructLocalHeaders;
 var
   i:  Integer;
 begin
-For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  with fArchiveStructure.Entries.Arr[i] do
-    begin
-      If fProcessingSettings.LocalHeader.IgnoreVersions and not fProcessingSettings.CentralDirectory.IgnoreVersions then
+If fProcessingSettings.LocalHeader.IgnoreLocalHeaders then
+  begin
+  {
+    local headers were not loaded, this means central directory must have been
+    loaded, do direct copy of data from cetral directory to local headers
+  }
+    For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+      with fArchiveStructure.Entries.Arr[i] do
         begin
+          LocalHeader.BinPart.Signature := DART_ZIP_LocalFileHeaderSignature;
           LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
           LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
-        end;
-      If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
-        LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
-      If fProcessingSettings.LocalHeader.IgnoreModTime and not fProcessingSettings.CentralDirectory.IgnoreModTime then
-        LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
-      If fProcessingSettings.LocalHeader.IgnoreModDate and not fProcessingSettings.CentralDirectory.IgnoreModDate then
-        LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
-      If fProcessingSettings.LocalHeader.IgnoreCRC32 and not fProcessingSettings.CentralDirectory.IgnoreCRC32 then
-        begin
+          LocalHeader.BinPart.GeneralPurposeBitFlag := CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag;
+          LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
+          LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
+          LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
           LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
-          DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
-        end;
-      If fProcessingSettings.LocalHeader.IgnoreSizes and not fProcessingSettings.CentralDirectory.IgnoreSizes then
-        begin
           LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
-          LocalHeader.BinPart.UncompressedSize:= CentralDirectoryHeader.BinPart.UncompressedSize;
+          LocalHeader.BinPart.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+          LocalHeader.BinPart.FileNameLength := CentralDirectoryHeader.BinPart.FileNameLength;
+          LocalHeader.BinPart.ExtraFieldLength := CentralDirectoryHeader.BinPart.ExtraFieldLength;
+          LocalHeader.FileName := CentralDirectoryHeader.FileName;
+          LocalHeader.ExtraField := CentralDirectoryHeader.ExtraField;
+          DataDescriptor.Signature := DART_ZIP_DataDescriptorSignature;
+          DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
           DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
           DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+          UtilityData.DataOffset := Int64(CentralDirectoryHeader.BinPart.RelativeOffsetOfLocalHeader) +
+                                    SizeOf(TDART_ZIP_LocalFileHeaderRecord) +
+                                    LocalHeader.BinPart.FileNameLength +
+                                    LocalHeader.BinPart.ExtraFieldLength;
+          DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
         end;
-      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
-    end;
+  end
+else
+  begin
+    {
+      local headers were loaded, but some fields might have been ignored (they
+      are set to default values at this point) - if central directory was not
+      ignored, copy values from CD fields to corresponding ignored LH fields,
+      but only when they have not been ignored in CD too
+    }
+    If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+      For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+        with fArchiveStructure.Entries.Arr[i] do
+          begin
+            If fProcessingSettings.LocalHeader.IgnoreVersions and not fProcessingSettings.CentralDirectory.IgnoreVersions then
+              begin
+                LocalHeader.BinPart.VersionNeededToExtract := CentralDirectoryHeader.BinPart.VersionNeededToExtract;
+                LocalHeader.BinPart.OSNeededForExtraction := CentralDirectoryHeader.BinPart.OSNeededForExtraction;
+              end;
+            If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and not fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
+              LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod;
+            If fProcessingSettings.LocalHeader.IgnoreModTime and not fProcessingSettings.CentralDirectory.IgnoreModTime then
+              LocalHeader.BinPart.LastModFileTime := CentralDirectoryHeader.BinPart.LastModFileTime;
+            If fProcessingSettings.LocalHeader.IgnoreModDate and not fProcessingSettings.CentralDirectory.IgnoreModDate then
+              LocalHeader.BinPart.LastModFileDate := CentralDirectoryHeader.BinPart.LastModFileDate;
+            If fProcessingSettings.LocalHeader.IgnoreCRC32 and not fProcessingSettings.CentralDirectory.IgnoreCRC32 then
+              begin
+                LocalHeader.BinPart.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+                DataDescriptor.CRC32 := CentralDirectoryHeader.BinPart.CRC32;
+              end;
+            If fProcessingSettings.LocalHeader.IgnoreSizes and not fProcessingSettings.CentralDirectory.IgnoreSizes then
+              begin
+                LocalHeader.BinPart.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+                LocalHeader.BinPart.UncompressedSize:= CentralDirectoryHeader.BinPart.UncompressedSize;
+                DataDescriptor.CompressedSize := CentralDirectoryHeader.BinPart.CompressedSize;
+                DataDescriptor.UncompressedSize := CentralDirectoryHeader.BinPart.UncompressedSize;
+              end;
+            {
+              if file name is ignored in LH, it was already set from CD in
+              loading (CD cannot be ignored when file name in LH is ignored)
+
+              if extra field is ignored, it is dicarded and not copied from CD
+            }
+            DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+          end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -679,7 +729,17 @@ begin
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   with fArchiveStructure.Entries.Arr[i] do
     begin
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      {
+        If central directory was ignored, it must be initialized and available
+        data copied fron local headers (fields not ignored in LH) or
+        initialized to default values
+
+        Also, value of fields ignored in CD and not ignored in LH are copied
+        from LH
+
+        note - if CD is ignored as a whore, LH cannot be
+      }
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreVersions and not fProcessingSettings.LocalHeader.IgnoreVersions) then
         begin
           CentralDirectoryHeader.BinPart.VersionMadeBy := LocalHeader.BinPart.VersionNeededToExtract;
@@ -687,24 +747,27 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           CentralDirectoryHeader.BinPart.VersionNeededToExtract := LocalHeader.BinPart.VersionNeededToExtract;
           CentralDirectoryHeader.BinPart.OSNeededForExtraction := LocalHeader.BinPart.OSNeededForExtraction;
         end;
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+        CentralDirectoryHeader.BinPart.GeneralPurposeBitFlag := LocalHeader.BinPart.GeneralPurposeBitFlag;
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreCompressionMethod and not fProcessingSettings.LocalHeader.IgnoreCompressionMethod) then
         CentralDirectoryHeader.BinPart.CompressionMethod := LocalHeader.BinPart.CompressionMethod;
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreModTime and not fProcessingSettings.LocalHeader.IgnoreModTime) then
         CentralDirectoryHeader.BinPart.LastModFileTime := LocalHeader.BinPart.LastModFileTime;
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreModDate and not fProcessingSettings.LocalHeader.IgnoreModDate) then
         CentralDirectoryHeader.BinPart.LastModFileDate := LocalHeader.BinPart.LastModFileDate;
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreCRC32 and not fProcessingSettings.LocalHeader.IgnoreCRC32) then
         CentralDirectoryHeader.BinPart.CRC32 := LocalHeader.BinPart.CRC32;
-      If (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and not fProcessingSettings.LocalHeader.IgnoreLocalHeaders) or
+      If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or
         (fProcessingSettings.CentralDirectory.IgnoreSizes and not fProcessingSettings.LocalHeader.IgnoreSizes) then
         begin
           CentralDirectoryHeader.BinPart.CompressedSize := LocalHeader.BinPart.CompressedSize;
           CentralDirectoryHeader.BinPart.UncompressedSize := LocalHeader.BinPart.UncompressedSize;
         end;
+      // fields that cannot be copied from LH (they are simply not there) or that cannot be ignored
       If fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
         begin
           CentralDirectoryHeader.BinPart.Signature := DART_ZIP_CentralDirectoryFileHeaderSignature;
@@ -714,16 +777,14 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
           else
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
+          // if CD was ignored, file name in LH could not have been ignored, copy it  
           CentralDirectoryHeader.BinPart.FileNameLength := LocalHeader.BinPart.FileNameLength;
           CentralDirectoryHeader.FileName := LocalHeader.FileName;
+          CentralDirectoryHeader.BinPart.ExtraFieldLength := 0;
+          CentralDirectoryHeader.ExtraField := '';
+          CentralDirectoryHeader.BinPart.FileCommentLength := 0;
+          CentralDirectoryHeader.FileComment := '';
         end;
-      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsCRC32 :=
-        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreCRC32) and
-        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreCRC32);
-      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsSizes :=
-        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
-        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
-      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);  
     end;
 end;
 
@@ -743,7 +804,8 @@ with fArchiveStructure.EndOfCentralDirectory do
         BinPart.CommentLength := 0;
         Comment := '';
       end;
-    If fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory or fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries then
+    If fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory or
+       fProcessingSettings.EndOfCentralDirectory.IgnoreNumberOfEntries then
       begin
         BinPart.EntriesOnDisk := fArchiveStructure.Entries.Count;
         BinPart.Entries := fArchiveStructure.Entries.Count;
@@ -757,6 +819,41 @@ with fArchiveStructure.EndOfCentralDirectory do
         Inc(BinPart.CentralDirectorySize,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.BinPart.FileCommentLength);
       end;
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_ZIP.ZIP_ReconstructFinal;
+var
+  i:  Integer;
+begin
+// finalize reconstruction
+For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+  with fArchiveStructure.Entries.Arr[i] do
+    begin
+      If not fProcessingSettings.LocalHeader.IgnoreLocalHeaders and
+        not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory then
+        begin
+          // if both compression methods are ignored, we have to set them to one that was obtained from sizes
+          If fProcessingSettings.LocalHeader.IgnoreCompressionMethod and
+            fProcessingSettings.CentralDirectory.IgnoreCompressionMethod then
+            begin
+              If fProcessingSettings.LocalHeader.IgnoreSizes then
+                LocalHeader.BinPart.CompressionMethod := CentralDirectoryHeader.BinPart.CompressionMethod
+              else
+                CentralDirectoryHeader.BinPart.CompressionMethod := LocalHeader.BinPart.CompressionMethod;
+            end;
+        end;
+      // set whether CRC32 needs to be recalculated in further processing
+      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsCRC32 :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreCRC32) and
+        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreCRC32);
+      // set whether sizes needs to be obtained in further processing
+      fArchiveStructure.Entries.Arr[i].UtilityData.NeedsSizes :=
+        (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
+        (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
 end;
 
 //==============================================================================

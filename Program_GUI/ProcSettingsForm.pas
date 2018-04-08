@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls, DART_ProcessingSettings;
+  Dialogs, StdCtrls, ExtCtrls,
+  DART_ProcessingSettings;
 
 type
 {$IFNDEF FPC}
@@ -54,13 +55,17 @@ type
     procedure btnCloseClick(Sender: TObject);
     procedure btnBrowseTargetClick(Sender: TObject);
   private
-    fLocalArchiveProcessingSettings:  TDARTArchiveProcessingSettings;
-    fLoading:                         Boolean;
-    fAccepted:                        Boolean;
+    fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
+    fActiveArchiveSettingsFrame:  TFrame;
+    fLoading:                     Boolean;
+    fAccepted:                    Boolean;
+    fOptionDescriptions:          array of array of String;
   protected
     procedure LoadOptionsDescription;
+    procedure FrameOptionDescriptionHandler(Sender: TObject; DescriptionTag: Integer);
     procedure SettingsToForm;
     procedure FormToSettings;
+    procedure ShowArchiveSettingsFrame(ForceChange: Boolean = False);
   public
     procedure ShowProcessingSettings(var ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
   published
@@ -80,52 +85,73 @@ implementation
 uses
   {$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON},
   StrRect,
-  DART_Auxiliary, DART_ProcessingManager;
+  DART_Auxiliary, DART_ProcessingManager,
+  ProcSettingsFrame_ZIP, ProcSettingsFrame_SCS;
 
 procedure TfProcSettingsForm.LoadOptionsDescription;
 begin
+SetLength(fOptionDescriptions,0,0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.FrameOptionDescriptionHandler(Sender: TObject; DescriptionTag: Integer);
+begin
+If meOptionDecription.Tag <> DescriptionTag then
+  begin
+    meOptionDecription.Tag := DescriptionTag;
+    //If (DescriptionTag >= Low(fSettingsDescriptions)) and (HintTag <= High(fSettingsDescriptions)) then
+    //  meSettingDescription.Text := fSettingsDescriptions[HintTag]
+    //else
+      meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfProcSettingsForm.SettingsToForm;
 begin
-lblArchiveFile.Caption := MinimizeName(fLocalArchiveProcessingSettings.Common.ArchivePath,lblArchiveFile.Canvas,lblArchiveFile.Constraints.MaxWidth);
-lblArchiveFile.ShowHint := not AnsiSameText(lblArchiveFile.Caption,fLocalArchiveProcessingSettings.Common.ArchivePath) or
+lblArchiveFile.Caption := MinimizeName(fArchiveProcessingSettings.Common.ArchivePath,lblArchiveFile.Canvas,lblArchiveFile.Constraints.MaxWidth);
+lblArchiveFile.ShowHint := not AnsiSameText(lblArchiveFile.Caption,fArchiveProcessingSettings.Common.ArchivePath) or
                            (lblArchiveFile.Canvas.TextWidth(lblArchiveFile.Caption) > lblArchiveFile.Constraints.MaxWidth);
 If lblArchiveFile.ShowHint then
-  lblArchiveFile.Hint := fLocalArchiveProcessingSettings.Common.ArchivePath;
-lblArchiveType.Caption := DART_ArchiveTypeStrings[fLocalArchiveProcessingSettings.Common.SelectedArchiveType];
-cbForceArchiveType.Checked := fLocalArchiveProcessingSettings.Common.SelectedArchiveType in [atSCS_frc,atZIP_frc];
+  lblArchiveFile.Hint := fArchiveProcessingSettings.Common.ArchivePath;
+lblArchiveType.Caption := DART_ArchiveTypeStrings[fArchiveProcessingSettings.Common.SelectedArchiveType];
+cbForceArchiveType.Checked := fArchiveProcessingSettings.Common.SelectedArchiveType in [atSCS_frc,atZIP_frc];
 If cbForceArchiveType.Checked then
-  case fLocalArchiveProcessingSettings.Common.SelectedArchiveType of
+  case fArchiveProcessingSettings.Common.SelectedArchiveType of
     atSCS_frc:  cmbForcedArchiveType.ItemIndex := 0;
     atZIP_frc:  cmbForcedArchiveType.ItemIndex := 1;
   end
 else cmbForcedArchiveType.ItemIndex := 0;
-case fLocalArchiveProcessingSettings.Common.RepairMethod of
+case fArchiveProcessingSettings.Common.RepairMethod of
   rmRebuild:  rbRebuild.Checked := True;
   rmExtract:  rbExtract.Checked := True;
   rmConvert:  rbConvert.Checked := True;
 end;
-lblConvertTo.Enabled := fLocalArchiveProcessingSettings.Common.RepairMethod = rmConvert;
-cmbConvertTo.Enabled := fLocalArchiveProcessingSettings.Common.RepairMethod = rmConvert;
-case fLocalArchiveProcessingSettings.Common.ConvertTo of
+lblConvertTo.Enabled := fArchiveProcessingSettings.Common.RepairMethod = rmConvert;
+cmbConvertTo.Enabled := fArchiveProcessingSettings.Common.RepairMethod = rmConvert;
+case fArchiveProcessingSettings.Common.ConvertTo of
   katSCS: cmbConvertTo.ItemIndex := 0;
   katZIP: cmbConvertTo.ItemIndex := 1;
 else
-  case fLocalArchiveProcessingSettings.Common.SelectedArchiveType of
+  case fArchiveProcessingSettings.Common.SelectedArchiveType of
     atSCS_sig,atSCS_frc:
       cmbConvertTo.ItemIndex := 1;
     atZIP_sig,atZIP_frc,atZIP_dft:
       cmbConvertTo.ItemIndex := 0;
   end
 end;
-lbleTarget.Text := fLocalArchiveProcessingSettings.Common.TargetPath;
-cbIgnoreArchiveSignature.Checked := fLocalArchiveProcessingSettings.Common.IgnoreArchiveSignature;
-cbInMemoryProcessing.Checked := fLocalArchiveProcessingSettings.Common.InMemoryProcessing;
-cbInMemoryProcessing.Enabled := fLocalArchiveProcessingSettings.Auxiliary.InMemoryProcessingAllowed;
-cbIgnoreErroneousEntries.Checked := fLocalArchiveProcessingSettings.Common.IgnoreErroneousEntries;
+lbleTarget.Text := fArchiveProcessingSettings.Common.TargetPath;
+cbIgnoreArchiveSignature.Checked := fArchiveProcessingSettings.Common.IgnoreArchiveSignature;
+cbInMemoryProcessing.Checked := fArchiveProcessingSettings.Common.InMemoryProcessing;
+cbInMemoryProcessing.Enabled := fArchiveProcessingSettings.Auxiliary.InMemoryProcessingAllowed;
+cbIgnoreErroneousEntries.Checked := fArchiveProcessingSettings.Common.IgnoreErroneousEntries;
+If Assigned(fActiveArchiveSettingsFrame) then
+  begin
+    If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then
+      TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame).ShowProcessingSettings(fArchiveProcessingSettings);
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -134,19 +160,60 @@ procedure TfProcSettingsForm.FormToSettings;
 begin
 // SelectedArchiveType and RepairMethod are selected in-place
 case cmbConvertTo.ItemIndex of
-  0:  fLocalArchiveProcessingSettings.Common.ConvertTo := katSCS;
-  1:  fLocalArchiveProcessingSettings.Common.ConvertTo := katZIP;
+  0:  fArchiveProcessingSettings.Common.ConvertTo := katSCS;
+  1:  fArchiveProcessingSettings.Common.ConvertTo := katZIP;
 else
-  fLocalArchiveProcessingSettings.Common.ConvertTo := katUnknown;
+  fArchiveProcessingSettings.Common.ConvertTo := katUnknown;
 end;
-case fLocalArchiveProcessingSettings.Common.RepairMethod of
+case fArchiveProcessingSettings.Common.RepairMethod of
   rmRebuild,
-  rmConvert:  fLocalArchiveProcessingSettings.Common.TargetPath := DART_ExpandFileName(lbleTarget.Text);
-  rmExtract:  fLocalArchiveProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(DART_ExpandFileName(lbleTarget.Text));
+  rmConvert:  fArchiveProcessingSettings.Common.TargetPath := DART_ExpandFileName(lbleTarget.Text);
+  rmExtract:  fArchiveProcessingSettings.Common.TargetPath := IncludeTrailingPathDelimiter(DART_ExpandFileName(lbleTarget.Text));
 end;
-fLocalArchiveProcessingSettings.Common.IgnoreArchiveSignature := cbIgnoreArchiveSignature.Checked;
-fLocalArchiveProcessingSettings.Common.InMemoryProcessing := cbInMemoryProcessing.Checked;
-fLocalArchiveProcessingSettings.Common.IgnoreErroneousEntries := cbIgnoreErroneousEntries.Checked;
+fArchiveProcessingSettings.Common.IgnoreArchiveSignature := cbIgnoreArchiveSignature.Checked;
+fArchiveProcessingSettings.Common.InMemoryProcessing := cbInMemoryProcessing.Checked;
+fArchiveProcessingSettings.Common.IgnoreErroneousEntries := cbIgnoreErroneousEntries.Checked;
+If Assigned(fActiveArchiveSettingsFrame) then
+  begin
+    If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then
+      TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame).RetrieveProcessingSettings(fArchiveProcessingSettings);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.ShowArchiveSettingsFrame(ForceChange: Boolean = False);
+begin
+If Assigned(fActiveArchiveSettingsFrame) then
+  begin
+    If not ForceChange then
+      case fArchiveProcessingSettings.Common.SelectedArchiveType of
+        atSCS_sig,atSCS_frc:
+          If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_SCS then Exit;
+        atZIP_sig,atZIP_frc,atZIP_dft:
+          If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then Exit;
+      end;
+    fActiveArchiveSettingsFrame.Free;
+  end;
+case fArchiveProcessingSettings.Common.SelectedArchiveType of
+  atSCS_sig,atSCS_frc:
+    fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_SCS.Create(Self);
+  atZIP_sig,atZIP_frc,atZIP_dft:
+    begin
+      fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_ZIP.Create(Self);
+      with TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame) do
+        begin
+          OnOptionDescription := FrameOptionDescriptionHandler;
+          Initialize;
+          ShowProcessingSettings(fArchiveProcessingSettings);
+        end;
+    end;
+else
+  raise Exception.Create('Unknown archive type.');
+end;
+fActiveArchiveSettingsFrame.Left := 0;
+fActiveArchiveSettingsFrame.Top := 0;
+fActiveArchiveSettingsFrame.Parent := scbArchiveSettings;
 end;
 
 //------------------------------------------------------------------------------
@@ -159,12 +226,12 @@ If (Sender is TCheckBox) and not fLoading then
           cmbForcedArchiveType.Enabled := TCheckBox(Sender).Checked;
           If TCheckBox(Sender).Checked then
             case cmbForcedArchiveType.ItemIndex of
-              0:  fLocalArchiveProcessingSettings.Common.SelectedArchiveType := atSCS_frc;
-              1:  fLocalArchiveProcessingSettings.Common.SelectedArchiveType := atZIP_frc;
+              0:  fArchiveProcessingSettings.Common.SelectedArchiveType := atSCS_frc;
+              1:  fArchiveProcessingSettings.Common.SelectedArchiveType := atZIP_frc;
             end
-          else fLocalArchiveProcessingSettings.Common.SelectedArchiveType := fLocalArchiveProcessingSettings.Common.OriginalArchiveType;
-          lblArchiveType.Caption := DART_ArchiveTypeStrings[fLocalArchiveProcessingSettings.Common.SelectedArchiveType];
-          //ShowProperFrame;
+          else fArchiveProcessingSettings.Common.SelectedArchiveType := fArchiveProcessingSettings.Common.OriginalArchiveType;
+          lblArchiveType.Caption := DART_ArchiveTypeStrings[fArchiveProcessingSettings.Common.SelectedArchiveType];
+          ShowArchiveSettingsFrame;
         end;
   end;
 end;
@@ -178,24 +245,24 @@ If Sender is TRadioButton then
     btnBrowseTarget.Tag := TRadioButton(Sender).Tag;
     case TRadioButton(Sender).Tag of
       5:  begin   // rbRebuild
-            fLocalArchiveProcessingSettings.Common.RepairMethod := rmRebuild;
+            fArchiveProcessingSettings.Common.RepairMethod := rmRebuild;
             lbleTarget.EditLabel.Caption := 'Output file:';
-            TDARTProcessingManager.SetTargetPathFromSourcePath(fLocalArchiveProcessingSettings.Common);
+            TDARTProcessingManager.SetTargetPathFromSourcePath(fArchiveProcessingSettings.Common);
           end;
       6:  begin   // rbExtract
-            fLocalArchiveProcessingSettings.Common.RepairMethod := rmExtract;
+            fArchiveProcessingSettings.Common.RepairMethod := rmExtract;
             lbleTarget.EditLabel.Caption := 'Extract into:';
-            TDARTProcessingManager.SetTargetPathFromSourcePath(fLocalArchiveProcessingSettings.Common);
+            TDARTProcessingManager.SetTargetPathFromSourcePath(fArchiveProcessingSettings.Common);
           end;
       7:  begin   // rbConvert
-            fLocalArchiveProcessingSettings.Common.RepairMethod := rmConvert;
+            fArchiveProcessingSettings.Common.RepairMethod := rmConvert;
             lbleTarget.EditLabel.Caption := 'Output file:';
-            TDARTProcessingManager.SetTargetPathFromSourcePath(fLocalArchiveProcessingSettings.Common);
+            TDARTProcessingManager.SetTargetPathFromSourcePath(fArchiveProcessingSettings.Common);
           end;
     end;
-    lbleTarget.Text := fLocalArchiveProcessingSettings.Common.TargetPath;
-    lblConvertTo.Enabled := fLocalArchiveProcessingSettings.Common.RepairMethod = rmConvert;
-    cmbConvertTo.Enabled := fLocalArchiveProcessingSettings.Common.RepairMethod = rmConvert;
+    lbleTarget.Text := fArchiveProcessingSettings.Common.TargetPath;
+    lblConvertTo.Enabled := fArchiveProcessingSettings.Common.RepairMethod = rmConvert;
+    cmbConvertTo.Enabled := fArchiveProcessingSettings.Common.RepairMethod = rmConvert;
   end;
 end;
 
@@ -234,7 +301,7 @@ end;
 
 procedure TfProcSettingsForm.ShowProcessingSettings(var ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
-fLocalArchiveProcessingSettings := ArchiveProcessingSettings;
+fArchiveProcessingSettings := ArchiveProcessingSettings;
 fLoading := True;
 try
   SettingsToForm;
@@ -242,13 +309,13 @@ finally
   fLoading := False;
 end;
 cbForceArchiveType.OnClick(cbForceArchiveType);
-//ShowProperFrame
+ShowArchiveSettingsFrame(True);
 fAccepted := False;
 ShowModal;
 If fAccepted then
   begin
     FormToSettings;
-    ArchiveProcessingSettings := fLocalArchiveProcessingSettings;
+    ArchiveProcessingSettings := fArchiveProcessingSettings;
   end;
 end;
 
@@ -258,6 +325,7 @@ procedure TfProcSettingsForm.FormCreate(Sender: TObject);
 var
   i:  TDARTKnownArchiveTypes;
 begin
+fActiveArchiveSettingsFrame := nil;
 For i := Low(TDARTKnownArchiveTypes) to High(TDARTKnownArchiveTypes) do
   If i <> katUnknown then
     begin
@@ -285,11 +353,11 @@ begin
 If cbForceArchiveType.Checked then
   begin
     case cmbForcedArchiveType.ItemIndex of
-      0:  fLocalArchiveProcessingSettings.Common.SelectedArchiveType := atSCS_frc;
-      1:  fLocalArchiveProcessingSettings.Common.SelectedArchiveType := atZIP_frc;
+      0:  fArchiveProcessingSettings.Common.SelectedArchiveType := atSCS_frc;
+      1:  fArchiveProcessingSettings.Common.SelectedArchiveType := atZIP_frc;
     end;
-    lblArchiveType.Caption := DART_ArchiveTypeStrings[fLocalArchiveProcessingSettings.Common.SelectedArchiveType];
-    //ShowProperFrame;
+    lblArchiveType.Caption := DART_ArchiveTypeStrings[fArchiveProcessingSettings.Common.SelectedArchiveType];
+    ShowArchiveSettingsFrame;
   end;
 end;
 
@@ -335,7 +403,7 @@ procedure TfProcSettingsForm.btnBrowseTargetClick(Sender: TObject);
 var
   TempStr:  String;
 begin
-case fLocalArchiveProcessingSettings.Common.RepairMethod of
+case fArchiveProcessingSettings.Common.RepairMethod of
   rmRebuild,
   rmConvert:  // rebuild or convert -> browse for file
     begin

@@ -25,9 +25,9 @@ object fProcSettingsForm: TfProcSettingsForm
     Caption = 'Option description:'
   end
   object bvlMainHorSplit: TBevel
-    Left = 8
+    Left = 0
     Top = 544
-    Width = 1001
+    Width = 1017
     Height = 9
     Shape = bsTopLine
   end
