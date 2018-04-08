@@ -2,7 +2,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 586
+  Height = 602
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,7 +14,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 586
+    Height = 602
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
@@ -67,7 +67,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Left = 0
       Top = 56
       Width = 561
-      Height = 529
+      Height = 545
       Caption = 'Path resolving'
       TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
@@ -124,6 +124,12 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         Top = 64
         Width = 545
         Height = 137
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Style = []
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 3
         WordWrap = False
@@ -136,6 +142,12 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         Top = 224
         Width = 545
         Height = 137
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Style = []
+        ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 4
         WordWrap = False
@@ -161,14 +173,14 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         Left = 8
         Top = 368
         Width = 545
-        Height = 73
+        Height = 81
         Caption = 'Content parsing'
         TabOrder = 6
         object lblHint1: TLabel
           Left = 2
           Top = 15
           Width = 541
-          Height = 56
+          Height = 64
           Align = alClient
           Alignment = taCenter
           AutoSize = False
@@ -184,16 +196,16 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       end
       object gbBruteForce: TGroupBox
         Left = 8
-        Top = 448
+        Top = 456
         Width = 545
-        Height = 73
+        Height = 81
         Caption = 'Brute force resolve'
         TabOrder = 7
         object lblHint2: TLabel
           Left = 2
           Top = 15
           Width = 541
-          Height = 56
+          Height = 64
           Align = alClient
           Alignment = taCenter
           AutoSize = False
@@ -216,16 +228,16 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Caption = 'Browse for help archives...'
       OnClick = mi_HAM_BrowseClick
     end
-    object N1: TMenuItem
+    object mi_HAM_N1: TMenuItem
       Caption = '-'
     end
     object mi_HAM_EST2: TMenuItem
-      Tag = 1
       Caption = 'Euro Truck Simulator 2 files'
+      OnClick = LoadGameFiles
     end
     object mi_HAM_ATS: TMenuItem
-      Tag = 2
       Caption = 'American Truck Simulator files'
+      OnClick = LoadGameFiles
     end
   end
   object diaHelpArchivesOpen: TOpenDialog

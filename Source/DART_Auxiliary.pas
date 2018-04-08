@@ -5,6 +5,7 @@ unit DART_Auxiliary;
 interface
 
 uses
+  Windows, SysUtils,
   AuxTypes;
 
 {$IF not Declared(FILE_WRITE_ATTRIBUTES)}
@@ -17,6 +18,10 @@ Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;
 Function DART_FileExists(const FilePath: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
 Function DART_ExpandFileName(const FilePath: String): String; {$IFDEF CanInline}inline;{$ENDIF}
+
+Function DART_FindFirst(const Path: String; Attr: Integer; var F: TSearchRec): Integer; {$IFDEF CanInline}inline;{$ENDIF}
+Function DART_FindNext(var F: TSearchRec): Integer; {$IFDEF CanInline}inline;{$ENDIF}
+procedure DART_FindClose(var F: TSearchRec); {$IFDEF CanInline}inline;{$ENDIF}
 
 // working with directories
 Function DART_ForceDirectories(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
@@ -33,7 +38,7 @@ Function DART_GetAvailableMemory: UInt64;
 implementation
 
 uses
-  Windows, SysUtils, Classes, StrRect
+  Classes, StrRect
 {$IFDEF FPC_NonUnicode}
   , LazUTF8
   {$IFDEF FPC_NonUnicode_NoUTF8RTL}
@@ -100,6 +105,39 @@ begin
 Result := ExpandFileNameUTF8(FilePath);
 {$ELSE}
 Result := ExpandFileName(FilePath);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_FindFirst(const Path: String; Attr: Integer; var F: TSearchRec): Integer;
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+Result := FindFirstUTF8(Path,Attr,F);
+{$ELSE}
+Result := FindFirst(Path,Attr,F);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_FindNext(var F: TSearchRec): Integer;
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+Result := FindNextUTF8(F);
+{$ELSE}
+Result := FindNext(F);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure DART_FindClose(var F: TSearchRec);
+begin
+{$IFDEF FPC_NonUnicode_NoUTF8RTL}
+FindCloseUTF8(F);
+{$ELSE}
+FindClose(F);
 {$ENDIF}
 end;
 

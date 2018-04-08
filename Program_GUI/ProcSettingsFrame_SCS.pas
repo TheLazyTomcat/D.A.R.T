@@ -31,7 +31,7 @@ type
     lblHint2: TLabel;
     pmHelpArchivesMenu: TPopupMenu;
     mi_HAM_Browse: TMenuItem;
-    N1: TMenuItem;
+    mi_HAM_N1: TMenuItem;
     mi_HAM_EST2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
     diaHelpArchivesOpen: TOpenDialog;
@@ -44,6 +44,9 @@ type
     fLoading:                   Boolean;
     fOnOptionDescription:       TOptionDescriptionEvent;
     fProcessingSettings:        TDART_PS_SCS;
+    fGameInstallDirs:           array of String;
+  protected
+    procedure GetInstalledGames;
   public
     procedure Initialize;
     procedure SettingsToFrame;
@@ -62,8 +65,85 @@ implementation
 
 {$R *.dfm}
 
-procedure TfrmProcSettingsFrame_SCS.Initialize;
+uses
+  Registry,
+  StrRect,
+  DART_Auxiliary;
+
+
+procedure TfrmProcSettingsFrame_SCS.GetInstalledGames;
+type
+  TKnownGameItem = record
+    RegistryRoot: HKEY;
+    RegistryKey:  String;
+    ValueName:    String;
+  end;
+const
+{
+   Note steam installations are not included.
+   If anyone knows a reliable way of how to obtain where individual games are
+   installed by steam, please let me know.
+}
+  KnownGamesInfoArray: array[0..1] of TKnownGameItem = (
+    (RegistryRoot: HKEY_LOCAL_MACHINE;
+     RegistryKey:  '\SOFTWARE\SCS Software\Euro Truck Simulator 2';
+     ValueName:    'InstallDir'),
+    (RegistryRoot: HKEY_LOCAL_MACHINE;
+     RegistryKey:  '\SOFTWARE\SCS Software\American Truck Simulator';
+     ValueName:    'InstallDir'));
+var
+  Reg:  TRegistry;
+  i:    Integer;
 begin
+SetLength(fGameInstallDirs,Length(KnownGamesInfoArray));
+Reg := TRegistry.Create;
+try
+  For i := Low(KnownGamesInfoArray) to High(KnownGamesInfoArray) do
+    begin
+      Reg.RootKey := KnownGamesInfoArray[i].RegistryRoot;
+      If Reg.KeyExists(KnownGamesInfoArray[i].RegistryKey) then
+        If Reg.OpenKeyReadOnly(KnownGamesInfoArray[i].RegistryKey) then
+          begin
+            If Reg.ValueExists(KnownGamesInfoArray[i].ValueName) then
+              fGameInstallDirs[i] := Reg.ReadString(KnownGamesInfoArray[i].ValueName);
+            Reg.CloseKey;
+          end;
+    end;
+finally
+  Reg.Free;
+end;
+end;
+
+//==============================================================================
+
+procedure TfrmProcSettingsFrame_SCS.Initialize;
+var
+  i:  Integer;
+
+  Function GetGameFilesMenuItem(IDX: Integer): TMenuItem;
+  begin
+    case IDX of
+      0:  Result := mi_HAM_EST2;
+      1:  Result := mi_HAM_ATS;
+    else
+      Result := nil;
+    end;
+  end;
+
+begin
+diaHelpArchivesOpen.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
+GetInstalledGames;
+For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
+  If fGameInstallDirs[i] <> '' then
+    begin
+      with GetGameFilesMenuItem(i) do
+        begin
+          Visible := True;
+          Tag := i;
+        end;
+      mi_HAM_N1.Visible := True;
+    end
+  else GetGameFilesMenuItem(i).Visible := False;
 end;
 
 //------------------------------------------------------------------------------
@@ -244,27 +324,14 @@ var
   var
     SearchRec: TSearchRec;
   begin
-  (*
-  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-    If FindFirstUTF8(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
+    If DART_FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
     try
       repeat
         Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
-      until FindNextUTF8(SearchRec) <> 0;
+      until DART_FindNext(SearchRec) <> 0;
     finally
-      FindCloseUTF8(SearchRec);
+      DART_FindClose(SearchRec);
     end;
-  {$ELSE}
-    If FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
-    try
-      repeat
-        Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);
-      until FindNext(SearchRec) <> 0;
-    finally
-      FindClose(SearchRec);
-    end;
-  {$ENDIF}
-  *)
   end;
 
 begin
@@ -272,7 +339,7 @@ If Sender is TMenuItem then
   begin
     FileList := TStringList.Create;
     try
-      //GetListing(fGameInstallDirs[TMenuItem(Sender).Tag],FileList);
+      GetListing(fGameInstallDirs[TMenuItem(Sender).Tag],FileList);
       meHelpArchives.Lines.BeginUpdate;
       try
         For i := 0 to Pred(FileList.Count) do
