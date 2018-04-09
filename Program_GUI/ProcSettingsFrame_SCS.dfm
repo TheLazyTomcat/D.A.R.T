@@ -2,7 +2,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 602
+  Height = 658
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,7 +14,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 602
+    Height = 658
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
@@ -22,7 +22,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object gbEntries: TGroupBox
       Tag = 1100
       Left = 0
-      Top = 0
+      Top = 56
       Width = 561
       Height = 49
       Caption = 'Entries'
@@ -65,7 +65,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object gbPathResolve: TGroupBox
       Tag = 1200
       Left = 0
-      Top = 56
+      Top = 112
       Width = 561
       Height = 545
       Caption = 'Path resolving'
@@ -218,6 +218,26 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
           ParentFont = False
           Layout = tlCenter
         end
+      end
+    end
+    object gbGeneral: TGroupBox
+      Left = 0
+      Top = 0
+      Width = 561
+      Height = 49
+      Caption = 'General'
+      TabOrder = 2
+      OnMouseMove = GroupBoxMouseMove
+      object cbEntryTabInMem: TCheckBox
+        Tag = 1001
+        Left = 8
+        Top = 24
+        Width = 169
+        Height = 17
+        Caption = 'Process entry table in memory'
+        TabOrder = 0
+        OnClick = CheckBoxClick
+        OnMouseMove = OptionMouseMove
       end
     end
   end

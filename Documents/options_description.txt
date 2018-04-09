@@ -200,6 +200,12 @@ Extra field stored in the central directory header is ignored (data are discarde
 When active, the data descriptor, if indicated to be present by appropriate flag, is ignored and not loaded from the input stream. The data descriptor flag (bit 3) in general purpose bit flags is cleared.
 
 When not active and when data descriptor is indicated to be present, then data descriptor is read from the input stream - this reading is affected by individual settings for local header (see source code for details).
+#1001
+When selected, entire entry table is loaded into memory and processed there. Also, when saving entry table, it is first constructed in memory and then saved as a whole. 
+
+This can speed-up reading and saving of SCS# archives with very large number of entries.
+
+Has no effect when in-memory archive processing is active.
 #1101
 Stored CRC32 checksum is discarded.
 Instead, a new CRC32 is calculated as the entry data are processed and saved into output.

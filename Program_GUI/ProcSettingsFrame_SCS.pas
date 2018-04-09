@@ -21,6 +21,7 @@ type
 
   TfrmProcSettingsFrame_SCS = class(TFrame)
     pnlBackground: TPanel;
+    gbGeneral: TGroupBox;
     gbEntries: TGroupBox;
     cbIgnoreCRC32: TCheckBox;
     cbIgnoreCompressionFlag: TCheckBox;
@@ -44,6 +45,7 @@ type
     mi_HAM_ETS2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
     diaHelpArchivesOpen: TOpenDialog;
+    cbEntryTabInMem: TCheckBox;
     procedure meCustomPathsKeyPress(Sender: TObject; var Key: Char);
     procedure meHelpArchivesKeyPress(Sender: TObject; var Key: Char);
     procedure btnHelpArchivesMenuClick(Sender: TObject);
@@ -165,6 +167,8 @@ procedure TfrmProcSettingsFrame_SCS.SettingsToFrame;
 var
   i:  Integer;
 begin
+// general
+cbEntryTabInMem.Checked := fProcessingSettings.EntryTabInMem;
 // entry
 cbIgnoreCRC32.Checked := fProcessingSettings.Entry.IgnoreCRC32;
 cbIgnoreCompressionFlag.Checked := fProcessingSettings.Entry.IgnoreCompressionFlag;
@@ -199,6 +203,8 @@ procedure TfrmProcSettingsFrame_SCS.FrameToSettings;
 var
   i,Count:  Integer;
 begin
+// general
+fProcessingSettings.EntryTabInMem := cbEntryTabInMem.Checked;
 // entry
 fProcessingSettings.Entry.IgnoreCRC32 := cbIgnoreCRC32.Checked;
 fProcessingSettings.Entry.IgnoreCompressionFlag := cbIgnoreCompressionFlag.Checked;
