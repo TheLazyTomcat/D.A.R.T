@@ -277,6 +277,7 @@ object fProcSettingsForm: TfProcSettingsForm
     Caption = 'Save processing settings...'
     Enabled = False
     TabOrder = 3
+    OnClick = btnSaveSettingsClick
   end
   object btnLoadSettings: TButton
     Left = 176
@@ -286,6 +287,7 @@ object fProcSettingsForm: TfProcSettingsForm
     Caption = 'Load processing settings...'
     Enabled = False
     TabOrder = 4
+    OnClick = btnLoadSettingsClick
   end
   object btnDefaultSettings: TButton
     Left = 432
@@ -295,6 +297,7 @@ object fProcSettingsForm: TfProcSettingsForm
     Caption = 'Load default processing settings'
     Enabled = False
     TabOrder = 5
+    OnClick = btnDefaultSettingsClick
   end
   object btnAccept: TButton
     Left = 808

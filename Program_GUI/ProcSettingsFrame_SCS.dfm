@@ -231,7 +231,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object mi_HAM_N1: TMenuItem
       Caption = '-'
     end
-    object mi_HAM_EST2: TMenuItem
+    object mi_HAM_ETS2: TMenuItem
       Caption = 'Euro Truck Simulator 2 files'
       OnClick = LoadGameFiles
     end

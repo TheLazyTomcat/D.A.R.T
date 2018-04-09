@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit ProcSettingsFrame_ZIP;
 
 interface
@@ -38,6 +45,7 @@ type
     cbCDIgnoreExtraField: TCheckBox;
     cbCDIgnoreFileComment: TCheckBox;
     gbLocalHeaders: TGroupBox;
+    cbLHIgnoreLocalHeaders: TCheckBox;    
     cbLHIgnoreSignature: TCheckBox;
     cbLHIgnoreVersions: TCheckBox;
     cbLHClearEncryptionFlags: TCheckBox;
@@ -46,9 +54,8 @@ type
     cbLHIgnoreModDate: TCheckBox;
     cbLHIgnoreCRC32: TCheckBox;
     cbLHIgnoreSizes: TCheckBox;
-    cbLHIgnoreExtraField: TCheckBox;
     cbLHIgnoreFileName: TCheckBox;
-    cbLHIgnoreLocalHeaders: TCheckBox;
+    cbLHIgnoreExtraField: TCheckBox;
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
   private

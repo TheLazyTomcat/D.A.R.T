@@ -310,7 +310,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 145
         Height = 17
         Caption = 'Ignore header signature'
-        TabOrder = 0
+        TabOrder = 1
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -321,7 +321,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 97
         Height = 17
         Caption = 'Ignore versions'
-        TabOrder = 1
+        TabOrder = 2
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -332,7 +332,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 129
         Height = 17
         Caption = 'Clear encryption flags'
-        TabOrder = 2
+        TabOrder = 3
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -343,7 +343,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 161
         Height = 17
         Caption = 'Ignore compression method'
-        TabOrder = 3
+        TabOrder = 4
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -354,7 +354,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 121
         Height = 17
         Caption = 'Ignore last mod time'
-        TabOrder = 4
+        TabOrder = 5
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -365,7 +365,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 161
         Height = 17
         Caption = 'Ignore last modification date'
-        TabOrder = 5
+        TabOrder = 6
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -376,7 +376,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 89
         Height = 17
         Caption = 'Ignore CRC32'
-        TabOrder = 6
+        TabOrder = 7
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -387,7 +387,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 81
         Height = 17
         Caption = 'Ignore sizes'
-        TabOrder = 7
+        TabOrder = 8
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -398,7 +398,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 113
         Height = 17
         Caption = 'Ignore extra field'
-        TabOrder = 8
+        TabOrder = 10
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
@@ -420,7 +420,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         Width = 121
         Height = 17
         Caption = 'Ignore local headers'
-        TabOrder = 10
+        TabOrder = 0
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end

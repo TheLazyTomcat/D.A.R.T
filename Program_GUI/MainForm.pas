@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit MainForm;
 
 interface
@@ -19,6 +26,8 @@ type
     lblArchiveList: TLabel;
     lvArchiveList: TListView;
     btnStartProcessing: TButton;
+    btnPauseProcessing: TButton;
+    btnStopProcessing: TButton;
     bvlProgressSplit: TBevel;
     lblOverallProgress: TLabel;
     pbOverallProgress: TProgressBar;
@@ -41,8 +50,6 @@ type
     N3: TMenuItem;
     pmiAL_Tools: TMenuItem;
     oXPManifest: TXPManifest;
-    btnPauseProcessing: TButton;
-    btnStopProcessing: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormDestroy(Sender: TObject);
@@ -101,6 +108,8 @@ const
   LIST_COLUMN_Method = 3;
   LIST_COLUMN_State  = 4;
 
+//==============================================================================
+
 {$IFNDEF FPC}
 procedure TListView.WMDropFiles(var Msg: TWMDropFiles);
 var
@@ -129,6 +138,8 @@ end;
 end;
 {$ENDIF}
 
+//==============================================================================
+//------------------------------------------------------------------------------
 //==============================================================================
 
 procedure TfMainForm.LoadCopyrightInfo;
@@ -415,12 +426,12 @@ procedure TfMainForm.pmiAL_ProcessingSettingsClick(Sender: TObject);
 begin
 If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
   begin
-    fProcSettingsForm.ShowProcessingSettings(ProcessingManager.Pointers[lvArchiveList.ItemIndex]^.ProcessingSettings);
+    fProcSettingsForm.ShowProcessingSettings(ProcessingManager.Pointers[lvArchiveList.ItemIndex]^.ArchiveProcessingSettings);
     lvArchiveList.Items[lvArchiveList.ItemIndex].SubItems[LIST_COLUMN_Type] :=
-      DART_ArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.SelectedArchiveType];
+      DART_ArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ArchiveProcessingSettings.Common.SelectedArchiveType];
     lvArchiveList.Items[lvArchiveList.ItemIndex].SubItems[LIST_COLUMN_Method] :=
-      Format(DART_RepairMethodStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.RepairMethod],
-             [DART_KnownArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ProcessingSettings.Common.ConvertTo]]);
+      Format(DART_RepairMethodStrings[ProcessingManager[lvArchiveList.ItemIndex].ArchiveProcessingSettings.Common.RepairMethod],
+             [DART_KnownArchiveTypeStrings[ProcessingManager[lvArchiveList.ItemIndex].ArchiveProcessingSettings.Common.ConvertTo]]);
   end;
 end;
 

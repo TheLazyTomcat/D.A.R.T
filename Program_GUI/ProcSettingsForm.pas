@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit ProcSettingsForm;
 
 interface
@@ -20,26 +27,26 @@ type
     lblOptionDescription: TLabel;
     meOptionDecription: TMemo;
     brCommonSettings: TGroupBox;
-    gbArchiveSettings: TGroupBox;
-    scbArchiveSettings: TScrollBox;
     lblArchiveFileCpt: TLabel;
+    lblArchiveFile: TLabel;
     lblArchiveTypeCpt: TLabel;
     lblArchiveType: TLabel;
-    lblArchiveFile: TLabel;
     cbForceArchiveType: TCheckBox;
     cmbForcedArchiveType: TComboBox;
     bvlHorSplitFile: TBevel;
     rbRebuild: TRadioButton;
     rbExtract: TRadioButton;
     rbConvert: TRadioButton;
+    lblConvertTo: TLabel;
+    cmbConvertTo: TComboBox;
     lbleTarget: TLabeledEdit;
     btnBrowseTarget: TButton;
     bvlHorSplitTarget: TBevel;
     cbIgnoreArchiveSignature: TCheckBox;
     cbInMemoryProcessing: TCheckBox;
     cbIgnoreErroneousEntries: TCheckBox;
-    cmbConvertTo: TComboBox;
-    lblConvertTo: TLabel;
+    gbArchiveSettings: TGroupBox;
+    scbArchiveSettings: TScrollBox;    
     bvlMainHorSplit: TBevel;
     btnSaveSettings: TButton;
     btnLoadSettings: TButton;
@@ -51,9 +58,12 @@ type
     procedure FormShow(Sender: TObject);
     procedure cmbForcedArchiveTypeChange(Sender: TObject);
     procedure lbleTargetChange(Sender: TObject);
+    procedure btnBrowseTargetClick(Sender: TObject);
+    procedure btnSaveSettingsClick(Sender: TObject);
+    procedure btnLoadSettingsClick(Sender: TObject);
+    procedure btnDefaultSettingsClick(Sender: TObject);
     procedure btnAcceptClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
-    procedure btnBrowseTargetClick(Sender: TObject);
   private
     fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
     fActiveArchiveSettingsFrame:  TFrame;
@@ -96,14 +106,23 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TfProcSettingsForm.FrameOptionDescriptionHandler(Sender: TObject; DescriptionTag: Integer);
+var
+  GroupIdx: Integer;
+  DescrIdx:  Integer;
 begin
 If meOptionDecription.Tag <> DescriptionTag then
   begin
     meOptionDecription.Tag := DescriptionTag;
-    //If (DescriptionTag >= Low(fSettingsDescriptions)) and (HintTag <= High(fSettingsDescriptions)) then
-    //  meSettingDescription.Text := fSettingsDescriptions[HintTag]
-    //else
-      meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
+    GroupIdx := DescriptionTag div 100;
+    If (GroupIdx >= Low(fOptionDescriptions)) and (GroupIdx <= High(fOptionDescriptions)) then
+      begin
+        DescrIdx := DescriptionTag mod 100;
+        If (DescrIdx >= Low(fOptionDescriptions[GroupIdx])) and (DescrIdx <= High(fOptionDescriptions[GroupIdx])) then
+          meOptionDecription.Text := fOptionDescriptions[GroupIdx,DescrIdx]
+        else
+          meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
+      end
+    else meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
   end;
 end;
 
@@ -382,33 +401,6 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfProcSettingsForm.btnAcceptClick(Sender: TObject);
-var
-  MsgStr: String;
-begin
-If lbleTarget.Text <> '' then
-  begin
-    fAccepted := True;
-    Close;
-  end
-else
-  begin
-    If rbRebuild.Checked or rbConvert.Checked then MsgStr := 'No output file selected.'
-      else If rbExtract.Checked then MsgStr := 'No folder for extraction selected.'
-        else MsgStr := 'No output selected.';
-    MessageDlg(MsgStr,mtInformation,[mbOK],0);
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TfProcSettingsForm.btnCloseClick(Sender: TObject);
-begin
-Close;
-end;
-
-//------------------------------------------------------------------------------
-
 procedure TfProcSettingsForm.btnBrowseTargetClick(Sender: TObject);
 var
   TempStr:  String;
@@ -447,6 +439,54 @@ case fArchiveProcessingSettings.Common.RepairMethod of
       {$ENDIF}
     end;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.btnSaveSettingsClick(Sender: TObject);
+begin
+//
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.btnLoadSettingsClick(Sender: TObject);
+begin
+//
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.btnDefaultSettingsClick(Sender: TObject);
+begin
+//
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.btnAcceptClick(Sender: TObject);
+var
+  MsgStr: String;
+begin
+If lbleTarget.Text <> '' then
+  begin
+    fAccepted := True;
+    Close;
+  end
+else
+  begin
+    If rbRebuild.Checked or rbConvert.Checked then MsgStr := 'No output file selected.'
+      else If rbExtract.Checked then MsgStr := 'No folder for extraction selected.'
+        else MsgStr := 'No output selected.';
+    MessageDlg(MsgStr,mtInformation,[mbOK],0);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfProcSettingsForm.btnCloseClick(Sender: TObject);
+begin
+Close;
 end;
 
 end.

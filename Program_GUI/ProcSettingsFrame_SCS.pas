@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit ProcSettingsFrame_SCS;
 
 interface
@@ -32,7 +39,7 @@ type
     pmHelpArchivesMenu: TPopupMenu;
     mi_HAM_Browse: TMenuItem;
     mi_HAM_N1: TMenuItem;
-    mi_HAM_EST2: TMenuItem;
+    mi_HAM_ETS2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
     diaHelpArchivesOpen: TOpenDialog;
     procedure meCustomPathsKeyPress(Sender: TObject; var Key: Char);
@@ -123,7 +130,7 @@ var
   Function GetGameFilesMenuItem(IDX: Integer): TMenuItem;
   begin
     case IDX of
-      0:  Result := mi_HAM_EST2;
+      0:  Result := mi_HAM_ETS2;
       1:  Result := mi_HAM_ATS;
     else
       Result := nil;
@@ -279,6 +286,8 @@ If Key = ^A then
   end;
 end;
 
+//------------------------------------------------------------------------------
+
 procedure TfrmProcSettingsFrame_SCS.meHelpArchivesKeyPress(Sender: TObject;
   var Key: Char);
 begin
@@ -289,6 +298,8 @@ If Key = ^A then
   end;
 end;
 
+//------------------------------------------------------------------------------
+
 procedure TfrmProcSettingsFrame_SCS.btnHelpArchivesMenuClick(Sender: TObject);
 var
   PopupPoint: TPoint;
@@ -296,6 +307,8 @@ begin
 PopupPoint := gbPathResolve.ClientToScreen(Point(btnHelpArchivesMenu.Left,btnHelpArchivesMenu.BoundsRect.Bottom));
 pmHelpArchivesMenu.Popup(PopupPoint.X,PopupPoint.Y);
 end;
+
+//------------------------------------------------------------------------------
 
 procedure TfrmProcSettingsFrame_SCS.mi_HAM_BrowseClick(Sender: TObject);
 var
@@ -314,6 +327,8 @@ If diaHelpArchivesOpen.Execute then
     end
   end;
 end;
+
+//------------------------------------------------------------------------------
 
 procedure TfrmProcSettingsFrame_SCS.LoadGameFiles(Sender: TObject);
 var

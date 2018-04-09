@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit ResultInfoForm;
 
 interface
@@ -43,9 +50,14 @@ try
   meResultInfo.Clear;
   meResultInfo.Lines.Add('Archive file: ' + ArchiveInfo.Name);
   meResultInfo.Lines.Add(Format('Archive size: %s (%d bytes)',[SizeToStr(ArchiveInfo.Size),ArchiveInfo.Size]));
-  meResultInfo.Lines.Add(Format('Archive type: %s (%s)',[
-    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.SelectedArchiveType],
-    DART_ArchiveTypeStrings[ArchiveInfo.ProcessingSettings.Common.OriginalArchiveType]]));
+  If ArchiveInfo.ArchiveProcessingSettings.Common.SelectedArchiveType <>
+     ArchiveInfo.ArchiveProcessingSettings.Common.OriginalArchiveType then
+    meResultInfo.Lines.Add(Format('Archive type: %s (%s)',[
+      DART_ArchiveTypeStrings[ArchiveInfo.ArchiveProcessingSettings.Common.SelectedArchiveType],
+      DART_ArchiveTypeStrings[ArchiveInfo.ArchiveProcessingSettings.Common.OriginalArchiveType]]))
+  else
+    meResultInfo.Lines.Add(Format('Archive type: %s',[
+      DART_ArchiveTypeStrings[ArchiveInfo.ArchiveProcessingSettings.Common.SelectedArchiveType]]));
   meResultInfo.Lines.Add(Format('    Repairer: %s (%s)',[ArchiveInfo.ResultInfo.RepairerInfo,VersionStr]));
   // additional info (warning or error messages)
   case ArchiveInfo.ResultInfo.ResultState of
@@ -103,8 +115,7 @@ procedure TfResultInfoForm.FormKeyPress(Sender: TObject; var Key: Char);
 begin
 If Key = ^C then
   Clipboard.AsText := lblProcessingResult.Caption + sLineBreak + sLineBreak +
-                      StringOfChar('-',60) + sLineBreak + sLineBreak +
-                      meResultInfo.Text;
+    StringOfChar('-',60) + sLineBreak + sLineBreak + meResultInfo.Text;
 end;
 
 //------------------------------------------------------------------------------
