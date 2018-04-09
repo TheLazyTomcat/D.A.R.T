@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_SCS_Convert_ZIP;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,15 @@ interface
 uses
   DART_Format_ZIP, DART_Repairer_SCS_Convert;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                         TDARTRepairer_SCS_Convert_ZIP                         
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Convert_ZIP - class declaration
+===============================================================================}
 type
   TDARTRepairer_SCS_Convert_ZIP = class(TDARTRepairer_SCS_Convert)
   protected
@@ -29,9 +45,27 @@ uses
   AuxTypes, BitOps, CRC32, StrRect, MemoryBuffer, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                         TDARTRepairer_SCS_Convert_ZIP
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Convert_ZIP - method indexing constants
+===============================================================================}
+
 const
   DART_METHOD_ID_SCS_CONV_ZIP_SCEQSEE = $01030200;
   DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN = $01030201;
+
+{===============================================================================
+    TDARTRepairer_SCS_Convert_ZIP - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_Convert_ZIP - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_SCS_Convert_ZIP.ConvertArchiveStructure;
 var
@@ -428,7 +462,9 @@ with fZIPArchiveStructure.EndOfCentralDirectory do
   end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_Convert_ZIP - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_SCS_Convert_ZIP.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

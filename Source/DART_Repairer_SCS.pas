@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_SCS;
 
 {$INCLUDE DART_defs.inc}
@@ -8,8 +15,17 @@ uses
   AuxTypes, ProgressTracker,
   DART_Common, DART_ProcessingSettings, DART_Format_SCS, DART_Repairer;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                                TDARTRepairer_SCS
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS - progress stages indexing variables
+===============================================================================}
+
 var
-  // progress stages
   DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading:  Integer = -1;
   DART_PROGSTAGE_IDX_SCS_EntriesLoading:        Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsResolving:        Integer = -1;
@@ -46,6 +62,9 @@ var
   PSIDX_C_EntryDecompression:    Integer = -1;
   PSIDX_C_EntrySaving:           Integer = -1;
 
+{===============================================================================
+    TDARTRepairer_SCS - class declaration
+===============================================================================}
 type
   TDARTRepairer_SCS = class(TDARTRepairer)
   protected
@@ -89,6 +108,16 @@ type
     property ArchiveStructure: TDART_SCS_ArchiveStructure read fArchiveStructure;
   end;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                        TDARTRepairer_SCS_ProcessingBase
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_ProcessingBase - class declaration
+===============================================================================}
+
   TDARTRepairer_SCS_ProcessingBase = class(TDARTRepairer_SCS)
   protected
     procedure SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI); virtual;
@@ -102,9 +131,20 @@ implementation
 
 uses
   SysUtils, Classes,
-  City, BitOps, CRC32, StrRect, MemoryBuffer, StaticMemoryStream,
-  ExplicitStringLists, ZLibCommon,
+  City, BitOps, CRC32, StrRect, MemoryBuffer, ExplicitStringLists, ZLibCommon,
+  StaticMemoryStream,
   DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                                TDARTRepairer_SCS
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS - method indexing constants
+===============================================================================}
 
 const
   DART_METHOD_ID_SCS_ARCHPROC   = $00000200;
@@ -113,6 +153,14 @@ const
   DART_METHOD_ID_SCS_SSRTENQSEX = $00000203;
   DART_METHOD_ID_SCS_SLDARHEAD  = $00000204;
   DART_METHOD_ID_SCS_SLDPLOCLP  = $00000205;
+
+{===============================================================================
+    TDARTRepairer_SCS - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_SCS.InitializeProcessingSettings;
 begin
@@ -852,7 +900,9 @@ SCS_SortEntries;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_SCS.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
@@ -896,10 +946,27 @@ For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPa
     end;
 end;
 
-//******************************************************************************
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                        TDARTRepairer_SCS_ProcessingBase
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_ProcessingBase - method indexing constants
+===============================================================================}
 
 const
-  DART_METHOD_ID_SCS_PROC_ARCHPROC = 0;
+  DART_METHOD_ID_SCS_PROC_ARCHPROC = $01000200;
+
+{===============================================================================
+    TDARTRepairer_SCS_ProcessingBase - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_ProcessingBase - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_SCS_ProcessingBase.SCS_SaveEntryAsUnresolved(EntryIdx: Integer; Data: Pointer; Size: TMemSize; ProgressInfo: TDART_PSI);
 var
@@ -1054,7 +1121,9 @@ inherited;
 SCS_PrepareEntriesProgress;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_ProcessingBase - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_SCS_ProcessingBase.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

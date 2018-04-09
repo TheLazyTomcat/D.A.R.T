@@ -1,43 +1,23 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer;
 
 {$INCLUDE DART_defs.inc}
 
 interface
 
-{
-  Current repairer classes hierarchy:
-
-    TDARTRepairer
-     |- TDARTRepairer_SCS
-     |   |- TDARTRepairer_SCS_ProcessingBase
-     |        |- TDART_Repairer_SCS_Rebuild
-     |        |- TDART_Repairer_SCS_Exctract
-     |        |- TDART_Repairer_SCS_Convert
-     |            |- TDART_Repairer_SCS_Convert_ZIP
-     |
-     |- TDARTRepairer_ZIP
-         |- TDARTRepairer_ZIP_ProcessingBase
-              |- TDART_Repairer_ZIP_Rebuild
-              |- TDART_Repairer_ZIP_Exctract
-              |- TDART_Repairer_ZIP_Convert
-                  |- TDART_Repairer_ZIP_Convert_SCS
-
-  Classes TDARTRepairer_***_ProcessingBase are there to separate calculations
-  that are needed for further processing than just reading and parsing of
-  metadata (which is done in TDARTRepairer_*** classes).
-  These claculations are not needed when a repairer is used for parsing of help
-  archives.
-}
-
 uses
   SysUtils, Classes,
-  AuxTypes, ProgressTracker, MemoryBuffer, StrRect,
+  AuxTypes, ProgressTracker, MemoryBuffer,
   DART_Common, DART_ProcessingSettings;
 
 {===============================================================================
---------------------------------------------------------------------------------
-                                 TDARTRepairer
---------------------------------------------------------------------------------
+   Result information types, constants and functions
 ===============================================================================}
 
 type
@@ -86,8 +66,43 @@ const
 
 procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo); overload;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TDARTRepairer
+--------------------------------------------------------------------------------
+===============================================================================}
+{-------------------------------------------------------------------------------
+
+  Current repairer classes hierarchy:
+
+    TDARTRepairer
+     |- TDARTRepairer_SCS
+     |   |- TDARTRepairer_SCS_ProcessingBase
+     |        |- TDART_Repairer_SCS_Rebuild
+     |        |- TDART_Repairer_SCS_Exctract
+     |        |- TDART_Repairer_SCS_Convert
+     |            |- TDART_Repairer_SCS_Convert_ZIP
+     |
+     |- TDARTRepairer_ZIP
+         |- TDARTRepairer_ZIP_ProcessingBase
+              |- TDART_Repairer_ZIP_Rebuild
+              |- TDART_Repairer_ZIP_Exctract
+              |- TDART_Repairer_ZIP_Convert
+                  |- TDART_Repairer_ZIP_Convert_SCS
+
+
+  Classes TDARTRepairer_***_ProcessingBase are there to separate calculations
+  that are needed for further processing than just reading and parsing of
+  metadata (which is done in TDARTRepairer_*** classes), but not in parsing of
+  help archives.
+
+-------------------------------------------------------------------------------}
+
+{===============================================================================
+    TDARTRepairer - progress stages indexing constants and variables
+===============================================================================}
+
 const
-  // progress stages
   DART_PROGSTAGE_IDX_NoProgress = -11;
   DART_PROGSTAGE_IDX_Direct     = -10;
 
@@ -107,7 +122,7 @@ var
   PSIDX_Processing:  Integer = -1;
 
 {===============================================================================
-   TDARTRepairer - class declaration
+    TDARTRepairer - class declaration
 ===============================================================================}
 type
   TDARTProgressEvent = procedure(Sender: TObject; Progress: Double) of object;
@@ -193,7 +208,7 @@ implementation
 
 uses
   Windows, Math,
-  CRC32, ZLibUtils;
+  StrRect, CRC32, ZLibUtils;
 
 procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo);
 begin
@@ -211,23 +226,28 @@ end;
 --------------------------------------------------------------------------------
 ===============================================================================}
 
-const
-  DART_BUFFERSIZE_IO    = 1024 * 1024;       // 1MiB, used for I/O operations
-  DART_BUFFERSIZE_ENTRY = 1024 * 1024 * 16;  // 16MiB, used for entry data storage
+{===============================================================================
+    TDARTRepairer - method indexing and other constants
+===============================================================================}
 
 {
-  Mathod ID format:
+  Method ID format:
 
     byte 0 - method number
     byte 1 - input format (00 = unknown, 01 = ZIP, 02 = SCS#)
     byte 2 - repair method (00 = unknown, 01 = rebuild, 02 = extract, 03 = convert)
     byte 3 - repair method specific
 }
+const
   DART_METHOD_ID_STOP       = $00000000;
   DART_METHOD_ID_MAINPROC   = $00000001;
   DART_METHOD_ID_CHARCHSIG  = $00000002;
   DART_METHOD_ID_PROGDECOMP = $00000003;
   DART_METHOD_ID_PROGCOMP   = $00000004;
+
+  // preallocated buffers sizes
+  DART_BUFFERSIZE_IO    = 1024 * 1024;       // 1MiB, used for I/O operations
+  DART_BUFFERSIZE_ENTRY = 1024 * 1024 * 16;  // 16MiB, used for entry data storage
 
   // termination flag values
   DART_TERMFLAG_TERMINATED = -1;

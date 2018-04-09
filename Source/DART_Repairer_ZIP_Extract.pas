@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_ZIP_Extract;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,15 @@ interface
 uses
   DART_Repairer_ZIP;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_ZIP_Extract
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_Extract - class declaration
+===============================================================================}
 type
   TDARTRepairer_ZIP_Extract = class(TDARTRepairer_ZIP_ProcessingBase)
   protected
@@ -26,8 +42,26 @@ uses
   AuxTypes, StrRect, MemoryBuffer, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_ZIP, DART_Repairer;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_ZIP_Extract
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_Extract - method indexing constants
+===============================================================================}
+
 const
   DART_METHOD_ID_ZIP_EXT_SETFLTM = $00020100;
+
+{===============================================================================
+    TDARTRepairer_ZIP_Extract - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_Extract - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_ZIP_Extract.ArchiveProcessing;
 begin
@@ -196,7 +230,9 @@ If FileHandle <> INVALID_HANDLE_VALUE then
 else DoError(DART_METHOD_ID_ZIP_EXT_SETFLTM,'Cannot open file "%s" (0x%.8x).',[FileName,GetLastError]);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_Extract - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_ZIP_Extract.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

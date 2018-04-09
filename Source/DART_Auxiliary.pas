@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Auxiliary;
 
 {$INCLUDE DART_defs.inc}
@@ -8,12 +15,16 @@ uses
   Windows, SysUtils,
   AuxTypes;
 
+//--- Public auxilary constants ------------------------------------------------
+
 {$IF not Declared(FILE_WRITE_ATTRIBUTES)}
 const
   FILE_WRITE_ATTRIBUTES = 256;
 {$IFEND}
 
-// file information functions
+
+//--- Files --------------------------------------------------------------------
+
 Function DART_GetFileSize(const FilePath: String): Int64;
 Function DART_GetFileSignature(const FilePath: String): UInt32;
 Function DART_FileExists(const FilePath: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
@@ -23,51 +34,40 @@ Function DART_FindFirst(const Path: String; Attr: Integer; var F: TSearchRec): I
 Function DART_FindNext(var F: TSearchRec): Integer; {$IFDEF CanInline}inline;{$ENDIF}
 procedure DART_FindClose(var F: TSearchRec); {$IFDEF CanInline}inline;{$ENDIF}
 
-// working with directories
+//--- Directoris ---------------------------------------------------------------
+
 Function DART_ForceDirectories(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
 Function DART_DirectoryExists(const Path: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
 
-// path rectification
+//--- Path rectification -------------------------------------------------------
+
 Function DART_ExcludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 Function DART_ExcludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString; {$IFDEF CanInline}inline;{$ENDIF}
 
-// system information functions
+//--- System information -------------------------------------------------------
+
 Function DART_GetAvailableMemory: UInt64;
 
 implementation
 
 uses
-  Classes, StrRect
-{$IFDEF FPC_NonUnicode}
-  , LazUTF8
-  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-  , LazFileUtils
-  {$ENDIF}
-{$ENDIF};
+  Classes, StrRect;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 Function DART_GetFileSize(const FilePath: String): Int64;
 var
   SearchResult: TSearchRec;
 begin
-{$IFDEF FPC_NonUnicode_NoUTF8RTL}
-If FindFirstUTF8(FilePath,faAnyFile,SearchResult) = 0 then
-{$ELSE}
-If FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
-{$ENDIF}
+If DART_FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
   try
   {$WARN SYMBOL_PLATFORM OFF}
     Int64Rec(Result).Hi := SearchResult.FindData.nFileSizeHigh;
     Int64Rec(Result).Lo := SearchResult.FindData.nFileSizeLow;
   {$WARN SYMBOL_PLATFORM ON}
   finally
-  {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-    FindCloseUTF8(SearchResult);
-  {$ELSE}
-    FindClose(SearchResult);
-  {$ENDIF}
+    DART_FindClose(SearchResult);
   end
 else Result := 0;
 end;
@@ -141,7 +141,7 @@ FindClose(F);
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 Function DART_ForceDirectories(const Path: String): Boolean;
 begin
@@ -163,7 +163,7 @@ Result := DirectoryExists(Path)
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 Function DART_ExcludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 begin
@@ -198,7 +198,7 @@ begin
 Result := DART_ExcludeLeadingPathDelim(DART_ExcludeTralingPathDelim(Path,Delim),Delim);
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 type
   TMemoryStatusEx = record

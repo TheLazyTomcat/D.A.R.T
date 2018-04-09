@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_ProcessingSettings;
 
 {$INCLUDE DART_defs.inc}
@@ -102,7 +109,7 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpArchives:               array of String;
-    // temporary fields...
+    // temporary fields, will be expanded as the functions are implemented
     ParseContent: Boolean;
     BruteForce:   Boolean;
   end;

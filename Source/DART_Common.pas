@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Common;
 
 {$INCLUDE DART_defs.inc}
@@ -6,8 +13,11 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs, CRC32, ProgressTracker,
-  DART_ProcessingSettings;
+  WinSyncObjs, CRC32, ProgressTracker;
+
+{===============================================================================
+    Known paths types
+===============================================================================}
 
 type
   TDARTKnownPath = record
@@ -21,6 +31,10 @@ type
     Arr:    array of TDARTKnownPath;
     Count:  Integer;
   end;
+
+{===============================================================================
+    Progress stage information types, functions
+===============================================================================}
 
 type
   TDARTProgressStageInfo = record
@@ -71,8 +85,9 @@ type
 
 implementation
 
-uses
-  Windows;
+{===============================================================================
+    Progress stage information functions imlementation
+===============================================================================}
 
 Function ProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): TDARTProgressStageInfo;
 begin

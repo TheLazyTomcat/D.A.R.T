@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_ZIP;
 
 {$INCLUDE DART_defs.inc}
@@ -8,8 +15,17 @@ uses
   AuxTypes, ProgressTracker,
   DART_Common, DART_ProcessingSettings, DART_Format_ZIP, DART_Repairer;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                                TDARTRepairer_ZIP
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP - progress stages indexing variables
+===============================================================================}
+
 var
-  // progress stages
   DART_PROGSTAGE_IDX_ZIP_EOCDLoading:         Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_CDHeadersLoading:    Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_LocalHeadersLoading: Integer = -1;
@@ -34,6 +50,9 @@ var
   PSIDX_Z_EntryDecompression:  Integer = -1;
   PSIDX_Z_EntrySaving:         Integer = -1;
 
+{===============================================================================
+    TDARTRepairer_ZIP - class declaration
+===============================================================================}
 type
   TDARTRepairer_ZIP = class(TDARTRepairer)
   protected
@@ -63,6 +82,16 @@ type
     property ArchiveStructure: TDART_ZIP_ArchiveStructure read fArchiveStructure;
   end;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                        TDARTRepairer_ZIP_ProcessingBase
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_ProcessingBase - class declaration
+===============================================================================}
+
   TDARTRepairer_ZIP_ProcessingBase = class(TDARTRepairer_ZIP)
   protected
     procedure ArchiveProcessing; override;
@@ -78,6 +107,16 @@ uses
   StrRect, MemoryBuffer, ZLibCommon,
   DART_Auxiliary, DART_PathDeconstructor;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                                TDARTRepairer_ZIP
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP - method indexing constants
+===============================================================================}
+
 const
   DART_METHOD_ID_ZIP_ARCHPROC = $00000100;
   DART_METHOD_ID_ZIP_GETENTRY = $00000101;
@@ -86,6 +125,14 @@ const
   DART_METHOD_ID_ZIP_ZLCDH    = $00000112;
   DART_METHOD_ID_ZIP_ZLLH     = $00000113;
   DART_METHOD_ID_ZIP_ZLLHH    = $00000114;
+
+{===============================================================================
+    TDARTRepairer_ZIP - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_ZIP.InitializeProcessingSettings;
 begin
@@ -856,7 +903,9 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
     end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_ZIP.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin
@@ -926,10 +975,27 @@ finally
 end;
 end;
 
-//******************************************************************************
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                        TDARTRepairer_ZIP_ProcessingBase
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_ProcessingBase - method indexing constants
+===============================================================================}
 
 const
   DART_METHOD_ID_ZIP_PROC_ARCHPROC = 1100;
+
+{===============================================================================
+    TDARTRepairer_ZIP_ProcessingBase - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_ProcessingBase - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_ZIP_ProcessingBase.ArchiveProcessing;
 begin
@@ -1000,7 +1066,9 @@ end;
 DoProgress(fProcessingProgNode,PSIDX_Z_EntriesProgressPrep,1.0);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_ProcessingBase - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_ZIP_ProcessingBase.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

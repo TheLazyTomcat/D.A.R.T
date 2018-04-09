@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_ProcessingThread;
 
 {$INCLUDE DART_defs.inc}
@@ -5,12 +12,21 @@ unit DART_ProcessingThread;
 interface
 
 uses
-  Classes,
   SyncThread,
-  DART_PRocessingSettings, DART_Common, DART_Repairer;
+  DART_Common, DART_ProcessingSettings, DART_Repairer;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTProcessingThread
+--------------------------------------------------------------------------------
+===============================================================================}
 
 type
   TDARTArchiveProgressEvent = procedure(Sender: TObject; ArchiveIndex: Integer; Progress: Double) of object;
+
+{===============================================================================
+    TDARTProcessingThread - class declaration
+===============================================================================}
 
   TDARTProcessingThread = class(TSyncThread)
   private
@@ -37,11 +53,9 @@ type
     procedure PauseProcessing; virtual;
     procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
-    property ArchiveProcessingSettings: TDARTArchiveProcessingSettings read fArchiveProcessingSettings;
     property ResultInfo: TDARTResultInfo read fResultInfo;
   published
     property ProgressFactorCoefficient: Integer read fProgressFactorCoef write fProgressFactorCoef;
-    property ArchiveIndex: Integer read fArchiveIndex;
     property OnArchiveProgress: TDARTArchiveProgressEvent read fOnArchiveProgress write fOnArchiveProgress;
   end;
 
@@ -51,6 +65,20 @@ uses
   SysUtils,
   DART_Repairer_SCS_Rebuild, DART_Repairer_SCS_Extract, DART_Repairer_SCS_Convert_ZIP,
   DART_Repairer_ZIP_Rebuild, DART_Repairer_ZIP_Extract, DART_Repairer_ZIP_Convert_SCS;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTProcessingThread
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTProcessingThread - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTProcessingThread - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTProcessingThread.sync_DoProgress;
 begin
@@ -156,7 +184,9 @@ except
 end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTProcessingThread - public methods
+-------------------------------------------------------------------------------}
 
 constructor TDARTProcessingThread.Create(ArchiveIndex: Integer; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; Heartbeat: PInteger; SyncDispatcher: TSyncThreadDispatcher);
 begin
@@ -171,7 +201,7 @@ fArchiveProcessingSettings := ArchiveProcessingSettings;
 EnsureThreadSafety(fArchiveProcessingSettings);
 fPauseControlObject := TDARTPauseObject.Create;
 fHeartbeat := Heartbeat;
-// creation of repairer is deffered to when the thread is started
+// creation of repairer is deffered to a thread start
 fRepairer := nil;
 fResultInfo := DART_DefaultResultInfo;
 fOnArchiveProgress := nil;

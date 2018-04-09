@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_PathDeconstructor;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,12 @@ interface
 uses
   ExplicitStringLists;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTPathDeconstructor
+--------------------------------------------------------------------------------
+===============================================================================}
+
 type
   TDARTPathNode = class; // forward declaration
 
@@ -14,6 +27,10 @@ type
     Arr:    array of TDARTPathNode;
     Count:  Integer
   end;
+
+{===============================================================================
+    TDARTPathDeconstructor - class declaration
+===============================================================================}
 
   TDARTPathDeconstructor = class(TObject)
   private
@@ -34,6 +51,10 @@ type
     property Count: Integer read fNodes.Count;
     property RootNode: TDARTPathNode read fRootNode;
   end;
+
+{===============================================================================
+    TDARTPathNode - class declaration
+===============================================================================}
 
   TDARTPathNode = class(TObject)
   private
@@ -74,6 +95,20 @@ uses
   SysUtils,
   DART_Auxiliary;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTPathDeconstructor
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTPathDeconstructor - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTPathDeconstructor - private methods
+-------------------------------------------------------------------------------}
+
 Function TDARTPathDeconstructor.GetNode(Index: Integer): TDARTPathNode;
 begin
 If (Index >= Low(fNodes.Arr)) and (Index < fNodes.Count) then
@@ -82,7 +117,9 @@ else
   raise Exception.CreateFmt('TDARTPathDeconstructor.GetNode: Index (%d) out of bounds.',[Index]);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTPathDeconstructor - protected methods
+-------------------------------------------------------------------------------}
 
 Function TDARTPathDeconstructor.AddNode(Node: TDARTPathNode): Integer;
 begin
@@ -93,7 +130,9 @@ fNodes.Arr[Result] := Node;
 Inc(fNodes.Count);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTPathDeconstructor - public methods
+-------------------------------------------------------------------------------}
 
 constructor TDARTPathDeconstructor.Create(PathDelimiter: AnsiChar);
 begin
@@ -143,7 +182,13 @@ For i := Low(fNodes.Arr) to Pred(fNodes.Count) do
   fNodes.Arr[i].Sort;
 end;
 
-//******************************************************************************
+{===============================================================================
+    TDARTPathNode - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTPathNode - private methods
+-------------------------------------------------------------------------------}
 
 Function TDARTPathNode.GetSubNode(Index: Integer): TDARTPathNode;
 begin
@@ -170,7 +215,9 @@ else
   raise Exception.CreateFmt('TDARTPathNode.GetFile: Index (%d) out of bounds.',[Index]);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTPathNode - protected methods
+-------------------------------------------------------------------------------}
 
 Function TDARTPathNode.IndexOfSubNode(const SubNodeName: AnsiString): Integer;
 var
@@ -203,7 +250,9 @@ If Idx1 <> Idx2 then
   end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTPathNode - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTPathNode.CharPos(Chr: AnsiChar; const Str: AnsiString): Integer;
 var

@@ -1,14 +1,13 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_ZIP_Convert_SCS;
 
 {$INCLUDE DART_defs.inc}
-
-{!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-                                    WARNING
-
-    implementation of TDARTRepairer_ZIP_Convert_SCS is completely untested
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
 
 interface
 
@@ -16,8 +15,17 @@ uses
   AuxTypes, ProgressTracker,
   DART_Format_SCS, DART_Repairer_ZIP_Convert;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                         TDARTRepairer_ZIP_Convert_SCS
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_Convert_SCS - progress stages indexing variables
+===============================================================================}
+
 var
-  // progress stages
   DART_PROGSTAGE_IDX_ZIP_CONV_SCS_EntriesCopy:     Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_CONV_SCS_DirsReconstruct: Integer = -1;
   DART_PROGSTAGE_IDX_ZIP_CONV_SCS_ProgressReset:   Integer = -1;
@@ -26,6 +34,9 @@ var
   PSIDX_Z_DirsReconstruct: Integer = -1;
   PSIDX_Z_ProgressReset:   Integer = -1;
 
+{===============================================================================
+    TDARTRepairer_ZIP_Convert_SCS - class declaration
+===============================================================================}
 type
   TDARTRepairer_ZIP_Convert_SCS = class(TDARTRepairer_ZIP_Convert)
   protected
@@ -58,9 +69,27 @@ uses
   DART_Auxiliary, DART_Common, DART_PathDeconstructor, DART_Format_ZIP,
   DART_Repairer, DART_Repairer_ZIP;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                         TDARTRepairer_ZIP_Convert_SCS
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_ZIP_Convert_SCS - method indexing constants
+===============================================================================}
+
 const
   DART_METHOD_ID_ZIP_CONV_SCS_ENFNHSH = $01030100;
   DART_METHOD_ID_ZIP_CONV_SCS_SCEQSEE = $01030101;
+
+{===============================================================================
+    TDARTRepairer_ZIP_Convert_SCS - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_Convert_SCS - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_ZIP_Convert_SCS.InitializeProgress;
 begin
@@ -573,7 +602,9 @@ except
 end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTRepairer_ZIP_Convert_SCS - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTRepairer_ZIP_Convert_SCS.GetMethodNameFromIndex(MethodIndex: Integer): String;
 begin

@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Format_ZIP;
 
 {$INCLUDE DART_defs.inc}
@@ -158,8 +165,7 @@ const
   DART_ZIP_PathDelim = '/';
 
   DART_ZIP_DefVersionMadeBy = 20; // 2.0
-  DART_ZIP_DefHostOS        = 0;  // DOS / Windows
-
+  DART_ZIP_DefHostOS        = 0;  // DOS / Windows    
 
 implementation
 

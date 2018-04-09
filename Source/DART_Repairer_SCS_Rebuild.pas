@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_SCS_Rebuild;
 
 {$INCLUDE DART_defs.inc}
@@ -8,6 +15,15 @@ uses
   Classes,
   DART_Repairer_SCS;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_SCS_Rebuild                                                         
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Rebuild - class declaration
+===============================================================================}
 type
   TDARTRepairer_SCS_Rebuild = class(TDARTRepairer_SCS_ProcessingBase)
   protected
@@ -26,6 +42,20 @@ uses
   AuxTypes, StrRect, BitOps, CRC32, MemoryBuffer, StaticMemoryStream,
   ExplicitStringListsBase, ExplicitStringLists, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_SCS_Rebuild                                                         
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Rebuild - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_Rebuild - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_SCS_Rebuild.ArchiveProcessing;
 begin

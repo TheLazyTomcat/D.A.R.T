@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_ProcessingManager;
 
 {$INCLUDE DART_defs.inc}
@@ -8,6 +15,12 @@ uses
   Classes, ComCtrls,
   AuxTypes, ProgressTracker, SyncThread,
   DART_ProcessingSettings, DART_Repairer, DART_ProcessingThread;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTProcessingManager
+--------------------------------------------------------------------------------
+===============================================================================}
 
 type
   TDARTArchiveProcessingStatus = (apsUnknown,apsReady,apsPaused,apsSuccess,
@@ -22,13 +35,13 @@ const
 
 type
   TDARTArchiveListItem = record
-    Path:               String;
-    Name:               String;
-    Size:               Int64;
-    ProcessingStatus:   TDARTArchiveProcessingStatus;
-    ProcessingSettings: TDARTArchiveProcessingSettings;
-    ResultInfo:         TDARTResultInfo;
-    ProgressStageNode:  TProgressTracker;
+    Path:                       String;
+    Name:                       String;
+    Size:                       Int64;
+    ProcessingStatus:           TDARTArchiveProcessingStatus;
+    ArchiveProcessingSettings:  TDARTArchiveProcessingSettings;
+    ResultInfo:                 TDARTResultInfo;
+    ProgressStageNode:          TProgressTracker;
   end;
   PDARTArchiveListItem = ^TDARTArchiveListItem;
 
@@ -42,7 +55,10 @@ type
 
   TDARTArchiveChangeEvent = procedure(Sender: TObject; Index: Integer) of object;
 
-type
+{===============================================================================
+    TDARTProcessingManager - class declaration
+===============================================================================}
+
   TDARTProcessingManager = class(TObject)
   private
     fVisualListing:       TListView;
@@ -53,7 +69,7 @@ type
     fMemoryLimit:         TMemSize;
     fProcessedArchIdx:    Integer;
     fProcessingThread:    TDARTProcessingThread;
-    fDefferedDestThrds:   array of TThread;
+    fDefferedDestThrds:   array of TDARTProcessingThread;
     fHeartbeat:           Integer;
     fHeartbeatCounter:    Integer;
     fHeartbeatActThrsld:  Integer;
@@ -70,7 +86,7 @@ type
     procedure DoArchiveStatus(Index: Integer); virtual;
     procedure DoManagerStatus; virtual;
     procedure AddToVisualListing(Item: TDARTArchiveListItem); virtual;
-    procedure DeferThreadDestruction(Thread: TThread); virtual;
+    procedure DeferThreadDestruction(Thread: TDARTProcessingThread); virtual;
     procedure RunDeferredThreadDestruction; virtual;
     procedure ThreadProgressHandler(Sender: TObject; ArchiveIndex: Integer; Progress: Double); virtual;
     Function CreateProcessingThread: TDARTProcessingThread;
@@ -112,6 +128,20 @@ uses
   WinFileInfo,
   DART_Auxiliary, DART_Format_SCS, DART_Format_ZIP;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                             TDARTProcessingManager
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTProcessingManager - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTProcessingManager - private methods
+-------------------------------------------------------------------------------}
+
 Function TDARTProcessingManager.GetArchivePtr(Index: Integer): PDARTArchiveListItem;
 begin
 If CheckIndex(Index) then
@@ -137,7 +167,9 @@ begin
 Result := fProgressTracker.Progress;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTProcessingManager - protected methods
+-------------------------------------------------------------------------------}
 
 Function TDARTProcessingManager.CheckIndex(Index: Integer): Boolean;
 begin
@@ -174,9 +206,9 @@ If Assigned(fVisualListing) then
     begin
       SubItems.Add(Item.Name);
       SubItems.Add(SizeToStr(Item.Size));
-      SubItems.Add(DART_ArchiveTypeStrings[Item.ProcessingSettings.Common.SelectedArchiveType]);
-      SubItems.Add(Format(DART_RepairMethodStrings[Item.ProcessingSettings.Common.RepairMethod],
-        [DART_KnownArchiveTypeStrings[Item.ProcessingSettings.Common.ConvertTo]]));
+      SubItems.Add(DART_ArchiveTypeStrings[Item.ArchiveProcessingSettings.Common.SelectedArchiveType]);
+      SubItems.Add(Format(DART_RepairMethodStrings[Item.ArchiveProcessingSettings.Common.RepairMethod],
+        [DART_KnownArchiveTypeStrings[Item.ArchiveProcessingSettings.Common.ConvertTo]]));
       SubItems.Add(DART_ArchiveProcessingStatusStrings[Item.ProcessingStatus]);
       ImageIndex := Ord(Item.ProcessingStatus);
     end;
@@ -184,7 +216,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTProcessingManager.DeferThreadDestruction(Thread: TThread);
+procedure TDARTProcessingManager.DeferThreadDestruction(Thread: TDARTProcessingThread);
 begin
 SetLength(fDefferedDestThrds,Length(fDefferedDestThrds) + 1);
 fDefferedDestThrds[High(fDefferedDestThrds)] := Thread;
@@ -269,38 +301,45 @@ end;
 Function TDARTProcessingManager.CreateProcessingThread: TDARTProcessingThread;
 begin
 If Assigned(fSynchronizer) then
-  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,@fHeartbeat,fSynchronizer.CreateDispatcher)
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ArchiveProcessingSettings,
+                                         @fHeartbeat,fSynchronizer.CreateDispatcher)
 else
-  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ProcessingSettings,@fHeartbeat,nil);
+  Result := TDARTProcessingThread.Create(fProcessedArchIdx,fArchiveList.Arr[fProcessedArchIdx].ArchiveProcessingSettings,
+                                         @fHeartbeat,nil);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTProcessingManager - public methods
+-------------------------------------------------------------------------------}
 
 class Function TDARTProcessingManager.SetTargetPathFromSourcePath(var CommonProcSett: TDART_PS_Common): String;
 begin
 case CommonProcSett.RepairMethod of
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  rmRebuild:  CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) +
-                'repaired_' + ExtractFileName(CommonProcSett.ArchivePath);
+  rmRebuild:
+    CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) +
+      'repaired_' + ExtractFileName(CommonProcSett.ArchivePath);
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  rmExtract:  If AnsiSameText(ExtractFileName(CommonProcSett.ArchivePath),ExtractFileExt(CommonProcSett.ArchivePath)) then
-                // archive does not have proper name (actual name starts with a dot - meaning it is seen as an extension)
-                CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired')
-              else If ExtractFileExt(CommonProcSett.ArchivePath) <> '' then
-                // archive does have a proper name and extension
-                CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ChangeFileExt(CommonProcSett.ArchivePath,''))
-              else
-                // archive does have a proper name but no extension
-                CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(IncludeTrailingPathDelimiter(CommonProcSett.ArchivePath) + '_repaired');
+  rmExtract:
+    If AnsiSameText(ExtractFileName(CommonProcSett.ArchivePath),ExtractFileExt(CommonProcSett.ArchivePath)) then
+      // archive does not have proper name (actual name starts with a dot - meaning it is seen as an extension)
+      CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired')
+    else If ExtractFileExt(CommonProcSett.ArchivePath) <> '' then
+      // archive does have a proper name and extension
+      CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ChangeFileExt(CommonProcSett.ArchivePath,''))
+    else
+      // archive does have a proper name but no extension
+      CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(IncludeTrailingPathDelimiter(CommonProcSett.ArchivePath) + '_repaired');
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  rmConvert:  case CommonProcSett.ConvertTo of
-                katSCS: CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired_' +
-                          ChangeFileExt(ExtractFileName(CommonProcSett.ArchivePath),DART_SCS_DefaultExt);
-                katZIP: CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired_' +
-                          ChangeFileExt(ExtractFileName(CommonProcSett.ArchivePath),DART_ZIP_DefaultExt);
-              else
-                CommonProcSett.TargetPath := '';
-              end;
+  rmConvert:
+    case CommonProcSett.ConvertTo of
+      katSCS: CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired_' +
+                ChangeFileExt(ExtractFileName(CommonProcSett.ArchivePath),DART_SCS_DefaultExt);
+      katZIP: CommonProcSett.TargetPath := ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired_' +
+                ChangeFileExt(ExtractFileName(CommonProcSett.ArchivePath),DART_ZIP_DefaultExt);
+    else
+      CommonProcSett.TargetPath := '';
+    end;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
 else
   CommonProcSett.TargetPath := '';
@@ -383,38 +422,38 @@ If fStatus = pmsReady then
             Name := ExtractFileName(Path);
             Size := DART_GetFileSize(Path);
             ProcessingStatus := apsReady;
-            ProcessingSettings := DART_DefaultArchiveProcessingSettings;
+            ArchiveProcessingSettings := DART_DefaultArchiveProcessingSettings;
             ResultInfo := DART_DefaultResultInfo;
             Index := fProgressTracker.Add(Size);
             ProgressStageNode := fProgressTracker.StageObjects[Index];
             // prepare processing settings
-            ProcessingSettings.Common.ArchivePath := Path;
+            ArchiveProcessingSettings.Common.ArchivePath := Path;
             // get probable archive type from signature
             case DART_GetFileSignature(Path) of
-              DART_SCS_ArchiveSignature:  ProcessingSettings.Common.OriginalArchiveType := atSCS_sig;
-              DART_ZIP_ArchiveSignature:  ProcessingSettings.Common.OriginalArchiveType := atZIP_sig;
+              DART_SCS_ArchiveSignature:  ArchiveProcessingSettings.Common.OriginalArchiveType := atSCS_sig;
+              DART_ZIP_ArchiveSignature:  ArchiveProcessingSettings.Common.OriginalArchiveType := atZIP_sig;
             else
-              ProcessingSettings.Common.OriginalArchiveType := atZIP_dft;
+              ArchiveProcessingSettings.Common.OriginalArchiveType := atZIP_dft;
             end;
-            ProcessingSettings.Common.SelectedArchiveType := ProcessingSettings.Common.OriginalArchiveType;
+            ArchiveProcessingSettings.Common.SelectedArchiveType := ArchiveProcessingSettings.Common.OriginalArchiveType;
             // set conversion to zip as a default repair method for SCS# archives, rebuild for others
-            case ProcessingSettings.Common.SelectedArchiveType of
+            case ArchiveProcessingSettings.Common.SelectedArchiveType of
               atSCS_sig,atSCS_frc:
                 begin
-                  ProcessingSettings.Common.RepairMethod := rmRebuild;
-                  ProcessingSettings.Common.ConvertTo := katZIP;
+                  ArchiveProcessingSettings.Common.RepairMethod := rmRebuild;
+                  ArchiveProcessingSettings.Common.ConvertTo := katZIP;
                 end;
               atZIP_sig,atZIP_frc,atZIP_dft:
                 begin
-                  ProcessingSettings.Common.RepairMethod := rmRebuild;
-                  ProcessingSettings.Common.ConvertTo := katSCS;
+                  ArchiveProcessingSettings.Common.RepairMethod := rmRebuild;
+                  ArchiveProcessingSettings.Common.ConvertTo := katSCS;
                 end;
             else
-              ProcessingSettings.Common.RepairMethod := rmRebuild;
-              ProcessingSettings.Common.ConvertTo := katUnknown;
+              ArchiveProcessingSettings.Common.RepairMethod := rmRebuild;
+              ArchiveProcessingSettings.Common.ConvertTo := katUnknown;
             end;
-            SetTargetPathFromSourcePath(ProcessingSettings.Common);
-            ProcessingSettings.Auxiliary.InMemoryProcessingAllowed := Size <= fMemoryLimit;
+            SetTargetPathFromSourcePath(ArchiveProcessingSettings.Common);
+            ArchiveProcessingSettings.Auxiliary.InMemoryProcessingAllowed := Size <= fMemoryLimit;
           end;
         // add new archive to visual listing
         AddToVisualListing(fArchiveList.Arr[Result]);

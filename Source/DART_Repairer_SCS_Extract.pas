@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Repairer_SCS_Extract;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,15 @@ interface
 uses
   DART_Repairer_SCS;
 
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_SCS_Extract
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Extract - class declaration
+===============================================================================}
 type
   TDARTRepairer_SCS_Extract = class(TDARTRepairer_SCS_ProcessingBase)
   protected
@@ -22,6 +38,20 @@ uses
   SysUtils, Classes, StrUtils,
   AuxTypes, StrRect, BitOps, MemoryBuffer, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                           TDARTRepairer_SCS_Extract
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTRepairer_SCS_Extract - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTRepairer_SCS_Extract - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTRepairer_SCS_Extract.ArchiveProcessing;
 begin
