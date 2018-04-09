@@ -7,11 +7,14 @@
 -------------------------------------------------------------------------------}
 unit MainForm;
 
+{$INCLUDE '..\Source\DART_defs.inc'}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ComCtrls, ExtCtrls, XPMan, StdCtrls, Menus, ImgList,
+  Windows, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs,
+  ComCtrls, ExtCtrls, {$IFNDEF FPC}Messages, ImgList, XPMan,{$ENDIF}StdCtrls,
+  Menus,
   DART_ProcessingManager;
 
 type
@@ -21,6 +24,8 @@ type
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
   end;
 {$ENDIF}
+
+  { TfMainForm }
 
   TfMainForm = class(TForm)
     lblArchiveList: TLabel;
@@ -49,11 +54,14 @@ type
     pmiAL_ClearCompleted: TMenuItem;
     N3: TMenuItem;
     pmiAL_Tools: TMenuItem;
+  {$IFNDEF FPC}
     oXPManifest: TXPManifest;
+  {$ENDIF}
     procedure FormCreate(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormClose(Sender: TObject; var {%H-}prmAction: TCloseAction);
     procedure FormDestroy(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure lvArchiveListChange(Sender: TObject; {%H-}Item: TListItem; {%H-}Change: TItemChange);
     procedure lvArchiveListDblClick(Sender: TObject);
     procedure pmArchiveListMenuPopup(Sender: TObject);
     procedure pmiAL_AddClick(Sender: TObject);
@@ -67,6 +75,9 @@ type
     procedure btnStopProcessingClick(Sender: TObject);
     procedure tmrHearbeatTimerTimer(Sender: TObject);    
     procedure tmrAnimTimerTimer(Sender: TObject);
+  {$IFDEF FPC}
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+  {$ENDIF}
   private
     fDefaultAppTitle:     String;
     fProgressAppTitle:    String;
@@ -87,7 +98,11 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 uses
   ShellAPI,
@@ -307,7 +322,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TfMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+procedure TfMainForm.FormClose(Sender: TObject; var prmAction: TCloseAction);
 begin
 ProcessingManager.EndProcessingAndWait;
 end;
@@ -317,7 +332,7 @@ end;
 procedure TfMainForm.FormDestroy(Sender: TObject);
 begin
 SetDropAccept(False);
-ProcessingManager.Free;
+FreeAndNil(ProcessingManager);
 end;
 
 //------------------------------------------------------------------------------
@@ -336,6 +351,14 @@ lvArchiveList.Columns[1].Width := NewWidth;
 btnPauseProcessing.Width := (ClientWidth - 24) div 2;
 btnStopProcessing.Left := btnPauseProcessing.Left + btnPauseProcessing.Width + 8;
 btnStopProcessing.Width := (ClientWidth - 24) div 2;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.lvArchiveListChange(Sender: TObject; Item: TListItem;
+  Change: TItemChange);
+begin
+pmArchiveListMenu.OnPopup(nil);
 end;
 
 //------------------------------------------------------------------------------
@@ -361,15 +384,18 @@ end;
 
 procedure TfMainForm.pmArchiveListMenuPopup(Sender: TObject);
 begin
-pmiAL_Add.Enabled := ProcessingManager.Status = pmsReady;
-pmiAL_Remove.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount > 0);
-pmiAL_Clear.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.Items.Count > 0);
-pmiAL_ProcessingSettings.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1);
-If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
-  pmiAL_ResultInfo.Enabled := ProcessingManager[lvArchiveList.Selected.Index].ProcessingStatus in [apsSuccess,apsWarning,apsError]
-else
-  pmiAL_ResultInfo.Enabled := False;
-pmiAL_ClearCompleted.Enabled := (ProcessingManager.Status = pmsReady) and (ProcessingManager.CompletedItemCount > 0);
+If Assigned(ProcessingManager) then
+  begin
+    pmiAL_Add.Enabled := ProcessingManager.Status = pmsReady;
+    pmiAL_Remove.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount > 0);
+    pmiAL_Clear.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.Items.Count > 0);
+    pmiAL_ProcessingSettings.Enabled := (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1);
+    If (ProcessingManager.Status = pmsReady) and (lvArchiveList.SelCount = 1) then
+      pmiAL_ResultInfo.Enabled := ProcessingManager[lvArchiveList.Selected.Index].ProcessingStatus in [apsSuccess,apsWarning,apsError]
+    else
+      pmiAL_ResultInfo.Enabled := False;
+    pmiAL_ClearCompleted.Enabled := (ProcessingManager.Status = pmsReady) and (ProcessingManager.CompletedItemCount > 0);
+  end;
 end;
  
 //------------------------------------------------------------------------------
@@ -526,5 +552,19 @@ If ProcessingManager.ProcessedArchiveIndex >= 0 then
       end;
   end;
 end;
+
+//------------------------------------------------------------------------------
+
+{$IFDEF FPC}
+procedure TfMainForm.FormDropFiles(Sender: TObject; const FileNames: array of String);
+var
+  i:  Integer;
+begin
+If ProcessingManager.Status = pmsReady then
+  For i := Low(FileNames) to High(FileNames) do
+    If DART_FileExists(FileNames[i]) then
+      ProcessingManager.Add(FileNames[i]);
+end;
+{$ENDIF}
 
 end.

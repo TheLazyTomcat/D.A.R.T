@@ -15,14 +15,6 @@ uses
   Windows, SysUtils,
   AuxTypes;
 
-//--- Public auxilary constants ------------------------------------------------
-
-{$IF not Declared(FILE_WRITE_ATTRIBUTES)}
-const
-  FILE_WRITE_ATTRIBUTES = 256;
-{$IFEND}
-
-
 //--- Files --------------------------------------------------------------------
 
 Function DART_GetFileSize(const FilePath: String): Int64;
@@ -49,10 +41,17 @@ Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): An
 
 Function DART_GetAvailableMemory: UInt64;
 
+//--- Public auxilary constants ------------------------------------------------
+
+{$IF not Declared(FILE_WRITE_ATTRIBUTES)}
+const
+  FILE_WRITE_ATTRIBUTES = 256;
+{$IFEND}
+
 implementation
 
 uses
-  Classes, StrRect;
+  Classes, StrRect {$IFDEF FPC_NonUnicode_NoUTF8RTL}, LazFileUtils{$ENDIF};
 
 //==============================================================================
 
@@ -60,7 +59,7 @@ Function DART_GetFileSize(const FilePath: String): Int64;
 var
   SearchResult: TSearchRec;
 begin
-If DART_FindFirst(FilePath,faAnyFile,SearchResult) = 0 then
+If DART_FindFirst(FilePath,faAnyFile,{%H-}SearchResult) = 0 then
   try
   {$WARN SYMBOL_PLATFORM OFF}
     Int64Rec(Result).Hi := SearchResult.FindData.nFileSizeHigh;

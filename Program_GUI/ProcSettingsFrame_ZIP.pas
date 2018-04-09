@@ -7,11 +7,13 @@
 -------------------------------------------------------------------------------}
 unit ProcSettingsFrame_ZIP;
 
+{$INCLUDE '..\Source\DART_defs.inc'}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, 
-  Dialogs, ExtCtrls, StdCtrls,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, ExtCtrls,
+  StdCtrls,
   DART_ProcessingSettings;
 
 type
@@ -71,14 +73,18 @@ type
     procedure RetrieveProcessingSettings(var ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
   published
     procedure CheckBoxClick(Sender: TObject);
-    procedure OptionMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure OptionMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
     procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     property OnOptionDescription: TOptionDescriptionEvent read fOnOptionDescription write fOnOptionDescription;
   end;
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 procedure TfrmProcSettingsFrame_ZIP.Initialize;
 begin

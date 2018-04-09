@@ -230,7 +230,7 @@ If AuxTypes.NativeUInt64 then
         else Result := 0;
   end
 else
-  begin
+  begin{%H-}
     If Int64Rec(A).Hi <> Int64Rec(B).Hi then
       begin
         If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2

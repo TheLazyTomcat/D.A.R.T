@@ -343,7 +343,8 @@ case CommonProcSett.RepairMethod of
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -              
 else
   CommonProcSett.TargetPath := '';
-end
+end;
+Result := CommonProcSett.TargetPath;
 end;
 
 //------------------------------------------------------------------------------

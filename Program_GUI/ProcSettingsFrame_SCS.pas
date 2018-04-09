@@ -7,12 +7,14 @@
 -------------------------------------------------------------------------------}
 unit ProcSettingsFrame_SCS;
 
+{$INCLUDE '..\Source\DART_defs.inc'}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, 
-  Dialogs, ExtCtrls, StdCtrls,
-  DART_ProcessingSettings, Menus;
+  {$IFNDEF FPC}Windows,{$ENDIF} SysUtils, Variants, Classes, Graphics, Controls,
+  Forms, Dialogs, ExtCtrls, StdCtrls, Menus,
+  DART_ProcessingSettings;
 
 type
   TOptionDescriptionEvent = procedure(Sender: TObject; DescriptionTag: Integer) of object;
@@ -62,7 +64,7 @@ type
     procedure RetrieveProcessingSettings(var ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
   published
     procedure CheckBoxClick(Sender: TObject);
-    procedure OptionMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure OptionMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
     procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure LoadGameFiles(Sender: TObject);
     property OnOptionDescription: TOptionDescriptionEvent read fOnOptionDescription write fOnOptionDescription;
@@ -70,7 +72,11 @@ type
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 uses
   Registry,
@@ -339,7 +345,7 @@ var
   var
     SearchRec: TSearchRec;
   begin
-    If DART_FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,SearchRec) = 0 then
+    If DART_FindFirst(IncludeTrailingPathDelimiter(Path) + '*.scs',faAnyFile,{%H-}SearchRec) = 0 then
     try
       repeat
         Files.Add(IncludeTrailingPathDelimiter(Path) + SearchRec.Name);

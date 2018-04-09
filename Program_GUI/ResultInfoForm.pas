@@ -7,11 +7,12 @@
 -------------------------------------------------------------------------------}
 unit ResultInfoForm;
 
+{$INCLUDE '..\Source\DART_defs.inc'}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls,
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
   DART_ProcessingManager;
 
 type
@@ -33,7 +34,11 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 uses
   ClipBrd,

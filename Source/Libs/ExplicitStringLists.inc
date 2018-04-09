@@ -787,9 +787,12 @@ If Dest is TStrings then
     TStrings(Dest).Clear;
     For i := LowIndex to HighIndex do
       TStrings(Dest).Add(Strings[i]);
+    {$MESSAGE 'Check in which FPC was the property LineBreak introduced.'}
   {$IF Defined(FPC) or (CompilerVersion >= 31)}
     TStrings(Dest).StrictDelimiter := fStrictDelimiter;
+    {$IF Defined(FPC) and (FPC_FULLVERSION >= 30000)}
     TStrings(Dest).LineBreak := ConvertStringFrom(fLineBreak);
+    {$IFEND}
   {$IFNDEF FPC}
     TStrings(Dest).TrailingLineBreak := fTrailingLineBreak;
   {$ENDIF}
@@ -1297,9 +1300,12 @@ try
       When were following added to TStrings in Delphi? I know they are all in
       10.1 (Berlin), but other than that...
     }
+    {$MESSAGE 'Check in which FPC was the property LineBreak introduced.'}
     {$IF Defined(FPC) or (CompilerVersion >= 31)}
       fStrictDelimiter := TStrings(Source).StrictDelimiter;
+    {$IF Defined(FPC) and (FPC_FULLVERSION >= 30000)}
       fLineBreak := ConvertStringTo(TStrings(Source).LineBreak);
+    {$IFEND}
     {$IFNDEF FPC}
       fTrailingLineBreak := TStrings(Source).TrailingLineBreak;
     {$ENDIF}

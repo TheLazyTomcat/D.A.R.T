@@ -145,7 +145,6 @@ end;
 
 procedure TDARTRepairer_ZIP.InitializeData;
 begin
-inherited;
 SetLength(fArchiveStructure.Entries.Arr,0);
 fArchiveStructure.Entries.Count := 0;
 FillChar(fArchiveStructure.EndOfCentralDirectory.BinPart,SizeOf(TDART_ZIP_EndOfCentralDirectoryRecord),0);
@@ -204,7 +203,6 @@ Function TDARTRepairer_ZIP.IndexOfEntry(const EntryFileName: AnsiString): Intege
 var
   i:  Integer;
 begin
-inherited;
 Result := -1;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   If AnsiSameText(EntryFileName,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName) then
@@ -218,7 +216,6 @@ end;
 
 Function TDARTRepairer_ZIP.GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean;
 begin
-inherited;
 Result := False;
 If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchiveStructure.Entries.Count) then
   begin
@@ -260,7 +257,6 @@ end;
 
 procedure TDARTRepairer_ZIP.ArchiveProcessing;
 begin
-inherited;
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
   begin
     ZIP_LoadEndOfCentralDirectory;
@@ -947,7 +943,6 @@ var
   end;
 
 begin
-inherited;
 Result := 0;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
   with fArchiveStructure.Entries.Arr[i] do

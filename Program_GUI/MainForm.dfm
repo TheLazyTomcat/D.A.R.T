@@ -102,6 +102,7 @@ object fMainForm: TfMainForm
     0000000000000000000000000000E00FFFFFC003FFFFC003FFFFC003FFFFC003
     FFFFC003FFFFC003FFFFC003FFFFC003FFFFC003FFFFE007FFFFF18FFFFFF18F
     FFFFF08FFFFFF81FFFFFFC1FFFFF}
+  KeyPreview = True
   OldCreateOrder = False
   Position = poScreenCenter
   OnClose = FormClose
@@ -195,6 +196,7 @@ object fMainForm: TfMainForm
     SmallImages = ilArchiveList
     TabOrder = 0
     ViewStyle = vsReport
+    OnChange = lvArchiveListChange
     OnDblClick = lvArchiveListDblClick
   end
   object btnStartProcessing: TButton

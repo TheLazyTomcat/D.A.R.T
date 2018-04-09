@@ -7,11 +7,13 @@
 -------------------------------------------------------------------------------}
 unit ProcSettingsForm;
 
+{$INCLUDE '..\Source\DART_defs.inc'}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ExtCtrls,
+  Windows, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs,
+  StdCtrls, ExtCtrls,
   DART_ProcessingSettings;
 
 type
@@ -81,7 +83,7 @@ type
   published
     procedure CheckBoxClick(Sender: TObject);
     procedure RepairMethodClick(Sender: TObject);
-    procedure OptionMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure OptionMouseMove(Sender: TObject; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
     procedure GroupBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
   end;
 
@@ -90,7 +92,11 @@ var
 
 implementation
 
-{$R *.dfm}
+{$IFDEF FPC}
+  {$R *.lfm}
+{$ELSE}
+  {$R *.dfm}
+{$ENDIF}
 
 uses
   {$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON},
@@ -213,19 +219,22 @@ procedure TfProcSettingsForm.ShowArchiveSettingsFrame(ForceChange: Boolean = Fal
 begin
 If Assigned(fActiveArchiveSettingsFrame) then
   begin
-    If not ForceChange then
-      case fArchiveProcessingSettings.Common.SelectedArchiveType of
-        atSCS_sig,atSCS_frc:
-          If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_SCS then Exit;
-        atZIP_sig,atZIP_frc,atZIP_dft:
-          If fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP then Exit;
-      end;
+    case fArchiveProcessingSettings.Common.SelectedArchiveType of
+      atSCS_sig,atSCS_frc:
+        If (fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_SCS) and
+          not ForceChange then Exit;
+      atZIP_sig,atZIP_frc,atZIP_dft:
+        If (fActiveArchiveSettingsFrame is TfrmProcSettingsFrame_ZIP) and
+          not ForceChange then Exit;
+    end;
     FormToSettings;
-    fActiveArchiveSettingsFrame.Free;
+    fActiveArchiveSettingsFrame.Parent := nil;
+    FreeAndNil(fActiveArchiveSettingsFrame);
   end;
 case fArchiveProcessingSettings.Common.SelectedArchiveType of
   atSCS_sig,atSCS_frc:
     begin
+      gbArchiveSettings.Caption := 'SCS# archive settings';
       fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_SCS.Create(Self);
       with TfrmProcSettingsFrame_SCS(fActiveArchiveSettingsFrame) do
         begin
@@ -236,6 +245,7 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
     end;
   atZIP_sig,atZIP_frc,atZIP_dft:
     begin
+      gbArchiveSettings.Caption := 'ZIP archive settings';
       fActiveArchiveSettingsFrame := TfrmProcSettingsFrame_ZIP.Create(Self);
       with TfrmProcSettingsFrame_ZIP(fActiveArchiveSettingsFrame) do
         begin
@@ -247,10 +257,24 @@ case fArchiveProcessingSettings.Common.SelectedArchiveType of
 else
   raise Exception.Create('Unknown archive type.');
 end;
-fActiveArchiveSettingsFrame.Left := 0;
-fActiveArchiveSettingsFrame.Top := 0;
-fActiveArchiveSettingsFrame.Parent := scbArchiveSettings;
+If Assigned(fActiveArchiveSettingsFrame) then
+  begin
+    fActiveArchiveSettingsFrame.Left := 0;
+    fActiveArchiveSettingsFrame.Top := 0;
+    fActiveArchiveSettingsFrame.Parent := scbArchiveSettings;
+  end;
 SettingsToForm;
+{$IFDEF FPC}
+{
+  Force recalculation of scrollbar, otherwise there are glitches when compiled
+  in Lazarus (wrong range and page size).
+}
+If ForceChange then
+  begin
+    scbArchiveSettings.VertScrollBar.Position := 1;
+    scbArchiveSettings.VertScrollBar.Position := 0;
+  end;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -334,10 +358,10 @@ fArchiveProcessingSettings := ArchiveProcessingSettings;
 fLoading := True;
 try
   SettingsToForm;
+  cbForceArchiveType.OnClick(cbForceArchiveType);
 finally
   fLoading := False;
 end;
-cbForceArchiveType.OnClick(cbForceArchiveType);
 ShowArchiveSettingsFrame(True);
 fAccepted := False;
 ShowModal;
@@ -386,7 +410,8 @@ If cbForceArchiveType.Checked then
       1:  fArchiveProcessingSettings.Common.SelectedArchiveType := atZIP_frc;
     end;
     lblArchiveType.Caption := DART_ArchiveTypeStrings[fArchiveProcessingSettings.Common.SelectedArchiveType];
-    ShowArchiveSettingsFrame;
+    If not fLoading then
+      ShowArchiveSettingsFrame;
   end;
 end;
 

@@ -173,7 +173,6 @@ end;
 
 procedure TDARTRepairer_SCS.InitializeData;
 begin
-inherited;
 FillChar(fArchiveStructure.ArchiveHeader,SizeOf(TDART_SCS_ArchiveHeader),0);
 SetLength(fArchiveStructure.Entries.Arr,0);
 fArchiveStructure.Entries.Count := 0;
@@ -245,7 +244,6 @@ end;
 
 Function TDARTRepairer_SCS.IndexOfEntry(const EntryFileName: AnsiString): Integer;
 begin
-inherited;
 Result := SCS_IndexOfEntry(SCS_EntryFileNameHash(EntryFileName));
 end;
 
@@ -256,7 +254,6 @@ var
   DecompressedBuff: Pointer;
   DecompressedSize: TMemSize;
 begin
-inherited;
 Result := False;
 If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchiveStructure.Entries.Count) then
   begin
@@ -297,7 +294,6 @@ end;
 
 procedure TDARTRepairer_SCS.ArchiveProcessing;
 begin
-inherited;
 SCS_LoadArchiveHeader;
 SCS_LoadEntries;
 If fArchiveStructure.Entries.Count <= 0 then
@@ -341,7 +337,7 @@ If AuxTypes.NativeUInt64 then
         else Result := 0;
   end
 else
-  begin
+  begin{%H-}
     If Int64Rec(A).Hi <> Int64Rec(B).Hi then
       begin
         If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2
@@ -933,7 +929,6 @@ Function TDARTRepairer_SCS.GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): In
 var
   i:  Integer;
 begin
-inherited;
 If (KnownPaths.Count + fArchiveStructure.KnownPaths.Count) > Length(KnownPaths.Arr) then
   SetLength(KnownPaths.Arr,KnownPaths.Count + fArchiveStructure.KnownPaths.Count);
 Result := 0;
