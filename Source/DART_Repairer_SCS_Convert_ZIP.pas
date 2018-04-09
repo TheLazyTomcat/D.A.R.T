@@ -329,7 +329,7 @@ try
   If fArchiveStructure.Entries.Arr[SCS_Index].UtilityData.Resolved then
     begin
       // entry seems to have been resolved
-      // save only entries that have name
+      // save only entries that have a name
       If Length(LocalHeader.FileName) > 0 then
         begin
           // entry is resolved, save it into ZIP output

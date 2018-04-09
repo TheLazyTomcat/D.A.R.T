@@ -234,7 +234,7 @@ Note - when this option is active during rebuilding, unresolved entries are also
 
 Files are stored into the output folder, subfolder "_unresolved_".
 #1204
-Set of paths that will be used to resolve enries file names.
+Set of paths that will be used to resolve entries file names.
 
 One path on each line. Path delimiter is forward slash (/). Paths must not contain leading and/or trailing delimited.
 #1205
