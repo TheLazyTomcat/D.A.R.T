@@ -100,13 +100,82 @@ implementation
 
 uses
   {$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON},
-  StrRect,
+  StrRect, ExplicitStringLists,
   DART_Auxiliary, DART_ProcessingManager,
   ProcSettingsFrame_ZIP, ProcSettingsFrame_SCS;
 
+{$R '.\Resources\OptsDescr.res'}
+
+//==============================================================================  
+
 procedure TfProcSettingsForm.LoadOptionsDescription;
+var
+  ResourceStream: TResourceStream;
+  TempStrList:    TAnsiStringList;
+  i:              Integer;
+  DescrIndex:     Integer;
+  TempStr:        String;
+
+  Function GetDescrIndex(const Str: AnsiString): Integer;
+  begin
+    Result := -1;
+    If Length(Str) > 0 then
+      If Str[1] = '#' then
+        Result := StrToIntDef(Copy(AnsiToStr(Str),2,Length(Str)),-1);
+  end;
+
+  procedure AddNewDescription(const Str: String; Index: Integer);
+  var
+    GroupIdx: Integer;
+    DescrIdx: Integer;
+  begin
+    If Index >= 0 then
+      begin
+        GroupIdx := Index div 100;
+        DescrIdx := Index mod 100;
+        If Length(fOptionDescriptions) <= GroupIdx then
+          SetLength(fOptionDescriptions,GroupIdx + 1);
+        If Length(fOptionDescriptions[GroupIdx]) <= DescrIdx then
+          SetLength(fOptionDescriptions[GroupIdx],DescrIdx + 1);
+        fOptionDescriptions[GroupIdx,DescrIdx] := Str;
+      end;
+  end;
+
 begin
 SetLength(fOptionDescriptions,0,0);
+TempStrList := TAnsiStringList.Create;
+try
+  ResourceStream := TResourceStream.Create(hInstance,'OptsDescr',RT_RCDATA);
+  try
+    TempStrList.LoadFromStream(ResourceStream);
+  finally
+    ResourceStream.Free;
+  end;
+  // load individual descriptions
+  DescrIndex := -1;
+  TempStr := '';
+  For i := 0 to Pred(TempStrList.Count) do
+    begin
+      If GetDescrIndex(TempStrList[i]) < 0 then
+        begin
+          // line does not contain a tag, add its content to TempStr
+          If Length(TempStr) > 0 then
+            TempStr := TempStr + sLineBreak + AnsiToStr(TempStrList[i])
+          else
+            TempStr := AnsiToStr(TempStrList[i]);
+        end
+      else
+        begin
+          // line contains a tag, store what is in TempStr to a description with index equal to Tag
+          AddNewDescription(TempStr,DescrIndex);
+          TempStr := '';
+          DescrIndex := GetDescrIndex(TempStrList[i]);
+        end;
+    end;
+  AddNewDescription(TempStr,DescrIndex);
+finally
+  TempStrList.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -114,7 +183,7 @@ end;
 procedure TfProcSettingsForm.FrameOptionDescriptionHandler(Sender: TObject; DescriptionTag: Integer);
 var
   GroupIdx: Integer;
-  DescrIdx:  Integer;
+  DescrIdx: Integer;
 begin
 If meOptionDecription.Tag <> DescriptionTag then
   begin
@@ -143,6 +212,7 @@ If lblArchiveFile.ShowHint then
   lblArchiveFile.Hint := fArchiveProcessingSettings.Common.ArchivePath;
 lblArchiveType.Caption := DART_ArchiveTypeStrings[fArchiveProcessingSettings.Common.SelectedArchiveType];
 cbForceArchiveType.Checked := fArchiveProcessingSettings.Common.SelectedArchiveType in [atSCS_frc,atZIP_frc];
+cmbForcedArchiveType.Enabled := cbForceArchiveType.Checked;
 If cbForceArchiveType.Checked then
   case fArchiveProcessingSettings.Common.SelectedArchiveType of
     atSCS_frc:  cmbForcedArchiveType.ItemIndex := 0;
@@ -388,7 +458,8 @@ For i := Low(TDARTKnownArchiveTypes) to High(TDARTKnownArchiveTypes) do
 cmbForcedArchiveType.OnMouseMove := OptionMouseMove;
 cmbConvertTo.OnMouseMove := OptionMouseMove;
 gbArchiveSettings.DoubleBuffered := True;
-scbArchiveSettings.DoubleBuffered := True;    
+scbArchiveSettings.DoubleBuffered := True;
+LoadOptionsDescription;  
 end;
 
 //------------------------------------------------------------------------------

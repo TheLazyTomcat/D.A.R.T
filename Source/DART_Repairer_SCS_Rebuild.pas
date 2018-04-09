@@ -262,8 +262,9 @@ try
       // new data offset is set to current position in the output stream
       BinPart.DataOffset := UInt64(fRebuildArchiveStream.Position);
       // bin part does not need any more changes, save the data to output
-      ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
-        ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
+      If UtilityData.Resolved or fProcessingSettings.PathResolve.ExtractedUnresolvedEntries then
+        ProgressedStreamWrite(fRebuildArchiveStream,fBuffer_Entry.Memory,BinPart.CompressedSize,
+          ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
     end;
   DoProgress(fEntriesProcessingProgNode,Index,1.0);
 except

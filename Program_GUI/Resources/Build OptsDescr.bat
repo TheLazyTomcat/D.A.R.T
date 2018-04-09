@@ -1,0 +1,1 @@
+brcc32 -fo OptsDescr.res    OptsDescr.rc 
