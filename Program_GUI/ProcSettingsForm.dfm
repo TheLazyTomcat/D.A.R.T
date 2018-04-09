@@ -275,7 +275,6 @@ object fProcSettingsForm: TfProcSettingsForm
     Width = 161
     Height = 25
     Caption = 'Save processing settings...'
-    Enabled = False
     TabOrder = 3
     OnClick = btnSaveSettingsClick
   end
@@ -285,7 +284,6 @@ object fProcSettingsForm: TfProcSettingsForm
     Width = 161
     Height = 25
     Caption = 'Load processing settings...'
-    Enabled = False
     TabOrder = 4
     OnClick = btnLoadSettingsClick
   end
@@ -295,7 +293,6 @@ object fProcSettingsForm: TfProcSettingsForm
     Width = 177
     Height = 25
     Caption = 'Load default processing settings'
-    Enabled = False
     TabOrder = 5
     OnClick = btnDefaultSettingsClick
   end
@@ -322,6 +319,16 @@ object fProcSettingsForm: TfProcSettingsForm
     Filter = 
       'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zi' +
       'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
+    Left = 912
+  end
+  object diaProcSettOpen: TOpenDialog
+    Filter = 'INI files (*.ini)|*.ini|All files (*.*)|*.*'
+    Left = 944
+  end
+  object diaProcSettSave: TSaveDialog
+    DefaultExt = '.ini'
+    Filter = 'INI files (*.ini)|*.ini|All files (*.*)|*.*'
     Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
     Left = 976
   end

@@ -653,6 +653,9 @@ If Assigned(fProcessingThread) then
     DoManagerStatus;
     fProcessingThread.StopProcessing;   // does not stop the thread, only sets a flag
     fProcessingThread.ResumeProcessing; // in case it is paused
+  {$IFDEF DevelNotes}
+    {$MESSAGE 'read hare'}
+  {$ENDIF}
   {
     Following line might hung if there is problem in processing.
 

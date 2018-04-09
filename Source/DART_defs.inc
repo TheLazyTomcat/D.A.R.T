@@ -49,3 +49,7 @@
 {$ELSE}
   {$UNDEF FPC_NonUnicode_NoUTF8RTL}
 {$IFEND}
+
+//--- Others -------------------------------------------------------------------
+
+{.$DEFINE DevelNotes}

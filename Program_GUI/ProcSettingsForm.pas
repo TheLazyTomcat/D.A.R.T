@@ -56,6 +56,8 @@ type
     btnAccept: TButton;
     btnClose: TButton;
     diaTargetSave: TSaveDialog;
+    diaProcSettOpen: TOpenDialog;
+    diaProcSettSave: TSaveDialog;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure cmbForcedArchiveTypeChange(Sender: TObject);
@@ -428,7 +430,6 @@ fArchiveProcessingSettings := ArchiveProcessingSettings;
 fLoading := True;
 try
   SettingsToForm;
-  cbForceArchiveType.OnClick(cbForceArchiveType);
 finally
   fLoading := False;
 end;
@@ -446,10 +447,10 @@ end;
 
 procedure TfProcSettingsForm.FormCreate(Sender: TObject);
 var
-  i:  TDARTKnownArchiveTypes;
+  i:  TDARTKnownArchiveType;
 begin
 fActiveArchiveSettingsFrame := nil;
-For i := Low(TDARTKnownArchiveTypes) to High(TDARTKnownArchiveTypes) do
+For i := Low(TDARTKnownArchiveType) to High(TDARTKnownArchiveType) do
   If i <> katUnknown then
     begin
       cmbForcedArchiveType.Items.Add(DART_KnownArchiveTypeStrings[i]);
@@ -459,6 +460,8 @@ cmbForcedArchiveType.OnMouseMove := OptionMouseMove;
 cmbConvertTo.OnMouseMove := OptionMouseMove;
 gbArchiveSettings.DoubleBuffered := True;
 scbArchiveSettings.DoubleBuffered := True;
+diaProcSettOpen.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
+diaProcSettSave.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
 LoadOptionsDescription;  
 end;
 
@@ -541,21 +544,66 @@ end;
 
 procedure TfProcSettingsForm.btnSaveSettingsClick(Sender: TObject);
 begin
-//
+If diaProcSettSave.Execute then
+  SaveToIniFile(diaProcSettSave.FileName,fArchiveProcessingSettings);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfProcSettingsForm.btnLoadSettingsClick(Sender: TObject);
+var
+  TempArchiveProcessingSettings:  TDARTArchiveProcessingSettings;
 begin
-//
+If diaProcSettOpen.Execute then
+  If MessageDlg('Replace current processing settings with settings stored in the selected file?',mtWarning,[mbYes,mbNo],0) = mrYes then
+    begin
+      TempArchiveProcessingSettings := DART_DefaultArchiveProcessingSettings;
+      LoadFromIniFile(diaProcSettSave.FileName,TempArchiveProcessingSettings);
+      fArchiveProcessingSettings.SCS := TempArchiveProcessingSettings.SCS;
+      fArchiveProcessingSettings.ZIP := TempArchiveProcessingSettings.ZIP;
+      fArchiveProcessingSettings.Common.RepairMethod :=
+        TempArchiveProcessingSettings.Common.RepairMethod;
+      fArchiveProcessingSettings.Common.ConvertTo :=
+        TempArchiveProcessingSettings.Common.ConvertTo;
+      fArchiveProcessingSettings.Common.IgnoreArchiveSignature :=
+        TempArchiveProcessingSettings.Common.IgnoreArchiveSignature;
+      fArchiveProcessingSettings.Common.InMemoryProcessing :=
+        TempArchiveProcessingSettings.Common.InMemoryProcessing;
+      fArchiveProcessingSettings.Common.IgnoreErroneousEntries :=
+          TempArchiveProcessingSettings.Common.IgnoreErroneousEntries;
+      fLoading := True;
+      try
+        SettingsToForm;
+      finally
+        fLoading := False;
+      end;
+      ShowArchiveSettingsFrame;
+    end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfProcSettingsForm.btnDefaultSettingsClick(Sender: TObject);
+var
+  OldArchiveProcessingSettings:  TDARTArchiveProcessingSettings;
 begin
-//
+If MessageDlg('Are you sure you want to load default settings?',mtWarning,[mbYes,mbNo],0) = mrYes then
+  begin
+    OldArchiveProcessingSettings := fArchiveProcessingSettings;
+    fArchiveProcessingSettings := DART_DefaultArchiveProcessingSettings;
+    fArchiveProcessingSettings.Common.ArchivePath := OldArchiveProcessingSettings.Common.ArchivePath;
+    fArchiveProcessingSettings.Common.OriginalArchiveType := OldArchiveProcessingSettings.Common.OriginalArchiveType;
+    fArchiveProcessingSettings.Common.SelectedArchiveType := OldArchiveProcessingSettings.Common.OriginalArchiveType;
+    fArchiveProcessingSettings.Common.TargetPath := OldArchiveProcessingSettings.Common.TargetPath;
+    fArchiveProcessingSettings.Auxiliary.InMemoryProcessingAllowed := OldArchiveProcessingSettings.Auxiliary.InMemoryProcessingAllowed;
+    fLoading := True;
+    try
+      SettingsToForm;
+    finally
+      fLoading := False;
+    end;
+    ShowArchiveSettingsFrame;
+  end;
 end;
 
 //------------------------------------------------------------------------------

@@ -546,6 +546,9 @@ try
                 DecompressedBuff,DecompressedSize,WBITS_RAW,DART_PROGSTAGE_INFO_NoProgress);
               try
                 // recompress data
+              {$IFDEF DevelNotes}
+                {$MESSAGE 'read hare'}
+              {$ENDIF}
               {
                 This can be optimized - instead of recompression, do:
                   - construct zlib stream header
