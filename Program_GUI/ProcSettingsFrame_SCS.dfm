@@ -22,9 +22,11 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object lblPresets: TLabel
       Left = 0
       Top = 8
-      Width = 275
+      Width = 313
       Height = 13
-      Caption = 'SCS processing settings presets (select preset to load it):'
+      Caption = 
+        'SCS archive processing settings presets (select preset to load i' +
+        't):'
     end
     object gbEntries: TGroupBox
       Tag = 1100

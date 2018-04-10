@@ -22,9 +22,11 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     object lblPresets: TLabel
       Left = 0
       Top = 8
-      Width = 272
+      Width = 310
       Height = 13
-      Caption = 'ZIP processing settings presets (select preset to load it):'
+      Caption = 
+        'ZIP archive processing settings presets (select preset to load i' +
+        't):'
     end
     object gbGeneral: TGroupBox
       Tag = 100
