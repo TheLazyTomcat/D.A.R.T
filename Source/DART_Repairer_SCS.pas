@@ -100,6 +100,8 @@ type
     procedure SCS_ResolvePaths_ParseContent; virtual;
     procedure SCS_ResolvePaths_BruteForce; virtual;
     procedure SCS_ResolvePaths_Reconstruct; virtual;
+    // progress handlers
+    procedure SCS_ResolvePaths_BruteForce_ProgressHandler(Sender: TObject; Progress: Double); virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings; CatchExceptions: Boolean);
@@ -336,7 +338,7 @@ Result := -1;
 If fEntriesSorted then
   begin
     Min := 0;
-    max := Pred(fArchiveStructure.Entries.Count);
+    Max := Pred(fArchiveStructure.Entries.Count);
     while Max >= min do
       begin
         i := ((max - Min) shr 1) + Min;
@@ -858,6 +860,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
     Resolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fProcessingSettings.PathResolve.BruteForce);
     try
+      Resolver.OnProgress := SCS_ResolvePaths_BruteForce_ProgressHandler;
       Resolver.Initialize(fArchiveStructure);
       If Resolver.UnresolvedCount > 0 then
         Resolver.Run;
@@ -879,6 +882,13 @@ SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce_ProgressHandler(Sender: TObject; Progress: Double);
+begin
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,Progress);
 end;
 
 {-------------------------------------------------------------------------------

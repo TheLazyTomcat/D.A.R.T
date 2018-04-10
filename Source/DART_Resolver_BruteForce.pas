@@ -49,6 +49,8 @@ type
     procedure DoProgress(Progress: Double); virtual;
     Function PathHash(const Path: AnsiString): TDARTHash64; virtual;
     Function Unresolved_IndexOf(Hash: TDARTHash64): Integer; virtual;
+    procedure Unresolved_MoveToResolved(Index: Integer; const Path: AnsiString); virtual;
+    procedure Unresolved_SortEntries; virtual;
     // single thread (local) processing
     procedure MainProcessing_SingleThreaded; virtual;
   public
@@ -88,21 +90,154 @@ end;
 
 Function TDARTResolver_BruteForce.Unresolved_IndexOf(Hash: TDARTHash64): Integer;
 var
-  i:  Integer;
+  i,Min,Max:  Integer;
 begin
 Result := -1;
-For i := Low(fUnresolved.Arr) to Pred(fUnresolved.Count) do
-  If HashCompare(Hash,fUnresolved.Arr[i]) = 0 then
+Min := 0;
+Max := Pred(fUnresolved.Count);
+while Max >= min do
+  begin
+    i := ((max - Min) shr 1) + Min;
+    // i-th entry has lower hash than is requested
+    If HashCompare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
+      // i-th entry has higher hash than is requested
+      else If HashCompare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
+        else begin
+          // i-th entry has the requested hash
+          Result := i;
+          Break{while};
+        end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTResolver_BruteForce.Unresolved_MoveToResolved(Index: Integer; const Path: AnsiString);
+var
+  i:  Integer;
+begin
+If fResolved.Count >= Length(fResolved.Arr) then
+  SetLength(fResolved.Arr,Length(fResolved.Arr) + 1024);
+fResolved.Arr[fResolved.Count].Hash := fUnresolved.Arr[Index];
+fResolved.Arr[fResolved.Count].Path := Path;
+Inc(fResolved.Count);
+For i := Index to (fUnresolved.Count - 2) do
+  fUnresolved.Arr[i] := fUnresolved.Arr[i + 1];
+Dec(fUnresolved.Count);
+DoProgress(fResolved.Count / (fUnresolved.Count + fResolved.Count));
+
+WriteLn('  Resolved: ',Path);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTResolver_BruteForce.Unresolved_SortEntries;
+
+  procedure QuickSort(LeftIdx,RightIdx: Integer);
+  var
+    Pivot:  TDARTHash64;
+    Idx,i:  Integer;
+
+    procedure ExchangeEntries(Idx1,Idx2: Integer);
+    var
+      TempEntry:  TDARTHash64;
     begin
-      Result := i;
-      Break{For i};
+      If (Idx1 <> Idx2) then
+        begin
+          If (Idx1 < Low(fUnresolved.Arr)) or (Idx1 >= fUnresolved.Count) then
+            raise Exception.CreateFmt('TDARTResolver_BruteForce.Unresolved_SortEntries: Index1 (%d) out of bounds.',[Idx1]);
+          If (Idx2 < Low(fUnresolved.Arr)) or (Idx2 >= fUnresolved.Count) then
+            raise Exception.CreateFmt('TDARTResolver_BruteForce.Unresolved_SortEntries: Index2 (%d) out of bounds.',[Idx2]);
+          TempEntry := fUnresolved.Arr[Idx1];
+          fUnresolved.Arr[Idx1] := fUnresolved.Arr[Idx2];
+          fUnresolved.Arr[Idx2] := TempEntry;
+        end;
     end;
+    
+  begin
+    If LeftIdx < RightIdx then
+      begin
+        ExchangeEntries((LeftIdx + RightIdx) shr 1,RightIdx);
+        Pivot := fUnresolved.Arr[RightIdx];
+        Idx := LeftIdx;
+        For i := LeftIdx to Pred(RightIdx) do
+          If HashCompare(Pivot,fUnresolved.Arr[i]) < 0 then
+            begin
+              ExchangeEntries(i,idx);
+              Inc(Idx);
+            end;
+        ExchangeEntries(Idx,RightIdx);
+        QuickSort(LeftIdx,Idx - 1);
+        QuickSort(Idx + 1,RightIdx);
+      end;
+  end;
+
+begin
+If fUnresolved.Count > 1 then
+  QuickSort(Low(fUnresolved.Arr),Pred(fUnresolved.Count));
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TDARTResolver_BruteForce.MainProcessing_SingleThreaded;
+var
+  Shadow: AnsiString;
+  Buffer: AnsiString;
+  i,j,k:  Integer;
+  Index:  Integer;
 begin
+DoProgress(0.0);
+// prepare buffer
+SetLength(Shadow,fBruteForceSettings.PathLengthLimit);
+FillChar(PAnsiChar(Shadow)^,Length(Shadow),0);  // make sure shadow is filled with zeroes
+SetLength(Buffer,1);
+// alphabet cycle
+k := 0;
+while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.Count > 0) do
+  begin
+    Inc(k);
+    If k >= 10*1024 then
+      begin
+        WriteLn(Buffer,' ',fResolved.Count);
+        k := 0;
+      end;
+    For i := 0 to Pred(fAlphabet.Count) do
+      begin
+        Shadow[1] := AnsiChar(i);
+        Buffer[1] := fAlphabet.Letters[i];
+        // check hash of the buffer itself
+        Index := Unresolved_IndexOf(PathHash(Buffer));
+        If Index < 0 then
+          begin
+            // bare hash not found, search in combination with paths
+            For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
+              begin
+              Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j].Path + Buffer));
+                If Index >= 0 then
+                  Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j].Path + Buffer);
+              end;
+          end
+        else Unresolved_MoveToResolved(Index,Buffer);
+      end;
+    // propagate cycle
+    For i := 2 to Length(Shadow) do
+      begin
+        If (Ord(Shadow[i]) = 0) and (Length(Buffer) < i) then
+          SetLength(Buffer,i);
+        If Ord(Shadow[i]) < Pred(fAlphabet.Count) then
+          begin
+            Shadow[i] := AnsiChar(Ord(Shadow[i]) + 1);
+            Buffer[i] := fAlphabet.Letters[Ord(Shadow[i])];
+            Break{For i};
+          end
+        else
+          begin
+            Shadow[i] := AnsiChar(0);
+            Buffer[i] := fAlphabet.Letters[Ord(Shadow[i])];
+          end;
+      end;
+  end;
+DoProgress(1.0);
 end;
 
 //==============================================================================
@@ -132,18 +267,20 @@ For i := Low(ArchiveStructure.Entries.Arr) to Pred(ArchiveStructure.Entries.Coun
   If not ArchiveStructure.Entries.Arr[i].UtilityData.Resolved then
     begin
       If fUnresolved.Count >= Length(fUnresolved.Arr) then
-        SetLength(fUnresolved.Arr,Length(fUnresolved.Arr) + 128);
+        SetLength(fUnresolved.Arr,Length(fUnresolved.Arr) + 1024);
       fUnresolved.Arr[fUnresolved.Count] := ArchiveStructure.Entries.Arr[i].BinPart.Hash;
       Inc(fUnresolved.Count);
     end;
 // prepare list of used known paths
 If fBruteForceSettings.UseKnownPaths then
   For i := Low(ArchiveStructure.KnownPaths.Arr) to Pred(ArchiveStructure.KnownPaths.Count) do
-    If Length(ArchiveStructure.KnownPaths.Arr[i].Path) > 0 then
+    If (Length(ArchiveStructure.KnownPaths.Arr[i].Path) > 0) and ArchiveStructure.KnownPaths.Arr[i].Directory then
       begin
         If fUsedKnownPaths.Count >= Length(fUsedKnownPaths.Arr) then
-          SetLength(fUsedKnownPaths.Arr,Length(fUsedKnownPaths.Arr) + 128);
+          SetLength(fUsedKnownPaths.Arr,Length(fUsedKnownPaths.Arr) + 1024);
         fUsedKnownPaths.Arr[fUsedKnownPaths.Count] := ArchiveStructure.KnownPaths.Arr[i];
+        fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path :=
+          fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path + DART_SCS_PathDelim;
         Inc(fUsedKnownPaths.Count);
       end;
 // prepare hashing function
@@ -178,7 +315,9 @@ end;
 
 procedure TDARTResolver_BruteForce.Run;
 begin
-MainProcessing_SingleThreaded;
+Unresolved_SortEntries;
+If fBruteForceSettings.PathLengthLimit > 0 then
+  MainProcessing_SingleThreaded;
 end;
 
 
