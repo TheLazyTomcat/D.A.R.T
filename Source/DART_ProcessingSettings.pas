@@ -53,6 +53,15 @@ type
     IgnoreDictionaryID:     Boolean;
   end;
 
+  TDART_PS_SCS_PathResolve_BruteForce = record
+    ActivateBruteForce: Boolean;
+    Multithreaded:      Boolean;
+    UseKnownPaths:      Boolean;
+    PrintableASCIIOnly: Boolean;  // #32..#127
+    LimitedAlphabet:    Boolean;  // '0'..'9', 'a'..'z', '_', '.', '-', '/'
+    PathLengthLimit:    Integer;
+  end;
+
   TDART_PS_SCS_PathResolveSettings = record
     AssumeCityHash:             Boolean;
     UsePredefinedPaths:         Boolean;
@@ -61,7 +70,7 @@ type
     HelpArchives:               array of String;
     // temporary fields, will be expanded as the functions are implemented
     ParseContent: Boolean;
-    BruteForce:   Boolean;
+    BruteForce:                 TDART_PS_SCS_PathResolve_BruteForce;
   end;
 
   TDART_PS_SCS = record
@@ -158,7 +167,13 @@ const
         CustomPaths:                nil;
         HelpArchives:               nil;
         ParseContent:               False;
-        BruteForce:                 False));      
+        BruteForce: (
+          ActivateBruteForce:         False;
+          Multithreaded:              True;
+          UseKnownPaths:              False;
+          PrintableASCIIOnly:         True;
+          LimitedAlphabet:            False;
+          PathLengthLimit:            32)));
     ZIP: (
       AssumeCompressionMethod:  False;
       EndOfCentralDirectory: (

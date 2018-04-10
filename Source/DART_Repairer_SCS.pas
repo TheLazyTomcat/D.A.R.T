@@ -83,10 +83,9 @@ type
     // processing methods
     procedure ArchiveProcessing; override;
     // scs specific routines
-    Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
+    Function SCS_EntryFileNameHash(const EntryFileName: AnsiString): TDARTHash64; virtual;
     Function SCS_HashName: String; virtual;
-    Function SCS_HashCompare(A,B: UInt64): Integer; virtual;
-    Function SCS_IndexOfEntry(Hash: UInt64): Integer; virtual;
+    Function SCS_IndexOfEntry(Hash: TDARTHash64): Integer; virtual;
     procedure SCS_SortEntries; virtual;
     Function SCS_KnownPaths_IndexOf(const Path: AnsiString): Integer; virtual;
     Function SCS_KnownPaths_Add(const Path: AnsiString; Directory: Boolean): Integer; virtual;
@@ -133,7 +132,8 @@ uses
   SysUtils, Classes,
   City, BitOps, CRC32, StrRect, MemoryBuffer, ExplicitStringLists, ZLibCommon,
   StaticMemoryStream,
-  DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP;
+  DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP,
+  DART_Resolver_BruteForce;
 
 
 {===============================================================================
@@ -225,7 +225,7 @@ try
   If fProcessingSettings.PathResolve.ParseContent then
     DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
   // brute force
-  If fProcessingSettings.PathResolve.BruteForce then
+  If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
     DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce := fPathsResolveProcNode.Add(30);
   // reconstruct dirs
   DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct := fPathsResolveProcNode.Add(10);
@@ -305,11 +305,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
+Function TDARTRepairer_SCS.SCS_EntryFileNameHash(const EntryFileName: AnsiString): TDARTHash64;
 begin
 Result := 0;
 case fArchiveStructure.ArchiveHeader.HashType of
-  DART_SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar)));
 else
   DoError(DART_METHOD_ID_SCS_SENTRFNHS,'Unknown hashing algorithm (0x%.8x).',[fArchiveStructure.ArchiveHeader.HashType]);
 end;
@@ -328,33 +328,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_SCS.SCS_HashCompare(A,B: UInt64): Integer;
-begin
-If AuxTypes.NativeUInt64 then
-  begin
-    If A < B then Result := 1
-      else If A > B then Result := -1
-        else Result := 0;
-  end
-else
-  begin{%H-}
-    If Int64Rec(A).Hi <> Int64Rec(B).Hi then
-      begin
-        If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2
-          else Result := -2
-      end
-    else
-      begin
-        If Int64Rec(A).Lo < Int64Rec(B).Lo then Result := 1
-          else If Int64Rec(A).Lo > Int64Rec(B).Lo then Result := -1
-            else Result := 0;
-      end;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TDARTRepairer_SCS.SCS_IndexOfEntry(Hash: UInt64): Integer;
+Function TDARTRepairer_SCS.SCS_IndexOfEntry(Hash: TDARTHash64): Integer;
 var
   i,Min,Max:  Integer;
 begin
@@ -367,9 +341,9 @@ If fEntriesSorted then
       begin
         i := ((max - Min) shr 1) + Min;
         // i-th entry has lower hash than is requested
-        If SCS_HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) > 0 then Min := i + 1
+        If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) > 0 then Min := i + 1
           // i-th entry has higher hash than is requested
-          else If SCS_HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) < 0 then Max := i - 1
+          else If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) < 0 then Max := i - 1
             else begin
               // i-th entry has the requested hash
               Result := i;
@@ -380,7 +354,7 @@ If fEntriesSorted then
 else
   begin
     For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-      If SCS_HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) = 0 then
+      If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) = 0 then
         begin
           Result := i;
           Break{For i};
@@ -394,7 +368,7 @@ procedure TDARTRepairer_SCS.SCS_SortEntries;
 
   procedure QuickSort(LeftIdx,RightIdx: Integer);
   var
-    Pivot:  UInt64;
+    Pivot:  TDARTHash64;
     Idx,i:  Integer;
 
     procedure ExchangeEntries(Idx1,Idx2: Integer);
@@ -421,7 +395,7 @@ procedure TDARTRepairer_SCS.SCS_SortEntries;
         Pivot := fArchiveStructure.Entries.Arr[RightIdx].BinPart.Hash;
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If SCS_HashCompare(Pivot,fArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
+          If HashCompare(Pivot,fArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);
@@ -443,12 +417,12 @@ end;
 Function TDARTRepairer_SCS.SCS_KnownPaths_IndexOf(const Path: AnsiString): Integer;
 var
   i:        Integer;
-  PathHash: UInt64;
+  PathHash: TDARTHash64;
 begin
 Result := -1;
 PathHash := SCS_EntryFileNameHash(Path);
 For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-  If SCS_HashCompare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
+  If HashCompare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
     begin
       Result := i;
       Break{For i};
@@ -654,7 +628,9 @@ with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
     SCS_KnownPaths_Add(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
 // load all paths stored in the archive
-SCS_ResolvePaths_Local;
+{$message 'enable'}
+//SCS_ResolvePaths_Local;
+SCS_AssignPaths; // remove
 // load paths from help archives
 If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
   SCS_ResolvePaths_HelpArchives;
@@ -662,7 +638,7 @@ If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
 If fProcessingSettings.PathResolve.ParseContent then
   SCS_ResolvePaths_ParseContent;
 // bruteforce resolve  
-If fProcessingSettings.PathResolve.BruteForce then
+If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
   SCS_ResolvePaths_BruteForce;
 SCS_ResolvePaths_Reconstruct;
 DoProgress(fProcessingProgNode,PSIDX_C_PathsResolving,1.0);
@@ -874,11 +850,20 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce;
+var
+  Resolver: TDARTResolver_BruteForce;
 begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    DoError(-1,'Brute-force resolve is not implemented in this build.');
+    Resolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fProcessingSettings.PathResolve.BruteForce);
+    try
+      Resolver.Initialize(fArchiveStructure);
+      If Resolver.UnresolvedCount > 0 then
+        Resolver.Run;
+    finally
+      Resolver.Free;
+    end;
   end;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,1.0);
 end;

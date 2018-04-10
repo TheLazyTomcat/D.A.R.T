@@ -13,7 +13,7 @@ interface
 
 uses
   AuxTypes, ProgressTracker,
-  DART_Format_SCS, DART_Repairer_ZIP_Convert;
+  DART_Format_SCS, DART_Common, DART_Repairer_ZIP_Convert;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -49,8 +49,7 @@ type
     procedure ConvertArchive; override;
     // conversion-specific methods
     procedure ZIP_Conv_SCS_InitializeConvertedArchive; virtual;
-    Function ZIP_Conv_SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64; virtual;
-    Function ZIP_Conv_SCS_HashCompare(A,B: UInt64): Integer; virtual;
+    Function ZIP_Conv_SCS_EntryFileNameHash(const EntryFileName: AnsiString): TDARTHash64; virtual;
     procedure ZIP_Conv_SCS_SortConvertedEntries; virtual;
     procedure ZIP_Conv_SCS_ReconstructDirectories; virtual;
     procedure ZIP_Conv_SCS_ResetProgress; virtual;
@@ -66,8 +65,8 @@ uses
   Windows, SysUtils, Classes, StrUtils,
   City, StrRect, MemoryBuffer, ExplicitStringListsBase, ExplicitStringLists,
   BitOps, CRC32, ZLibCommon,
-  DART_Auxiliary, DART_Common, DART_PathDeconstructor, DART_Format_ZIP,
-  DART_Repairer, DART_Repairer_ZIP;
+  DART_Auxiliary, DART_PathDeconstructor, DART_Format_ZIP, DART_Repairer,
+  DART_Repairer_ZIP;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -209,40 +208,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_EntryFileNameHash(const EntryFileName: AnsiString): UInt64;
+Function TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_EntryFileNameHash(const EntryFileName: AnsiString): TDARTHash64;
 begin
 Result := 0;
 case fSCSArchiveStructure.ArchiveHeader.HashType of
-  DART_SCS_HASH_City: Result := CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar));
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(EntryFileName),Length(EntryFileName) * SizeOf(AnsiChar)));
 else
   DoError(DART_METHOD_ID_ZIP_CONV_SCS_ENFNHSH,'Unknown hashing algorithm (0x%.8x).',[fSCSArchiveStructure.ArchiveHeader.HashType]);
 end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_HashCompare(A,B: UInt64): Integer;
-begin
-If AuxTypes.NativeUInt64 then
-  begin
-    If A < B then Result := 1
-      else If A > B then Result := -1
-        else Result := 0;
-  end
-else
-  begin{%H-}
-    If Int64Rec(A).Hi <> Int64Rec(B).Hi then
-      begin
-        If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2
-          else Result := -2
-      end
-    else
-      begin
-        If Int64Rec(A).Lo < Int64Rec(B).Lo then Result := 1
-          else If Int64Rec(A).Lo > Int64Rec(B).Lo then Result := -1
-            else Result := 0;
-      end;
-  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -251,7 +224,7 @@ procedure TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_SortConvertedEntries;
 
   procedure QuickSort(LeftIdx,RightIdx: Integer);
   var
-    Pivot:  UInt64;
+    Pivot:  TDARTHash64;
     Idx,i:  Integer;
 
     procedure ExchangeEntries(Idx1,Idx2: Integer);
@@ -278,7 +251,7 @@ procedure TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_SortConvertedEntries;
         Pivot := fSCSArchiveStructure.Entries.Arr[RightIdx].BinPart.Hash;
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If ZIP_Conv_SCS_HashCompare(Pivot,fSCSArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
+          If HashCompare(Pivot,fSCSArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);
