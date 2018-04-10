@@ -203,7 +203,7 @@ const
 
 //--- Processing settings functions --------------------------------------------
 
-procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings);
+procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings; RectifyInnerStructs: Boolean = False);
 
 procedure RectifyZIPProcessingSettings(var ZIP_PS: TDART_PS_ZIP);
 procedure RectifySCSProcessingSettings(var {%H-}SCS_PS: TDART_PS_SCS);
@@ -221,10 +221,15 @@ implementation
 uses
   SysUtils, IniFiles, TypInfo;
 
-procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings);
+procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings; RectifyInnerStructs: Boolean = False);
 begin
 If not APS.Auxiliary.InMemoryProcessingAllowed then
   APS.Common.InMemoryProcessing := False;
+If RectifyInnerStructs then
+  begin
+    RectifyZIPProcessingSettings(APS.ZIP);
+    RectifySCSProcessingSettings(APS.SCS);
+  end;
 end;
 
 //------------------------------------------------------------------------------

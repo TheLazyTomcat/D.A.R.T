@@ -2,7 +2,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 658
+  Height = 714
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,15 +14,22 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 658
+    Height = 714
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
     TabOrder = 0
+    object lblPresets: TLabel
+      Left = 0
+      Top = 8
+      Width = 275
+      Height = 13
+      Caption = 'SCS processing settings presets (select preset to load it):'
+    end
     object gbEntries: TGroupBox
       Tag = 1100
       Left = 0
-      Top = 56
+      Top = 112
       Width = 561
       Height = 49
       Caption = 'Entries'
@@ -65,7 +72,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object gbPathResolve: TGroupBox
       Tag = 1200
       Left = 0
-      Top = 112
+      Top = 168
       Width = 561
       Height = 545
       Caption = 'Path resolving'
@@ -222,7 +229,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     end
     object gbGeneral: TGroupBox
       Left = 0
-      Top = 0
+      Top = 56
       Width = 561
       Height = 49
       Caption = 'General'
@@ -240,10 +247,20 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         OnMouseMove = OptionMouseMove
       end
     end
+    object cmbPresets: TComboBox
+      Left = 0
+      Top = 24
+      Width = 561
+      Height = 21
+      Style = csDropDownList
+      ItemHeight = 13
+      TabOrder = 3
+      OnChange = cmbPresetsChange
+    end
   end
   object pmHelpArchivesMenu: TPopupMenu
     Left = 464
-    Top = 256
+    Top = 368
     object mi_HAM_Browse: TMenuItem
       Caption = 'Browse for help archives...'
       OnClick = mi_HAM_BrowseClick
@@ -266,6 +283,6 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
     Left = 496
-    Top = 256
+    Top = 368
   end
 end

@@ -60,6 +60,9 @@ type
     cbLHIgnoreExtraField: TCheckBox;
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
+    cmbPresets: TComboBox;
+    lblPresets: TLabel;
+    procedure cmbPresetsChange(Sender: TObject);
   private
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
     fLoading:                   Boolean;
@@ -86,9 +89,24 @@ implementation
   {$R *.dfm}
 {$ENDIF}
 
+uses
+  DART_ProcessingSettings_Presets;
+
 procedure TfrmProcSettingsFrame_ZIP.Initialize;
+var
+  i:  Integer;
 begin
-// nothing to do here
+cmbPresets.Items.BeginUpdate;
+try
+  For i := Low(DART_PS_ZIP_Presets) to High(DART_PS_ZIP_Presets) do
+    cmbPresets.Items.Add(DART_PS_ZIP_Presets[i].PresetName);
+  If cmbPresets.Items.Count > 0 then
+    cmbPresets.ItemIndex := 0
+  else
+    cmbPresets.ItemIndex := -1;
+finally
+  cmbPresets.Items.EndUpdate;
+end;
 end;  
 
 //------------------------------------------------------------------------------
@@ -293,6 +311,17 @@ If Sender is TGroupBox then
     Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
     If Assigned(Control) and (Control is TCheckBox) then
       OptionMouseMove(Control,Shift,X,Y);
+  end;
+end;
+
+//==============================================================================
+
+procedure TfrmProcSettingsFrame_ZIP.cmbPresetsChange(Sender: TObject);
+begin
+If not fLoading and (cmbPresets.ItemIndex >= 0) then
+  begin
+    fProcessingSettings := DART_PS_ZIP_Presets[cmbPresets.ItemIndex].PresetData;
+    SettingsToFrame;
   end;
 end;
 

@@ -60,6 +60,7 @@ type
     diaProcSettSave: TSaveDialog;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure meOptionDecriptionKeyPress(Sender: TObject; var Key: Char);
     procedure cmbForcedArchiveTypeChange(Sender: TObject);
     procedure lbleTargetChange(Sender: TObject);
     procedure btnBrowseTargetClick(Sender: TObject);
@@ -67,7 +68,7 @@ type
     procedure btnLoadSettingsClick(Sender: TObject);
     procedure btnDefaultSettingsClick(Sender: TObject);
     procedure btnAcceptClick(Sender: TObject);
-    procedure btnCloseClick(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject); 
   private
     fArchiveProcessingSettings:   TDARTArchiveProcessingSettings;
     fActiveArchiveSettingsFrame:  TFrame;
@@ -475,6 +476,18 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TfProcSettingsForm.meOptionDecriptionKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+If Key = ^A then
+  begin
+    Key := #0;
+    meOptionDecription.SelectAll;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TfProcSettingsForm.cmbForcedArchiveTypeChange(Sender: TObject);
 begin
 If cbForceArchiveType.Checked then
@@ -559,6 +572,7 @@ If diaProcSettOpen.Execute then
     begin
       TempArchiveProcessingSettings := DART_DefaultArchiveProcessingSettings;
       LoadFromIniFile(diaProcSettSave.FileName,TempArchiveProcessingSettings);
+      RectifyArchiveProcessingSettings(TempArchiveProcessingSettings,True);
       fArchiveProcessingSettings.SCS := TempArchiveProcessingSettings.SCS;
       fArchiveProcessingSettings.ZIP := TempArchiveProcessingSettings.ZIP;
       fArchiveProcessingSettings.Common.RepairMethod :=

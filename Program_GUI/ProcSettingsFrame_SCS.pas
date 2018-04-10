@@ -21,7 +21,10 @@ type
 
   TfrmProcSettingsFrame_SCS = class(TFrame)
     pnlBackground: TPanel;
+    lblPresets: TLabel;
+    cmbPresets: TComboBox;    
     gbGeneral: TGroupBox;
+    cbEntryTabInMem: TCheckBox;    
     gbEntries: TGroupBox;
     cbIgnoreCRC32: TCheckBox;
     cbIgnoreCompressionFlag: TCheckBox;
@@ -45,11 +48,11 @@ type
     mi_HAM_ETS2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
     diaHelpArchivesOpen: TOpenDialog;
-    cbEntryTabInMem: TCheckBox;
     procedure meCustomPathsKeyPress(Sender: TObject; var Key: Char);
     procedure meHelpArchivesKeyPress(Sender: TObject; var Key: Char);
     procedure btnHelpArchivesMenuClick(Sender: TObject);
     procedure mi_HAM_BrowseClick(Sender: TObject);
+    procedure cmbPresetsChange(Sender: TObject);
   private
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
     fLoading:                   Boolean;
@@ -83,7 +86,7 @@ implementation
 uses
   Registry,
   StrRect,
-  DART_Auxiliary;
+  DART_Auxiliary, DART_ProcessingSettings_Presets;
 
 
 procedure TfrmProcSettingsFrame_SCS.GetInstalledGames;
@@ -148,6 +151,7 @@ var
 begin
 diaHelpArchivesOpen.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
 GetInstalledGames;
+// game files
 For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
   If fGameInstallDirs[i] <> '' then
     begin
@@ -159,6 +163,18 @@ For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
       mi_HAM_N1.Visible := True;
     end
   else GetGameFilesMenuItem(i).Visible := False;
+// presets
+cmbPresets.Items.BeginUpdate;
+try
+  For i := Low(DART_PS_SCS_Presets) to High(DART_PS_SCS_Presets) do
+    cmbPresets.Items.Add(DART_PS_SCS_Presets[i].PresetName);
+  If cmbPresets.Items.Count > 0 then
+    cmbPresets.ItemIndex := 0
+  else
+    cmbPresets.ItemIndex := -1;
+finally
+  cmbPresets.Items.EndUpdate;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -287,6 +303,17 @@ If Sender is TGroupBox then
 end;
 
 //==============================================================================
+
+procedure TfrmProcSettingsFrame_SCS.cmbPresetsChange(Sender: TObject);
+begin
+If not fLoading and (cmbPresets.ItemIndex >= 0) then
+  begin
+    fProcessingSettings := DART_PS_SCS_Presets[cmbPresets.ItemIndex].PresetData;
+    SettingsToFrame;
+  end;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TfrmProcSettingsFrame_SCS.meCustomPathsKeyPress(Sender: TObject;
   var Key: Char);

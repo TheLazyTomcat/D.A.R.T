@@ -1,9 +1,9 @@
 object fProcSettingsForm: TfProcSettingsForm
-  Left = 251
-  Top = 114
+  Left = 252
+  Top = 50
   BorderStyle = bsDialog
   Caption = 'Archive processing settings'
-  ClientHeight = 584
+  ClientHeight = 640
   ClientWidth = 1016
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -26,7 +26,7 @@ object fProcSettingsForm: TfProcSettingsForm
   end
   object bvlMainHorSplit: TBevel
     Left = 0
-    Top = 544
+    Top = 600
     Width = 1017
     Height = 9
     Shape = bsTopLine
@@ -35,7 +35,7 @@ object fProcSettingsForm: TfProcSettingsForm
     Left = 616
     Top = 24
     Width = 393
-    Height = 513
+    Height = 569
     Color = clInfoBk
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -49,6 +49,7 @@ object fProcSettingsForm: TfProcSettingsForm
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 0
+    OnKeyPress = meOptionDecriptionKeyPress
   end
   object brCommonSettings: TGroupBox
     Left = 8
@@ -253,14 +254,14 @@ object fProcSettingsForm: TfProcSettingsForm
     Left = 8
     Top = 200
     Width = 601
-    Height = 337
+    Height = 393
     Caption = 'Archive settings'
     TabOrder = 2
     object scbArchiveSettings: TScrollBox
       Left = 8
       Top = 16
       Width = 585
-      Height = 313
+      Height = 369
       HorzScrollBar.Visible = False
       VertScrollBar.Smooth = True
       VertScrollBar.Tracking = True
@@ -271,7 +272,7 @@ object fProcSettingsForm: TfProcSettingsForm
   end
   object btnSaveSettings: TButton
     Left = 8
-    Top = 552
+    Top = 608
     Width = 161
     Height = 25
     Caption = 'Save processing settings...'
@@ -280,7 +281,7 @@ object fProcSettingsForm: TfProcSettingsForm
   end
   object btnLoadSettings: TButton
     Left = 176
-    Top = 552
+    Top = 608
     Width = 161
     Height = 25
     Caption = 'Load processing settings...'
@@ -288,8 +289,8 @@ object fProcSettingsForm: TfProcSettingsForm
     OnClick = btnLoadSettingsClick
   end
   object btnDefaultSettings: TButton
-    Left = 432
-    Top = 552
+    Left = 424
+    Top = 608
     Width = 177
     Height = 25
     Caption = 'Load default processing settings'
@@ -298,7 +299,7 @@ object fProcSettingsForm: TfProcSettingsForm
   end
   object btnAccept: TButton
     Left = 808
-    Top = 552
+    Top = 608
     Width = 97
     Height = 25
     Caption = 'Accept'
@@ -307,7 +308,7 @@ object fProcSettingsForm: TfProcSettingsForm
   end
   object btnClose: TButton
     Left = 912
-    Top = 552
+    Top = 608
     Width = 97
     Height = 25
     Caption = 'Close'

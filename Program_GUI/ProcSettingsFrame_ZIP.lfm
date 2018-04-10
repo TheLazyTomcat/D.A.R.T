@@ -2,7 +2,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
   Left = 0
   Top = 0
   Width = 561
-  Height = 473
+  Height = 530
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,15 +14,22 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     Left = 0
     Top = 0
     Width = 561
-    Height = 473
+    Height = 530
     Align = alClient
     BevelOuter = bvNone
     ParentColor = True
     TabOrder = 0
+    object lblPresets: TLabel
+      Left = 0
+      Top = 6
+      Width = 272
+      Height = 13
+      Caption = 'ZIP processing settings presets (select preset to load it):'
+    end
     object gbGeneral: TGroupBox
       Tag = 100
       Left = 0
-      Top = 0
+      Top = 54
       Width = 561
       Height = 49
       Caption = 'General'
@@ -43,7 +50,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     object gbEndOfCentralDirectory: TGroupBox
       Tag = 200
       Left = 0
-      Top = 54
+      Top = 110
       Width = 561
       Height = 105
       Caption = 'End of central directory'
@@ -126,7 +133,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     object gbCentralDirectoryHeaders: TGroupBox
       Tag = 300
       Left = 0
-      Top = 166
+      Top = 222
       Width = 561
       Height = 145
       Caption = 'Central directory headers'
@@ -290,7 +297,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
     object gbLocalHeaders: TGroupBox
       Tag = 400
       Left = 0
-      Top = 318
+      Top = 374
       Width = 561
       Height = 153
       Caption = 'Local headers'
@@ -435,6 +442,16 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
       end
+    end
+    object cmbPresets: TComboBox
+      Left = 0
+      Top = 22
+      Width = 561
+      Height = 21
+      Style = csDropDownList
+      ItemHeight = 13
+      TabOrder = 4
+      OnChange = cmbPresetsChange
     end
   end
 end
