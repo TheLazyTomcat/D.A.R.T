@@ -10,6 +10,11 @@ uses
   DART_Format_SCS, DART_Common, DART_ProcessingSettings, DART_Repairer;
 
 type
+  TDARTUsedKnownPaths = record
+    Arr:    array of AnsiString;
+    Count:  Integer;
+  end;
+
   TDARTResolvedEntry = record
     Hash: TDARTHash64;
     Path: AnsiString;
@@ -38,11 +43,10 @@ type
   private
     fPauseControlObject:  TDARTPauseObject;
     fBruteForceSettings:  TDART_PS_SCS_PathResolve_BruteForce;
-    fUsedKnownPaths:      TDARTKnownPaths;
+    fUsedKnownPaths:      TDARTUsedKnownPaths;
     fUnresolved:          TDARTUnresolvedEntries;
     fResolved:            TDARTResolvedEntries;
     fOnProgress:          TDARTProgressEvent;
-    // processing fields
     fHashType:            UInt32;
     fAlphabet:            TDARTAlphabet;
   protected
@@ -95,19 +99,31 @@ begin
 Result := -1;
 Min := 0;
 Max := Pred(fUnresolved.Count);
-while Max >= min do
+If Max < 10 then
   begin
-    i := ((max - Min) shr 1) + Min;
-    // i-th entry has lower hash than is requested
-    If HashCompare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
-      // i-th entry has higher hash than is requested
-      else If HashCompare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
-        else begin
-          // i-th entry has the requested hash
+    // for short lists use normal linear search
+    For i := 0 to Max do
+      If HashCompare(fUnresolved.Arr[i],Hash) = 0 then
+        begin
           Result := i;
-          Break{while};
+          Break{For i};
         end;
-  end;
+  end
+else
+  // for longer lists, use binary search
+  while Max >= min do
+    begin
+      i := ((max - Min) shr 1) + Min;
+      // i-th entry has lower hash than is requested
+      If HashCompare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
+        // i-th entry has higher hash than is requested
+        else If HashCompare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
+          else begin
+            // i-th entry has the requested hash
+            Result := i;
+            Break{while};
+          end;
+    end;
 end;
 
 //------------------------------------------------------------------------------
@@ -125,8 +141,6 @@ For i := Index to (fUnresolved.Count - 2) do
   fUnresolved.Arr[i] := fUnresolved.Arr[i + 1];
 Dec(fUnresolved.Count);
 DoProgress(fResolved.Count / (fUnresolved.Count + fResolved.Count));
-
-WriteLn('  Resolved: ',Path);
 end;
 
 //------------------------------------------------------------------------------
@@ -183,24 +197,18 @@ procedure TDARTResolver_BruteForce.MainProcessing_SingleThreaded;
 var
   Shadow: AnsiString;
   Buffer: AnsiString;
-  i,j,k:  Integer;
+  i,j:    Integer;
   Index:  Integer;
 begin
 DoProgress(0.0);
-// prepare buffer
+// prepare buffers
 SetLength(Shadow,fBruteForceSettings.PathLengthLimit);
-FillChar(PAnsiChar(Shadow)^,Length(Shadow),0);  // make sure shadow is filled with zeroes
+FillChar(PAnsiChar(Shadow)^,Length(Shadow),0);
 SetLength(Buffer,1);
-// alphabet cycle
-k := 0;
+// main cycle
 while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.Count > 0) do
   begin
-    Inc(k);
-    If k >= 10*1024 then
-      begin
-        WriteLn(Buffer,' ',fResolved.Count);
-        k := 0;
-      end;
+    // alphabet cycle
     For i := 0 to Pred(fAlphabet.Count) do
       begin
         Shadow[1] := AnsiChar(i);
@@ -209,7 +217,7 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
         Index := Unresolved_IndexOf(PathHash(Buffer));
         If Index < 0 then
           begin
-            // bare hash not found, search in combination with paths
+            // bare hash not found, search in combination with used known paths
             For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
               begin
               Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j].Path + Buffer));
@@ -220,10 +228,8 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
         else Unresolved_MoveToResolved(Index,Buffer);
       end;
     // propagate cycle
-    For i := 2 to Length(Shadow) do
+    For i := 1 to Length(Shadow) do
       begin
-        If (Ord(Shadow[i]) = 0) and (Length(Buffer) < i) then
-          SetLength(Buffer,i);
         If Ord(Shadow[i]) < Pred(fAlphabet.Count) then
           begin
             Shadow[i] := AnsiChar(Ord(Shadow[i]) + 1);
@@ -234,8 +240,16 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
           begin
             Shadow[i] := AnsiChar(0);
             Buffer[i] := fAlphabet.Letters[Ord(Shadow[i])];
+            If (Length(Buffer) <= i) then
+              begin
+                SetLength(Buffer,i + 1);
+                Buffer[i + 1] := fAlphabet.Letters[0];
+                Break{For i};
+              end;
           end;
       end;
+    // not really needed, but should be here to ensure responsiveness
+    DoProgress(fResolved.Count / (fUnresolved.Count + fResolved.Count));
   end;
 DoProgress(1.0);
 end;
@@ -278,9 +292,7 @@ If fBruteForceSettings.UseKnownPaths then
       begin
         If fUsedKnownPaths.Count >= Length(fUsedKnownPaths.Arr) then
           SetLength(fUsedKnownPaths.Arr,Length(fUsedKnownPaths.Arr) + 1024);
-        fUsedKnownPaths.Arr[fUsedKnownPaths.Count] := ArchiveStructure.KnownPaths.Arr[i];
-        fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path :=
-          fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path + DART_SCS_PathDelim;
+        fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path := ArchiveStructure.KnownPaths.Arr[i].Path + DART_SCS_PathDelim;
         Inc(fUsedKnownPaths.Count);
       end;
 // prepare hashing function
@@ -316,6 +328,10 @@ end;
 procedure TDARTResolver_BruteForce.Run;
 begin
 Unresolved_SortEntries;
+WriteLn('known paths: ',fUsedKnownPaths.count);
+WriteLn(' unresolved: ',fUnresolved.count);
+WriteLn('   resolved: ',fResolved.count);
+Readln;
 If fBruteForceSettings.PathLengthLimit > 0 then
   MainProcessing_SingleThreaded;
 end;

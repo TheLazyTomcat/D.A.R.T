@@ -297,6 +297,7 @@ end;
 destructor TDARTPathNode.Destroy;
 begin
 Clear;
+fFiles.Free;
 inherited;
 end;
 

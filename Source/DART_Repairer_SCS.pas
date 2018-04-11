@@ -630,9 +630,7 @@ with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
     SCS_KnownPaths_Add(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
 // load all paths stored in the archive
-{$message 'enable'}
-//SCS_ResolvePaths_Local;
-SCS_AssignPaths; // remove
+SCS_ResolvePaths_Local;
 // load paths from help archives
 If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
   SCS_ResolvePaths_HelpArchives;
