@@ -856,7 +856,7 @@ begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    Resolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fProcessingSettings.PathResolve.BruteForce);
+    Resolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fArchiveProcessingSettings);
     try
       Resolver.OnProgress := SCS_ResolvePaths_BruteForce_ProgressHandler;
       Resolver.Initialize(fArchiveStructure);

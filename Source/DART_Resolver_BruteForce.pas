@@ -41,15 +41,17 @@ const
 type
   TDARTResolver_BruteForce = class(TObject)
   private
-    fPauseControlObject:  TDARTPauseObject;
-    fBruteForceSettings:  TDART_PS_SCS_PathResolve_BruteForce;
-    fUsedKnownPaths:      TDARTUsedKnownPaths;
-    fUnresolved:          TDARTUnresolvedEntries;
-    fResolved:            TDARTResolvedEntries;
-    fOnProgress:          TDARTProgressEvent;
-    fHashType:            UInt32;
-    fAlphabet:            TDARTAlphabet;
+    fPauseControlObject:        TDARTPauseObject;
+    fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
+    fBruteForceSettings:        TDART_PS_SCS_PathResolve_BruteForce;
+    fUsedKnownPaths:            TDARTUsedKnownPaths;
+    fUnresolved:                TDARTUnresolvedEntries;
+    fResolved:                  TDARTResolvedEntries;
+    fOnProgress:                TDARTProgressEvent;
+    fHashType:                  UInt32;
+    fAlphabet:                  TDARTAlphabet;
     // multithreading
+    fTasksManager:              TCNTSManager;
   protected
     procedure DoProgress(Progress: Double); virtual;
     Function PathHash(const Path: AnsiString): TDARTHash64; virtual;
@@ -61,7 +63,7 @@ type
     // multithreaded processing
     procedure MainProcessing_MultiThreaded; virtual; abstract;
   public
-    constructor Create(PauseControlObject: TDARTPauseObject; BruteForceSettings: TDART_PS_SCS_PathResolve_BruteForce);
+    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
     destructor Destroy; override;
     procedure Initialize(const ArchiveStructure: TDART_SCS_ArchiveStructure); virtual;
     procedure Run; virtual;
@@ -259,17 +261,21 @@ end;
 
 //==============================================================================
 
-constructor TDARTResolver_BruteForce.Create(PauseControlObject: TDARTPauseObject; BruteForceSettings: TDART_PS_SCS_PathResolve_BruteForce);
+constructor TDARTResolver_BruteForce.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
 inherited Create;
 fPauseControlObject := PauseControlObject;
-fBruteForceSettings := BruteForceSettings;
+fArchiveProcessingSettings := ArchiveProcessingSettings;
+fBruteForceSettings := ArchiveProcessingSettings.SCS.PathResolve.BruteForce;
+fTasksManager := TCNTSManager.Create(True);
 end;
 
 //------------------------------------------------------------------------------
 
 destructor TDARTResolver_BruteForce.Destroy;
 begin
+fTasksManager.WaitForRunningTasksToComplete;
+fTasksManager.Free;
 inherited;
 end;
 
