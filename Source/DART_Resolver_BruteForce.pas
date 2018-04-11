@@ -49,6 +49,7 @@ type
     fOnProgress:          TDARTProgressEvent;
     fHashType:            UInt32;
     fAlphabet:            TDARTAlphabet;
+    // multithreading
   protected
     procedure DoProgress(Progress: Double); virtual;
     Function PathHash(const Path: AnsiString): TDARTHash64; virtual;
@@ -57,6 +58,8 @@ type
     procedure Unresolved_SortEntries; virtual;
     // single thread (local) processing
     procedure MainProcessing_SingleThreaded; virtual;
+    // multithreaded processing
+    procedure MainProcessing_MultiThreaded; virtual; abstract;
   public
     constructor Create(PauseControlObject: TDARTPauseObject; BruteForceSettings: TDART_PS_SCS_PathResolve_BruteForce);
     destructor Destroy; override;
@@ -220,9 +223,9 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
             // bare hash not found, search in combination with used known paths
             For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
               begin
-              Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j].Path + Buffer));
+              Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer));
                 If Index >= 0 then
-                  Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j].Path + Buffer);
+                  Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j] + Buffer);
               end;
           end
         else Unresolved_MoveToResolved(Index,Buffer);
@@ -292,7 +295,7 @@ If fBruteForceSettings.UseKnownPaths then
       begin
         If fUsedKnownPaths.Count >= Length(fUsedKnownPaths.Arr) then
           SetLength(fUsedKnownPaths.Arr,Length(fUsedKnownPaths.Arr) + 1024);
-        fUsedKnownPaths.Arr[fUsedKnownPaths.Count].Path := ArchiveStructure.KnownPaths.Arr[i].Path + DART_SCS_PathDelim;
+        fUsedKnownPaths.Arr[fUsedKnownPaths.Count] := ArchiveStructure.KnownPaths.Arr[i].Path + DART_SCS_PathDelim;
         Inc(fUsedKnownPaths.Count);
       end;
 // prepare hashing function
@@ -328,12 +331,18 @@ end;
 procedure TDARTResolver_BruteForce.Run;
 begin
 Unresolved_SortEntries;
+// later remove
 WriteLn('known paths: ',fUsedKnownPaths.count);
 WriteLn(' unresolved: ',fUnresolved.count);
 WriteLn('   resolved: ',fResolved.count);
 Readln;
 If fBruteForceSettings.PathLengthLimit > 0 then
-  MainProcessing_SingleThreaded;
+  begin
+    If fBruteForceSettings.Multithreaded then
+      MainProcessing_MultiThreaded
+    else
+      MainProcessing_SingleThreaded;
+  end;
 end;
 
 
