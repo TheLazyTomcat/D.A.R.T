@@ -3,7 +3,7 @@ Full path of the processed input archive file.
 #2
 Type of the input archive file - this value affects how the archive will be processed. At this moment, support for two types is implemented - ZIP archives and SCS# archives.
 
-When ans archive is selected for processing, the program determines its type by looking at the archive file signature (first four bytes), but this can be overridden by manually forcing the archive type. If the archive has an unknown signature, the type defaults to ZIP.
+When an archive is selected for processing, the program determines its type by looking at the archive file signature (first four bytes), but this can be overridden by manually forcing the archive type. If the archive has an unknown signature, the type defaults to ZIP.
 #3
 When activated, initial type of the archive (determined from an archive file signature) will be overridden to a type selected to the right of this checkbox.
 #4
