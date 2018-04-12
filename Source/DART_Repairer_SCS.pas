@@ -13,7 +13,8 @@ interface
 
 uses
   AuxTypes, ProgressTracker,
-  DART_Common, DART_ProcessingSettings, DART_Format_SCS, DART_Repairer;
+  DART_Common, DART_ProcessingSettings, DART_Format_SCS, DART_Repairer,
+  DART_Resolver;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -73,6 +74,8 @@ type
     fEntriesSorted:         Boolean;
     // progress nodes
     fPathsResolveProcNode:  TProgressTracker;
+    // path resolving
+    fResolver:              TDARTResolver;
     // initialization methods
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
@@ -183,6 +186,7 @@ fArchiveStructure.Entries.Count := 0;
 SetLength(fArchiveStructure.KnownPaths.Arr,0);
 fArchiveStructure.KnownPaths.Count := 0;
 fArchiveStructure.UtilityData.UnresolvedCount := 0;
+fResolver := nil;
 end;
 
 //------------------------------------------------------------------------------
@@ -298,7 +302,8 @@ end;
 
 procedure TDARTRepairer_SCS.DoTerminate;
 begin
-{$message 'implement'}
+If Assigned(fResolver) then
+  fResolver.Stop;
 end;
 
 //------------------------------------------------------------------------------
@@ -710,7 +715,14 @@ var
                         Directories.Add(Copy(EntryLines[ii],2,Length(EntryLines[ii])));
                       SCS_KnownPaths_Add(Directories[Pred(Directories.Count)],True);
                     end
-                  else SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False); // file
+                  else
+                    begin
+                      // file
+                      If Path <> '' then
+                        SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False)
+                      else
+                        SCS_KnownPaths_Add(EntryLines[ii],False)
+                    end;
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
@@ -860,30 +872,29 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce;
 var
-  Resolver: TDARTResolver_BruteForce;
   i,Index:  Integer;
 begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    Resolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fArchiveProcessingSettings);
+    fResolver := TDARTResolver_BruteForce.Create(fPauseControlObject,fArchiveProcessingSettings);
     try
-      Resolver.OnProgress := SCS_ResolvePaths_BruteForce_ProgressHandler;
-      Resolver.Initialize(fArchiveStructure);
-      If Resolver.UnresolvedCount > 0 then
-        Resolver.Run;
+      fResolver.OnProgress := SCS_ResolvePaths_BruteForce_ProgressHandler;
+      fResolver.Initialize(fArchiveStructure);
+      If fResolver.UnresolvedCount > 0 then
+        fResolver.Run;
       // get resolved
-      For i := 0 to Pred(Resolver.ResolvedCount) do
+      For i := 0 to Pred(fResolver.ResolvedCount) do
         begin
-          Index := SCS_IndexOfEntry(Resolver.Resolved[i].Hash);
+          Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
           If Index >= 0 then
             begin
-              fArchiveStructure.Entries.Arr[Index].FileName := Resolver.Resolved[i].Path;
+              fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
               fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
             end;
         end;
     finally
-      Resolver.Free;
+      FreeAndNil(fResolver);
     end;
   end;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,1.0);
