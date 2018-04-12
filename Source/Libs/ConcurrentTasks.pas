@@ -478,6 +478,8 @@ case Msg.Parameter1 of
       Index := IndexOfTask(Msg.Sender);
       If Index >= 0 then
         begin
+          If Assigned(fTasks[Index].AssignedThread) then
+            fTasks[Index].AssignedThread.WaitFor;
           If Msg.Parameter2 <> 0 then
             fTasks[Index].PublicPart.State := tsCompleted
           else

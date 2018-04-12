@@ -35,6 +35,7 @@ type
   end;
 
 Function HashCompare(A,B: TDARTHash64): Integer;
+Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
 
 {===============================================================================
     Progress stage information types and functions
@@ -89,6 +90,10 @@ type
 
 implementation
 
+uses
+  CITY,
+  DART_Format_SCS;
+
 {===============================================================================
     Known paths functions implementation
 ===============================================================================}
@@ -125,6 +130,17 @@ Function ProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): 
 begin
 Result.ParentStage := ParentStage;
 Result.StageIndex := StageIndex;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
+begin
+case HashType of
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Length(Path) * SizeOf(AnsiChar)));
+else
+  Result := 0;
+end;
 end;
 
 {===============================================================================

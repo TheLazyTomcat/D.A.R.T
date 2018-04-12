@@ -80,6 +80,8 @@ type
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
+    // flow control methods;
+    procedure DoTerminate; override;
     // processing methods
     procedure ArchiveProcessing; override;
     // scs specific routines
@@ -290,6 +292,13 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
       else Result := False;
   end
 else DoError(DART_METHOD_ID_SCS_SGETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_SCS.DoTerminate;
+begin
+{$message 'implement'}
 end;
 
 //------------------------------------------------------------------------------
@@ -852,6 +861,7 @@ end;
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce;
 var
   Resolver: TDARTResolver_BruteForce;
+  i,Index:  Integer;
 begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
@@ -862,6 +872,16 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
       Resolver.Initialize(fArchiveStructure);
       If Resolver.UnresolvedCount > 0 then
         Resolver.Run;
+      // get resolved
+      For i := 0 to Pred(Resolver.ResolvedCount) do
+        begin
+          Index := SCS_IndexOfEntry(Resolver.Resolved[i].Hash);
+          If Index >= 0 then
+            begin
+              fArchiveStructure.Entries.Arr[Index].FileName := Resolver.Resolved[i].Path;
+              fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+            end;
+        end;
     finally
       Resolver.Free;
     end;
