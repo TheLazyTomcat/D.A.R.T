@@ -710,7 +710,14 @@ var
                         Directories.Add(Copy(EntryLines[ii],2,Length(EntryLines[ii])));
                       SCS_KnownPaths_Add(Directories[Pred(Directories.Count)],True);
                     end
-                  else SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False); // file
+                  else
+                    begin
+                      // file
+                      If Path <> '' then
+                        SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False)
+                      else
+                        SCS_KnownPaths_Add(EntryLines[ii],False)
+                    end;
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
