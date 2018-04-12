@@ -41,7 +41,7 @@ type
 //--- Entry record (table item) ------------------------------------------------
 
   TDART_SCS_EntryRecord = packed record
-    Hash:             UInt64;
+    Hash:             TDARTHash64;
     DataOffset:       UInt64;
     Flags:            UInt32;
     CRC32:            TCRC32;

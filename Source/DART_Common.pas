@@ -13,18 +13,20 @@ interface
 
 uses
   SysUtils,
-  WinSyncObjs, CRC32, ProgressTracker;
+  AuxTypes, WinSyncObjs, CRC32, ProgressTracker;
 
 {===============================================================================
-    Known paths types
+    Known paths types and functions
 ===============================================================================}
 
 type
+  TDARTHash64 = UInt64;
+
   TDARTKnownPath = record
     Path:       AnsiString;
     Directory:  Boolean;
     Hash:       TCRC32;
-    Hash64:     UInt64;
+    Hash64:     TDARTHash64;
   end;
 
   TDARTKnownPaths = record
@@ -32,8 +34,11 @@ type
     Count:  Integer;
   end;
 
+Function HashCompare(A,B: TDARTHash64): Integer;
+Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
+
 {===============================================================================
-    Progress stage information types, functions
+    Progress stage information types and functions
 ===============================================================================}
 
 type
@@ -85,6 +90,38 @@ type
 
 implementation
 
+uses
+  CITY,
+  DART_Format_SCS;
+
+{===============================================================================
+    Known paths functions implementation
+===============================================================================}
+
+Function HashCompare(A,B: TDARTHash64): Integer;
+begin
+If AuxTypes.NativeUInt64 then
+  begin
+    If A < B then Result := 1
+      else If A > B then Result := -1
+        else Result := 0;
+  end
+else
+  begin{%H-}
+    If Int64Rec(A).Hi <> Int64Rec(B).Hi then
+      begin
+        If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2
+          else Result := -2
+      end
+    else
+      begin
+        If Int64Rec(A).Lo < Int64Rec(B).Lo then Result := 1
+          else If Int64Rec(A).Lo > Int64Rec(B).Lo then Result := -1
+            else Result := 0;
+      end;
+  end;
+end;
+
 {===============================================================================
     Progress stage information functions imlementation
 ===============================================================================}
@@ -93,6 +130,17 @@ Function ProgressStageInfo(ParentStage: TProgressTracker; StageIndex: Integer): 
 begin
 Result.ParentStage := ParentStage;
 Result.StageIndex := StageIndex;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
+begin
+case HashType of
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Length(Path) * SizeOf(AnsiChar)));
+else
+  Result := 0;
+end;
 end;
 
 {===============================================================================
