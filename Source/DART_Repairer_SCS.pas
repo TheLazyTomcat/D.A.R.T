@@ -820,6 +820,13 @@ var
           // SCS# archive
           // archive signature must be checked because we assume it is SCS# format
           HelpArchiveProcSettings.Common.IgnoreArchiveSignature := False;
+          // set-up content parsing settings
+          HelpArchiveProcSettings.SCS.PathResolve.ParseContent := fProcessingSettings.PathResolve.ParseContent;
+          HelpArchiveProcSettings.SCS.PathResolve.ParseContent.ActivateContentPasing :=
+            fProcessingSettings.PathResolve.ParseContent.ParseHelpArchives;
+          HelpArchiveProcSettings.SCS.PathResolve.ParseContent.ParseEverything :=
+           fProcessingSettings.PathResolve.ParseContent.ParseEverythingInHlpArch;
+          HelpArchiveProcSettings.SCS.PathResolve.ParseContent.ParseHelpArchives := False;
           // prepare all already known paths
           SetLength(HelpArchiveProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
           For ii := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
@@ -888,26 +895,32 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
       fResolver.OnProgress := SCS_ResolvePaths_ContentParsing_ProgressHandler;
       fResolver.Initialize(fArchiveStructure);
       If fResolver.UnresolvedCount > 0 then
-        For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-          begin
-            If GetEntryData(i,EntryData,EntrySize) then
-              try
-                TDARTResolver_ContentParsing(fResolver).Run(EntryData,EntrySize);
-              finally
-                FreeMem(EntryData,EntrySize);
-              end;
-            DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,(i + 1) / fArchiveStructure.Entries.Count);
-            If fResolver.UnresolvedCount <= 0 then
-              Break{For i};
-          end;
-      // get resolved
-      For i := 0 to Pred(fResolver.ResolvedCount) do
         begin
-          Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
-          If Index >= 0 then
+          For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
             begin
-              fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
-              fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+              If GetEntryData(i,EntryData,EntrySize) then
+                try
+                  TDARTResolver_ContentParsing(fResolver).Run(EntryData,EntrySize);
+                finally
+                  FreeMem(EntryData,EntrySize);
+                end;
+            {
+              it is highly unlikely that processing of single entry will take much time,
+              therefore there is no progress in the resolver and it is instead done here per entry
+            }
+              DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,(i + 1) / fArchiveStructure.Entries.Count);
+              If fResolver.UnresolvedCount <= 0 then
+                Break{For i};
+            end;
+          // get resolved
+          For i := 0 to Pred(fResolver.ResolvedCount) do
+            begin
+              Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
+              If Index >= 0 then
+                begin
+                  fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
+                  fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+                end;
             end;
         end;
     finally
