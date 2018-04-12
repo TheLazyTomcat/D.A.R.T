@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Resolver_BruteForce;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,12 @@ interface
 uses
   ConcurrentTasks,
   DART_Format_SCS, DART_Common, DART_ProcessingSettings, DART_Resolver;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                            TDARTResolver_BruteForce
+--------------------------------------------------------------------------------
+===============================================================================}
 
 type
   TDARTUsedKnownPaths = record
@@ -22,6 +35,9 @@ type
 const
   DART_RES_BF_LimitedAlphabet: AnsiString = '0123456789abcdefghijklmnopqrstuvwxyz_.-/';
 
+{===============================================================================
+    TDARTResolver_BruteForce - class declaration
+===============================================================================}
 type
   TDARTResolver_BruteForce = class(TDARTResolver)
   private
@@ -56,9 +72,15 @@ uses
   SysUtils,
   AuxTypes, CITY, StrRect;
 
-const
-  DART_RES_MultThrLength = 3; // length of path that is calculated in thread
+{===============================================================================
+--------------------------------------------------------------------------------
+                            TDARTBruteForceProcessor
+--------------------------------------------------------------------------------
+===============================================================================}
 
+{===============================================================================
+    TDARTBruteForceProcessor - class declaration
+===============================================================================}
 type
   TDARTBruteForceProcessor = class(TCNTSTask)
   private
@@ -86,6 +108,27 @@ type
     property LastUpdateCounter: Integer read fLastUpdateCounter write fLastUpdateCounter;
   end;
 
+{===============================================================================
+    Unit-wide Private constants
+===============================================================================}
+
+const
+  DART_RES_MultThrLength = 3; // length of path that is calculated in thread
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                            TDARTBruteForceProcessor
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTBruteForceProcessor - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTBruteForceProcessor - private methods
+-------------------------------------------------------------------------------}
+
 Function TDARTBruteForceProcessor.GetResolved(Index: Integer): TDARTResolvedEntry;
 begin
 If (Index >= Low(fResolved.Arr)) and (Index < fResolved.Count) then
@@ -96,7 +139,9 @@ If (Index >= Low(fResolved.Arr)) and (Index < fResolved.Count) then
 else raise Exception.CreateFmt('TDARTBruteForceProcessor.GetResolved: Index (%d) out of bounds.',[Index]);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTBruteForceProcessor - protected methods
+-------------------------------------------------------------------------------}
 
 Function TDARTBruteForceProcessor.Unresolved_IndexOf(Hash: TDARTHash64): Integer;
 var
@@ -148,7 +193,9 @@ For i := Index to (fUnresolved.Count - 2) do
 Dec(fUnresolved.Count);
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTBruteForceProcessor - public methods
+-------------------------------------------------------------------------------}
 
 constructor TDARTBruteForceProcessor.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
@@ -248,9 +295,20 @@ while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.
 Result := not Terminated;
 end; 
 
-//******************************************************************************
-//==============================================================================
-//******************************************************************************
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                            TDARTResolver_BruteForce
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTResolver_BruteForce - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTResolver_BruteForce - protected methods
+-------------------------------------------------------------------------------}
 
 procedure TDARTResolver_BruteForce.MainProcessing_SingleThreaded(Progress: Boolean = True);
 var
@@ -447,7 +505,9 @@ else
   end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTResolver_BruteForce - public methods
+-------------------------------------------------------------------------------}
 
 constructor TDARTResolver_BruteForce.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
