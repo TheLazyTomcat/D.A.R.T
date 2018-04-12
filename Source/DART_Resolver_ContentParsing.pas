@@ -48,7 +48,7 @@ implementation
 
 uses
   Classes,
-  DART_Auxiliary;
+  DART_Auxiliary, DART_Format_SCS;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -154,10 +154,11 @@ end;
 
 procedure TDARTResolver_ContentParsing.CP_Parsing_Unknown_Text;
 var
-  Text:   TAnsiStringList;
-  Line:   TAnsiStringList;
-  i,j:    Integer;
-  Index:  Integer;
+  Text:     TAnsiStringList;
+  Line:     TAnsiStringList;
+  i,j:      Integer;
+  Index:    Integer;
+  TempStr:  AnsiString;
 begin
 Text := TAnsiStringList.Create;
 try
@@ -168,12 +169,21 @@ try
       begin
         CP_SplitLineToBlocks(Text[i],Line);
         For j := 0 to Pred(Line.Count) do
-          If Length(Line[j]) >= fContentPasingSettings.MinPathLength then
-            begin
-              Index := Unresolved_IndexOf(PathHash(Line[j],fHashType));
-              If Index >= 0 then
-                Unresolved_MoveToResolved(Index,Line[j]);
-            end;
+          begin
+            TempStr := DART_ExcludeOuterPathDelim(Line[j],DART_SCS_PathDelim);
+            If Length(TempStr) >= fContentPasingSettings.MinPathLength then
+              begin
+                Index := Unresolved_IndexOf(PathHash(TempStr,fHashType));
+                If Index >= 0 then
+                  begin
+                    Unresolved_MoveToResolved(Index,TempStr);
+                    If fUnresolved.Count <= 0 then
+                      Break{For j};
+                  end;
+              end;
+          end;
+        If fUnresolved.Count <= 0 then
+          Break{For i};
       end;
   finally
     Line.Free;
@@ -204,9 +214,14 @@ For i := 0 to Pred(fSize) do
           begin
             SetLength(TempStr,Len);
             Move(Pointer(PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
+            TempStr := DART_ExcludeOuterPathDelim(TempStr,DART_SCS_PathDelim);
             Index := Unresolved_IndexOf(PathHash(TempStr,fHashType));
             If Index >= 0 then
-              Unresolved_MoveToResolved(Index,TempStr);
+              begin
+                Unresolved_MoveToResolved(Index,TempStr);
+                If fUnresolved.Count <= 0 then
+                  Break{For i};
+              end;
           end;
         Start := i;
         Len := 0;
