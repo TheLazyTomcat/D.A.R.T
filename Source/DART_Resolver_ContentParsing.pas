@@ -12,7 +12,7 @@ unit DART_Resolver_ContentParsing;
 interface
 
 uses
-  AuxTypes, StaticMemoryStream,
+  AuxTypes, StaticMemoryStream, ExplicitStringLists,
   DART_ProcessingSettings, DART_Common, DART_Resolver;
 
 type
@@ -25,6 +25,7 @@ type
     fDataStream:            TStaticMemoryStream;
   protected
     Function CP_GetSignature: UInt32; virtual;
+    procedure CP_SplitLineToBlocks(const Line: AnsiString; Blocks: TAnsiStringList); virtual;
     procedure CP_Parsing_Unknown; virtual;
     procedure CP_Parsing_Unknown_Text; virtual;
     procedure CP_Parsing_Unknown_Binary; virtual;
@@ -38,11 +39,19 @@ implementation
 
 uses
   Classes,
-  ExplicitStringLists,
   DART_Auxiliary;
 
+Function TDARTResolver_ContentParsing.CP_GetSignature: UInt32;
+begin
+fDataStream.Seek(0,soBeginning);
+If fDataStream.Read(Result,SizeOf(UInt32)) < SizeOf(UInt32) then
+  Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
 // splits string on white spaces and quoted blocks (double quote)
-procedure ParseLine(const Line: AnsiString; Blocks: TAnsiStringList; LimitedCharSet: Boolean);
+procedure TDARTResolver_ContentParsing.CP_SplitLineToBlocks(const Line: AnsiString; Blocks: TAnsiStringList);
 var
   i:          Integer;
   Start,Len:  Integer;
@@ -54,7 +63,8 @@ Len := 0;
 Quoted := False;
 For i := 1 to Length(Line) do
   begin
-    If (Ord(Line[i]) <= 32) or ((Ord(Line[i]) > 127) and LimitedCharSet) and not Quoted then
+    If ((Ord(Line[i]) <= 32) or ((Ord(Line[i]) > 127) and
+        fContentPasingSettings.LimitedCharacterSet)) and not Quoted then
       begin
         If Len > 0 then
           Blocks.Add(Copy(Line,Start,Len));
@@ -97,15 +107,6 @@ If Len > 0 then
   end;
 end;
 
-//******************************************************************************
-
-Function TDARTResolver_ContentParsing.CP_GetSignature: UInt32;
-begin
-fDataStream.Seek(0,soBeginning);
-If fDataStream.Read(Result,SizeOf(UInt32)) < SizeOf(UInt32) then
-  Result := 0;
-end;
-
 //------------------------------------------------------------------------------
 
 procedure TDARTResolver_ContentParsing.CP_Parsing_Unknown;
@@ -113,7 +114,7 @@ var
   Counter:  TMemSize;
   i:        TMemSize;
 begin
-//select if data are binary or text (atm. it simply counts zero bytes)
+//select if data are binary or text (atm. it simply counts zeroed bytes)
 Counter := 0;
 For i := 0 to Pred(fSize) do
   If PByte(PtrUInt(fData) + PtrUInt(i))^ = 0 then
@@ -142,7 +143,7 @@ try
   try
     For i := 0 to Pred(Text.Count) do
       begin
-        ParseLine(Text[i],Line,fContentPasingSettings.LimitedCharacterSet);
+        CP_SplitLineToBlocks(Text[i],Line);
         For j := 0 to Pred(Line.Count) do
           If Length(Line[j]) >= fContentPasingSettings.MinPathLength then
             begin
@@ -162,7 +163,38 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TDARTResolver_ContentParsing.CP_Parsing_Unknown_Binary;
+var
+  i:          TMemSize;
+  Start,Len:  TMemSize;
+  CurrByte:   Byte;
+  TempStr:    AnsiString;
+  Index:      Integer;
 begin
+Start := 0;
+Len := 0;
+For i := 0 to Pred(fSize) do
+  begin
+    CurrByte := PByte(PtrUInt(fData) + PtrUInt(i))^;
+    If (CurrByte < 32) or ((CurrByte > 127) and fContentPasingSettings.LimitedCharacterSet) then
+      begin
+        If (Len > 0) and (Len >= TMemSize(fContentPasingSettings.MinPathLength)) then
+          begin
+            SetLength(TempStr,Len);
+            Move(Pointer(PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
+            Index := Unresolved_IndexOf(PathHash(TempStr,fHashType));
+            If Index >= 0 then
+              Unresolved_MoveToResolved(Index,TempStr);
+          end;
+        Start := i;
+        Len := 0;
+      end
+    else
+      begin
+        If Len = 0 then
+          Start := i;
+        Inc(Len);
+      end;
+  end;
 end;
 
 //==============================================================================

@@ -336,7 +336,12 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
-// nothing to do here
+If SCS_PS.PathResolve.ParseContent.BinaryThreshold < 0.0 then
+  SCS_PS.PathResolve.ParseContent.BinaryThreshold := 0.0
+else If SCS_PS.PathResolve.ParseContent.BinaryThreshold > 1.0 then
+  SCS_PS.PathResolve.ParseContent.BinaryThreshold := 1.0;
+If SCS_PS.PathResolve.ParseContent.MinPathLength < 1 then
+  SCS_PS.PathResolve.ParseContent.MinPathLength := 1;
 end;
 
 //------------------------------------------------------------------------------
