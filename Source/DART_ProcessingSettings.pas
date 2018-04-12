@@ -319,7 +319,10 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
-// nothing to do here
+If SCS_PS.PathResolve.BruteForce.PathLengthLimit < 1 then
+  SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1
+else If SCS_PS.PathResolve.BruteForce.PathLengthLimit > 1024 then
+  SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1024;
 end;
 
 //------------------------------------------------------------------------------
@@ -378,6 +381,16 @@ try
   WriteInteger('SCS_PathResolve','HelpArchives',Length(APS.SCS.PathResolve.HelpArchives));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
     WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),APS.SCS.PathResolve.HelpArchives[i]);
+
+  with APS.SCS.PathResolve.BruteForce do
+    begin
+      WriteBool('SCS_PathResolve_BruteForce','ActivateBruteForce',ActivateBruteForce);
+      WriteBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
+      WriteBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
+      WriteBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
+      WriteBool('SCS_PathResolve_BruteForce','LimitedAlphabet',LimitedAlphabet);
+      WriteInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
+    end;
 
   // ZIP settings  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -484,6 +497,16 @@ try
   SetLength(APS.SCS.PathResolve.HelpArchives,ReadInteger('SCS_PathResolve','HelpArchives',0));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
     APS.SCS.PathResolve.HelpArchives[i] := ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),'');
+
+  with APS.SCS.PathResolve.BruteForce do
+    begin
+      ActivateBruteForce := ReadBool('SCS_PathResolve_BruteForce','ActivateBruteForce',ActivateBruteForce);
+      Multithreaded := ReadBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
+      UseKnownPaths := ReadBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
+      PrintableASCIIOnly := ReadBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
+      LimitedAlphabet := ReadBool('SCS_PathResolve_BruteForce','LimitedAlphabet',LimitedAlphabet);
+      PathLengthLimit := ReadInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
+    end;
 
   // ZIP settings  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
