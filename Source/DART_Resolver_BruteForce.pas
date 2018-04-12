@@ -49,6 +49,7 @@ type
     fUpdateCounter:             Integer;
     fProcessorShadow:           AnsiString;
     fProcessorBuffer:           AnsiString;
+    fProcessingTerminating:     Boolean;
     fProcessingTerminated:      Boolean;
   protected
     // single thread (local) processing
@@ -399,6 +400,7 @@ If fUnresolved.Count > 0 then
     FillChar(PAnsiChar(fProcessorShadow)^,Length(fProcessorShadow),0);
     fProcessorBuffer := StrToAnsi(StringOfChar(#0,DART_RES_MultThrLength));
     fProcessingTerminated := False;
+    fProcessingTerminating := False;
     // create processors
     For i := 0 to Pred(fTasksManager.MaxConcurrentTasks) do
       If AdvanceProcessorBuffer then
@@ -489,7 +491,7 @@ If Processor.ResolvedCount > 0 then
       end;
     Inc(fUpdateCounter);
   end;
-If (fUnresolved.Count > 0) and AdvanceProcessorBuffer then
+If (fUnresolved.Count > 0) and AdvanceProcessorBuffer and not fProcessingTerminating then
   begin
     If Processor.LastUpdateCounter <> fUpdateCounter then
       Processor.Initialize(fUsedKnownPaths,fUnresolved,fHashType,fAlphabet);
@@ -588,10 +590,9 @@ procedure TDARTResolver_BruteForce.Stop;
 var
   i:  Integer;
 begin
-fProcessingTerminated := True;
+fProcessingTerminating := True;
 For i := 0 to Pred(fTasksManager.TaskCount) do
   fTasksManager.StopTask(i);
-fTasksManager.WaitForRunningTasksToComplete;
 end;
 
 
