@@ -108,6 +108,7 @@ type
     procedure SCS_ResolvePaths_BruteForce; virtual;
     procedure SCS_ResolvePaths_Reconstruct; virtual;
     // progress handlers
+    procedure SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double); virtual;    
     procedure SCS_ResolvePaths_BruteForce_ProgressHandler(Sender: TObject; Progress: Double); virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
@@ -142,7 +143,7 @@ uses
   City, BitOps, CRC32, StrRect, MemoryBuffer, ExplicitStringLists, ZLibCommon,
   StaticMemoryStream,
   DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP,
-  DART_Resolver_BruteForce;
+  DART_Resolver_BruteForce, DART_Resolver_ContentParsing;
 
 
 {===============================================================================
@@ -232,11 +233,11 @@ try
   If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
     DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives := fPathsResolveProcNode.Add(20);
   // parse content
-  If fProcessingSettings.PathResolve.ParseContent then
+  If fProcessingSettings.PathResolve.ParseContent.ActivateContentPasing then
     DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
   // second round of local resolve
   If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
-    fProcessingSettings.PathResolve.ParseContent then
+    fProcessingSettings.PathResolve.ParseContent.ActivateContentPasing then
     DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond := fPathsResolveProcNode.Add(20);
   // brute force
   If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
@@ -656,11 +657,11 @@ SCS_ResolvePaths_Local;
 If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
   SCS_ResolvePaths_HelpArchives;
 // parse content of processed archive
-If fProcessingSettings.PathResolve.ParseContent then
+If fProcessingSettings.PathResolve.ParseContent.ActivateContentPasing then
   SCS_ResolvePaths_ParseContent;
 // repeat local resolve (in case some paths were obtained from help archives or content parsing)
 If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
-  fProcessingSettings.PathResolve.ParseContent then
+  fProcessingSettings.PathResolve.ParseContent.ActivateContentPasing then
   SCS_ResolvePaths_Local(True);
 // bruteforce resolve
 If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
@@ -874,12 +875,44 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_ParseContent;
+var
+  i,Index:    Integer;
+  EntryData:  Pointer;
+  EntrySize:  TMemSize;
 begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    DoError(-1,'Content parsing is not implemented in this build.');
-    SCS_AssignPaths;
+    fResolver := TDARTResolver_ContentParsing.Create(fPauseControlObject,fArchiveProcessingSettings);
+    try
+      fResolver.OnProgress := SCS_ResolvePaths_ContentParsing_ProgressHandler;
+      fResolver.Initialize(fArchiveStructure);
+      If fResolver.UnresolvedCount > 0 then
+        For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+          begin
+            If GetEntryData(i,EntryData,EntrySize) then
+              try
+                TDARTResolver_ContentParsing(fResolver).Run(EntryData,EntrySize);
+              finally
+                FreeMem(EntryData,EntrySize);
+              end;
+            DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,(i + 1) / fArchiveStructure.Entries.Count);
+            If fResolver.UnresolvedCount <= 0 then
+              Break{For i};
+          end;
+      // get resolved
+      For i := 0 to Pred(fResolver.ResolvedCount) do
+        begin
+          Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
+          If Index >= 0 then
+            begin
+              fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
+              fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+            end;
+        end;
+    finally
+      FreeAndNil(fResolver);
+    end;
   end;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,1.0);
 end;
@@ -927,6 +960,13 @@ SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double);
+begin
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,Progress);
 end;
 
 //------------------------------------------------------------------------------

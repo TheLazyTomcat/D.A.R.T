@@ -53,6 +53,16 @@ type
     IgnoreDictionaryID:     Boolean;
   end;
 
+  TDART_PS_SCS_PathResolve_ContentParsing = record
+    ActivateContentPasing:    Boolean;
+    ParseEverything:          Boolean;
+    ParseHelpArchives:        Boolean;
+    ParseEverythingInHlpArch: Boolean;
+    LimitedCharacterSet:      Boolean;  // characters up to #127
+    BinaryThreshold:          Double;
+    MinPathLength:            Integer;
+  end;
+
   TDART_PS_SCS_PathResolve_BruteForce = record
     ActivateBruteForce: Boolean;
     Multithreaded:      Boolean;
@@ -69,7 +79,7 @@ type
     CustomPaths:                array of AnsiString;
     HelpArchives:               array of String;
     // temporary fields, will be expanded as the functions are implemented
-    ParseContent: Boolean;
+    ParseContent:               TDART_PS_SCS_PathResolve_ContentParsing;
     BruteForce:                 TDART_PS_SCS_PathResolve_BruteForce;
   end;
 
@@ -166,7 +176,14 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               False;
+        ParseContent: (
+          ActivateContentPasing:    False;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          LimitedCharacterSet:      False;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;

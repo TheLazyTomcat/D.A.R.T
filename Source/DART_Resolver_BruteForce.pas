@@ -52,12 +52,12 @@ type
     fProcessingTerminated:      Boolean;
   protected
     // single thread (local) processing
-    procedure MainProcessing_SingleThreaded(Progress: Boolean = True); virtual;
+    procedure BF_MainProcessing_SingleThreaded(Progress: Boolean = True); virtual;
     // multithreaded processing
-    procedure MainProcessing_MultiThreaded; virtual;
-    Function AdvanceProcessorBuffer: Boolean; virtual;
-    procedure Processor_OnProgress(Sender: TObject; TaskIndex: Integer); virtual;
-    procedure Processor_OnCompleted(Sender: TObject; TaskIndex: Integer); virtual;
+    procedure BF_MainProcessing_MultiThreaded; virtual;
+    Function BF_AdvanceProcessorBuffer: Boolean; virtual;
+    procedure BF_Processor_OnProgress(Sender: TObject; TaskIndex: Integer); virtual;
+    procedure BF_Processor_OnCompleted(Sender: TObject; TaskIndex: Integer); virtual;
   public
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
     destructor Destroy; override;
@@ -310,7 +310,7 @@ end;
     TDARTResolver_BruteForce - protected methods
 -------------------------------------------------------------------------------}
 
-procedure TDARTResolver_BruteForce.MainProcessing_SingleThreaded(Progress: Boolean = True);
+procedure TDARTResolver_BruteForce.BF_MainProcessing_SingleThreaded(Progress: Boolean = True);
 var
   Shadow: AnsiString;
   Buffer: AnsiString;
@@ -373,7 +373,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTResolver_BruteForce.MainProcessing_MultiThreaded;
+procedure TDARTResolver_BruteForce.BF_MainProcessing_MultiThreaded;
 var
   i:          Integer;
   Processor:  TDARTBruteForceProcessor;
@@ -383,13 +383,13 @@ DoProgress(0.0);
 i := fBruteForceSettings.PathLengthLimit;
 try
   fBruteForceSettings.PathLengthLimit := DART_RES_MultThrLength;
-  MainProcessing_SingleThreaded(False);
+  BF_MainProcessing_SingleThreaded(False);
 finally
   fBruteForceSettings.PathLengthLimit := i;
 end;
 // prepare events
-fTasksManager.OnTaskProgress := Processor_OnProgress;
-fTasksManager.OnTaskCompleted := Processor_OnCompleted;
+fTasksManager.OnTaskProgress := BF_Processor_OnProgress;
+fTasksManager.OnTaskCompleted := BF_Processor_OnCompleted;
 // do longer in threads
 If fUnresolved.Count > 0 then
   begin
@@ -401,7 +401,7 @@ If fUnresolved.Count > 0 then
     fProcessingTerminated := False;
     // create processors
     For i := 0 to Pred(fTasksManager.MaxConcurrentTasks) do
-      If AdvanceProcessorBuffer then
+      If BF_AdvanceProcessorBuffer then
         begin
           Processor := TDARTBruteForceProcessor.Create(fPauseControlObject,fArchiveProcessingSettings);
           Processor.Initialize(fUsedKnownPaths,fUnresolved,fHashType,fAlphabet);
@@ -425,7 +425,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTResolver_BruteForce.AdvanceProcessorBuffer: Boolean;
+Function TDARTResolver_BruteForce.BF_AdvanceProcessorBuffer: Boolean;
 var
   i:  Integer;
 begin
@@ -459,14 +459,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTResolver_BruteForce.Processor_OnProgress(Sender: TObject; TaskIndex: Integer);
+procedure TDARTResolver_BruteForce.BF_Processor_OnProgress(Sender: TObject; TaskIndex: Integer);
 begin
 DoProgress(fResolved.Count / (fUnresolved.Count + fResolved.Count));
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTResolver_BruteForce.Processor_OnCompleted(Sender: TObject; TaskIndex: Integer);
+procedure TDARTResolver_BruteForce.BF_Processor_OnCompleted(Sender: TObject; TaskIndex: Integer);
 var
   Processor:  TDARTBruteForceProcessor;
   i,Index:    Integer;
@@ -489,7 +489,7 @@ If Processor.ResolvedCount > 0 then
       end;
     Inc(fUpdateCounter);
   end;
-If (fUnresolved.Count > 0) and AdvanceProcessorBuffer then
+If (fUnresolved.Count > 0) and BF_AdvanceProcessorBuffer then
   begin
     If Processor.LastUpdateCounter <> fUpdateCounter then
       Processor.Initialize(fUsedKnownPaths,fUnresolved,fHashType,fAlphabet);
@@ -576,9 +576,9 @@ If fBruteForceSettings.PathLengthLimit > 0 then
   begin
     If fBruteForceSettings.Multithreaded and
       (fBruteForceSettings.PathLengthLimit > DART_RES_MultThrLength) then
-      MainProcessing_MultiThreaded
+      BF_MainProcessing_MultiThreaded
     else
-      MainProcessing_SingleThreaded;
+      BF_MainProcessing_SingleThreaded;
   end;
 end;
 

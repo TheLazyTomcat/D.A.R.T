@@ -42,7 +42,14 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               False;
+        ParseContent: (
+          ActivateContentPasing:    False;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          LimitedCharacterSet:      True;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;
@@ -64,7 +71,14 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               False;
+        ParseContent: (
+          ActivateContentPasing:    False;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          LimitedCharacterSet:      True;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;
@@ -86,7 +100,14 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               True;
+        ParseContent: (
+          ActivateContentPasing:    True;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          LimitedCharacterSet:      True;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;
@@ -108,7 +129,14 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               True;
+        ParseContent: (
+          ActivateContentPasing:    True;
+          ParseEverything:          True;
+          ParseHelpArchives:        True;
+          ParseEverythingInHlpArch: True;
+          LimitedCharacterSet:      False;
+          BinaryThreshold:          0.05;
+          MinPathLength:            1);
         BruteForce: (
           ActivateBruteForce:         True;
           Multithreaded:              True;
