@@ -3,9 +3,9 @@ Full path of the processed input archive file.
 #2
 Type of the input archive file - this value affects how the archive will be processed. At this moment, support for two types is implemented - ZIP archives and SCS# archives.
 
-When a file is selected for processing, the program determines its type by looking at the file signature (first four bytes), but this can be overridden by manually forcing the file type. If the file has an unknown signature, the type defaults to ZIP.
+When an archive is selected for processing, the program determines its type by looking at the archive file signature (first four bytes), but this can be overridden by manually forcing the archive type. If the archive has an unknown signature, the type defaults to ZIP.
 #3
-When activated, initial type of the file (determined from a file signature) will be overridden to a type selected to the right of this checkbox.
+When activated, initial type of the archive (determined from an archive file signature) will be overridden to a type selected to the right of this checkbox.
 #4
 Archive type to be forced (select one).
 #5
@@ -30,21 +30,21 @@ WARNING - do not set output back into the input file!
 
 - Extraction is selected -
 
-Folder where the content of the input file will be extracted.
+Folder where the content of the input archive will be extracted.
 
 You can select the folder with standard dialog when you click on the button to the right of this editbox, or can write/edit the path manually.
 #10
-When NOT active, the program will, at the start of processing, load first four bytes of the input file (if there are at least four bytes) and check if they match with expected header signature (for a given file type). If they do not match or there is not enough data, then the processing will be terminated with an error.
+When NOT active, the program will, at the start of processing, load first four bytes of the input archive (if there are at least four bytes) and check if they match with expected header signature (for a given archive type). If they do not match or there is not enough data, then the processing will be terminated with an error.
 #11
-When this option is activated, the input file is completely loaded into memory where it is then processed, and output (when rebuilding or conversion is selected) is also build in the memory and then saved as a whole to the actual output file.
+When this option is activated, the input archive is completely loaded into memory where it is then processed, and output (when rebuilding or conversion is selected) is also build in the memory and then saved as a whole to the actual output file.
 
 This can be used eg. when input archive contains extremely large number of very small files. Loading and saving of such archive the normal way could take very long time.
 
-The input file must be smaller than or equal to 25% of total physical memory available to the process, otherwise this option is not available.
+The input archive must be smaller than or equal to 25% of total physical memory available to the process, otherwise this option is not available.
 
-Note that 32bit builds are limited to 2GiB of memory, irrespective of actual size of memory installed in your computer, meaning this option is limited to input files up to 512MiB in such builds.
+Note that 32bit builds are limited to 2GiB of memory, irrespective of actual size of memory installed in your computer, meaning this option is limited to input archives up to 512MiB in such builds.
 #12
-When active, errors raised while individual archive entries are processed are ignored and processing continues on the next entry.
+When active, errors raised while individual archive entries are processed are ignored (they are converted to warnings) and processing continues on the next entry.
 
 Takes effect only in the data processing, errors raised while archive metadata (headers) are loaded or processed still cause processing termination.
 
@@ -54,9 +54,11 @@ If compression method loaded from the archive is set to store, then it is left u
 
 This option has effect only when "Ignore compression method" is not selected (affects central directory and local headers separately).
 #201
-When active, the end of central directory record is not searched for and loaded from the input file.
+When active, the end of central directory record is not searched for and loaded from the input archive.
 
 All values of individual fields are reconstructed from other data loaded later from the archive or are filled with default values (zero, empty string).
+
+Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
 #202
 Stored values of end of central directory record fields "NumberOfThisDisk" and "CentralDirectoryStartDiskNumber" are ignored and set to 0. Field "Entries" is set to be equal to value stored in field "EntriesOnDisk".
 #203
@@ -70,13 +72,15 @@ When active, the archive comment stored in the end of central directory is ignor
 #206
 Before the end of central directory record can be loaded, it must be found in the input stream. It is searched for from the back, iterating over individual bytes, everytime checking for an end of central directory signature. To speed this up, iterating is done in-memory over buffers roughly 1MiB large.
 
-Activating this option will cause that only one buffer is searched for the signature, meaning the record must be at most 1MiB distant from the end of file, otherwise such file is assumed to be corrupted.
+Activating this option will cause that only one buffer is searched for the signature, meaning the record must be at most 1MiB distant from the end of file, otherwise such archive is assumed to be corrupted.
 
-If you deactivate it, the whole file will be searched, which may take very long time if the file is large and does not contain end of central directory record, but may be needed in case the file is damaged by inserting large amount of bogus data at its end.
+If you deactivate it, the whole archive will be searched, which may take very long time if the archive is large and does not contain end of central directory record, but may be needed in case the archive is damaged by inserting large amount of bogus data at its end.
 #301
 If active, the whole central directory structure is ignored (ie. is not loaded) and all data stored in there are reconstructed from local headers.
 
 Local headers cannot be ignored when this option is active.
+
+Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
 #302
 When active, the "Signature" field of loaded central directory header is not checked to match expected signature (0x02014b50).
 
@@ -128,7 +132,7 @@ Instead, if a file name (that is, a file without a path) can be extracted from a
 #312
 Offset where a corresponding local header can be found is ignored.
 
-Local headers must be loaded if this option is set (they cannot be ignored). The loading is done this way:
+Local headers must be loaded if this option is set (they cannot be ignored). The loading is then done this way:
 
   - for each entry loaded from central directory
     a local header is searched for in the input
@@ -138,7 +142,7 @@ Local headers must be loaded if this option is set (they cannot be ignored). The
     directory entry the second found local header
     is used, and so on
 
-This means that the local headers must have valid signatures (0x04034b50) and they must be in the same order as in the central directory. It also means there must be at least the same amount of local headers as central directory headers in the file.
+This means that the local headers must have valid signatures (0x04034b50) and they must be in the same order as in the central directory. It also means there must be at least the same amount of local headers as central directory headers in the archive.
 #313
 Extra field stored in the central directory header is ignored (data are discarded).
 #314
@@ -147,6 +151,8 @@ Entry file comment stored in the central directory header is ignored.
 When active, the local headers are completely ignored (not loaded from the input stream). They are instead reconstructed using data from central directory.
 
 This option cannot be active when central directory is ignored or when local header offset stored in central directory header is ignored.
+
+Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
 #402
 When active, the "Signature" field of loaded local header is not checked to match expected signature (0x04034b50).
 
@@ -216,7 +222,7 @@ Compression flag in entry metadata is ignored.
 
 Actual state of compression is determined from stored sizes. If compressed and uncompressed size matches, then compression flag is cleared, if they are different, then compression flag is set.
 #1103
-Dictionary ID in zlib stream is ignored if present. When this option is not active and dictionary ID is encountered, and error is raised.
+Dictionary ID in zlib stream is ignored if present. When this option is not active and dictionary ID is encountered, an error is raised.
  
 This option has meaning only for conversion from SCS# archive to ZIP archive.
 #1201
@@ -231,9 +237,9 @@ Names of individual files to which the entries are extracted are constructed fro
 
 - Rebuilding, converting -
 
-The files are stored in the same folder as the output file, into subfolder "unresolved_filename", where filename is the name of output file without the extension.
+The files are stored in the same folder as the output file, into subfolder "unresolved_filename", where filename is the name of output archive without the extension.
 
-Note - when this option is active during rebuilding, unresolved entries are also copied into output file.
+Note - when this option is active during rebuilding, unresolved entries are also copied into output archive.
 
 
 - Extracting -
@@ -244,10 +250,10 @@ Set of paths that will be used to resolve entries file names.
 
 One path on each line. Path delimiter is forward slash (/). Paths must not contain leading and/or trailing delimited.
 #1205
-Set of files whose file/directory structure (entries they contain) will be loaded and used in resolving entries file names in currently processed archive.
+Set of archives whose file/directory structure (entries they contain) will be loaded and used in resolving entries file names in currently processed archive.
 
-Note that when resolving these help files, all previously resolved paths are used, so ordering does matter.
+Note that when resolving these help archives, all previously resolved paths are used, so ordering does matter.
 
-One file on each line, full absolute paths. Only SCS# and ZIP files are allowed.
+One file on each line, full absolute paths. Only SCS# and ZIP archives are allowed.
 
-Also note that processing of these files is not included into progress, so when very large file is loaded, the program might seemingly stop - just give it a time.
+Also note that processing of these archives is not included into progress, so when very large archive is loaded, the program might seemingly stop - just give it a time.

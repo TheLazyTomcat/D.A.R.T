@@ -37,6 +37,7 @@ var
   DART_PROGSTAGE_IDX_SCS_PathsRes_Local:        Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives: Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent: Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond:  Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce:   Integer = -1;
   DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct:  Integer = -1;
 
@@ -55,6 +56,7 @@ var
   PSIDX_C_PathsRes_Local:        Integer = -1;
   PSIDX_C_PathsRes_HelpArchives: Integer = -1;
   PSIDX_C_PathsRes_ParseContent: Integer = -1;
+  PSIDX_C_PathsRes_LocalSecond:  Integer = -1;
   PSIDX_C_PathsRes_BruteForce:   Integer = -1;
   PSIDX_C_PathsRes_Reconstruct:  Integer = -1;
 
@@ -100,7 +102,7 @@ type
     procedure SCS_DiscardDirectories; virtual;
     procedure SCS_ReconstructDirectories; virtual;
     procedure SCS_ResolvePaths; virtual; 
-    procedure SCS_ResolvePaths_Local; virtual;
+    procedure SCS_ResolvePaths_Local(SecondRound: Boolean = False); virtual;
     procedure SCS_ResolvePaths_HelpArchives; virtual;
     procedure SCS_ResolvePaths_ParseContent; virtual;
     procedure SCS_ResolvePaths_BruteForce; virtual;
@@ -232,6 +234,10 @@ try
   // parse content
   If fProcessingSettings.PathResolve.ParseContent then
     DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
+  // second round of local resolve
+  If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
+    fProcessingSettings.PathResolve.ParseContent then
+    DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond := fPathsResolveProcNode.Add(20);
   // brute force
   If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
     DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce := fPathsResolveProcNode.Add(30);
@@ -241,6 +247,7 @@ try
   PSIDX_C_PathsRes_Local        := DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
   PSIDX_C_PathsRes_HelpArchives := DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
   PSIDX_C_PathsRes_ParseContent := DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent;
+  PSIDX_C_PathsRes_LocalSecond  := DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond;
   PSIDX_C_PathsRes_BruteForce   := DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
   PSIDX_C_PathsRes_Reconstruct  := DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
 finally
@@ -651,7 +658,11 @@ If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
 // parse content of processed archive
 If fProcessingSettings.PathResolve.ParseContent then
   SCS_ResolvePaths_ParseContent;
-// bruteforce resolve  
+// repeat local resolve (in case some paths were obtained from help archives or content parsing)
+If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
+  fProcessingSettings.PathResolve.ParseContent then
+  SCS_ResolvePaths_Local(True);
+// bruteforce resolve
 If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
   SCS_ResolvePaths_BruteForce;
 SCS_ResolvePaths_Reconstruct;
@@ -660,7 +671,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer_SCS.SCS_ResolvePaths_Local;
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_Local(SecondRound: Boolean = False);
 var
   i:                  Integer;
   DirectoryList:      TAnsiStringList;
@@ -668,6 +679,7 @@ var
   EntryLines:         TAnsiStringList;  // used inside of nested function LoadPath
   DirCount:           Integer;
   ProcessedDirCount:  Integer;
+  ProgressIndex:      Integer;
 
   procedure LoadPath(const Path: AnsiString; Directories: TAnsiStringList);
   var
@@ -726,12 +738,16 @@ var
                 end;
             Inc(ProcessedDirCount);
             If DirCount > 0 then
-              DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,ProcessedDirCount / DirCount);
+              DoProgress(fPathsResolveProcNode,ProgressIndex,ProcessedDirCount / DirCount);
           end;
   end;
 
 begin
-DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,0.0);
+If SecondRound then
+  ProgressIndex := PSIDX_C_PathsRes_LocalSecond
+else
+  ProgressIndex := PSIDX_C_PathsRes_Local;
+DoProgress(fPathsResolveProcNode,ProgressIndex,0.0);
 DirectoryList := TAnsiStringList.Create;
 try
   CurrentLevel := TAnsiStringList.Create;
@@ -766,7 +782,7 @@ finally
   DirectoryList.Free;
 end;
 SCS_AssignPaths;
-DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Local,1.0);
+DoProgress(fPathsResolveProcNode,ProgressIndex,1.0);
 end;
 
 //------------------------------------------------------------------------------

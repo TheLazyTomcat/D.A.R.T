@@ -1,3 +1,10 @@
+{-------------------------------------------------------------------------------
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-------------------------------------------------------------------------------}
 unit DART_Resolver;
 
 {$INCLUDE DART_defs.inc}
@@ -7,6 +14,12 @@ interface
 uses
   AuxTypes,
   DART_ProcessingSettings, DART_Format_SCS, DART_Common, DART_Repairer;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TDARTResolver
+--------------------------------------------------------------------------------
+===============================================================================}
 
 type
   TDARTResolvedEntry = record
@@ -24,6 +37,10 @@ type
     Count:  Integer;
   end;  
 
+{===============================================================================
+    TDARTResolver - class declaration
+===============================================================================}
+type
   TDARTResolver = class(TObject)
   private
     fOnProgress:  TDARTProgressEvent;
@@ -59,6 +76,20 @@ implementation
 
 uses
   SysUtils;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                                 TDARTResolver
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTResolver - class implmentation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTResolver - protected methods
+-------------------------------------------------------------------------------}
 
 Function TDARTResolver.GetUnresolved(Index: Integer): TDARTHash64;
 begin
@@ -188,7 +219,9 @@ If (fUnresolved.Count > 1) and not fUnresSorted then
 fUnresSorted := True;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    TDARTResolver - public methods
+-------------------------------------------------------------------------------}
 
 constructor TDARTResolver.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
