@@ -210,22 +210,81 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         Height = 81
         Caption = 'Brute force resolve'
         TabOrder = 7
-        object lblHint2: TLabel
-          Left = 2
-          Top = 15
-          Width = 541
-          Height = 64
-          Align = alClient
-          Alignment = taCenter
-          AutoSize = False
-          Caption = 'Not implemented'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clGrayText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
-          Layout = tlCenter
+        OnMouseMove = GroupBoxMouseMove
+        object lblMaxPathLength: TLabel
+          Left = 393
+          Top = 51
+          Width = 80
+          Height = 13
+          Alignment = taRightJustify
+          Caption = 'Path length limit:'
+        end
+        object cbBFActivate: TCheckBox
+          Tag = 1261
+          Left = 8
+          Top = 24
+          Width = 169
+          Height = 17
+          Caption = 'Activate brute force resolving'
+          TabOrder = 0
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbBFMultithreaded: TCheckBox
+          Tag = 1262
+          Left = 192
+          Top = 24
+          Width = 145
+          Height = 17
+          Caption = 'Multithreaded processing'
+          TabOrder = 1
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbBFUseKnownPaths: TCheckBox
+          Tag = 1263
+          Left = 376
+          Top = 24
+          Width = 145
+          Height = 17
+          Caption = 'Use already known paths'
+          TabOrder = 2
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbBFPrintableASCIIOnly: TCheckBox
+          Tag = 1264
+          Left = 8
+          Top = 48
+          Width = 177
+          Height = 17
+          Caption = 'Printable ASCII characters only'
+          TabOrder = 3
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbBFLimitedAlphabet: TCheckBox
+          Tag = 1265
+          Left = 192
+          Top = 48
+          Width = 105
+          Height = 17
+          Caption = 'Limited alphabet'
+          TabOrder = 4
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object seMaxPathLength: TSpinEdit
+          Tag = 1266
+          Left = 480
+          Top = 48
+          Width = 57
+          Height = 22
+          MaxValue = 1024
+          MinValue = 1
+          TabOrder = 5
+          Value = 32
+          OnMouseMove = OptionMouseMove
         end
       end
     end

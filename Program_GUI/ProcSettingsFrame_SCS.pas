@@ -14,7 +14,7 @@ interface
 uses
   {$IFNDEF FPC}Windows,{$ENDIF} SysUtils, Variants, Classes, Graphics, Controls,
   Forms, Dialogs, ExtCtrls, StdCtrls, Menus,
-  DART_ProcessingSettings;
+  DART_ProcessingSettings, Spin;
 
 type
   TOptionDescriptionEvent = procedure(Sender: TObject; DescriptionTag: Integer) of object;
@@ -41,13 +41,19 @@ type
     gbContentParsing: TGroupBox;
     gbBruteForce: TGroupBox;
     lblHint1: TLabel;
-    lblHint2: TLabel;
     pmHelpArchivesMenu: TPopupMenu;
     mi_HAM_Browse: TMenuItem;
     mi_HAM_N1: TMenuItem;
     mi_HAM_ETS2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
     diaHelpArchivesOpen: TOpenDialog;
+    cbBFActivate: TCheckBox;
+    cbBFMultithreaded: TCheckBox;
+    cbBFUseKnownPaths: TCheckBox;
+    cbBFPrintableASCIIOnly: TCheckBox;
+    cbBFLimitedAlphabet: TCheckBox;
+    lblMaxPathLength: TLabel;
+    seMaxPathLength: TSpinEdit;
     procedure meCustomPathsKeyPress(Sender: TObject; var Key: Char);
     procedure meHelpArchivesKeyPress(Sender: TObject; var Key: Char);
     procedure btnHelpArchivesMenuClick(Sender: TObject);
@@ -211,6 +217,13 @@ try
 finally
   meHelpArchives.Lines.EndUpdate;
 end;
+// brute force
+cbBFActivate.Checked := fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce;
+cbBFMultithreaded.Checked := fProcessingSettings.PathResolve.BruteForce.Multithreaded;
+cbBFUseKnownPaths.Checked := fProcessingSettings.PathResolve.BruteForce.UseKnownPaths;
+cbBFPrintableASCIIOnly.Checked := fProcessingSettings.PathResolve.BruteForce.PrintableASCIIOnly;
+cbBFLimitedAlphabet.Checked := fProcessingSettings.PathResolve.BruteForce.LimitedAlphabet;
+seMaxPathLength.Value := fProcessingSettings.PathResolve.BruteForce.PathLengthLimit;
 end;
 
 //------------------------------------------------------------------------------
@@ -249,6 +262,13 @@ For i := 0 to Pred(meHelpArchives.Lines.Count) do
       Inc(Count);
     end;
 SetLength(fProcessingSettings.PathResolve.HelpArchives,Count);
+// brute force
+fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce := cbBFActivate.Checked;
+fProcessingSettings.PathResolve.BruteForce.Multithreaded := cbBFMultithreaded.Checked;
+fProcessingSettings.PathResolve.BruteForce.UseKnownPaths := cbBFUseKnownPaths.Checked;
+fProcessingSettings.PathResolve.BruteForce.PrintableASCIIOnly := cbBFPrintableASCIIOnly.Checked;
+fProcessingSettings.PathResolve.BruteForce.LimitedAlphabet := cbBFLimitedAlphabet.Checked;
+fProcessingSettings.PathResolve.BruteForce.PathLengthLimit := seMaxPathLength.Value;
 end;
 
 //------------------------------------------------------------------------------
@@ -263,6 +283,8 @@ try
 finally
   fLoading := False;
 end;
+cbBFActivate.OnClick(cbBFActivate);
+cbBFPrintableASCIIOnly.OnClick(cbBFPrintableASCIIOnly);
 end;
 
 //------------------------------------------------------------------------------
@@ -277,7 +299,20 @@ end;
 
 procedure TfrmProcSettingsFrame_SCS.CheckBoxClick(Sender: TObject);
 begin
-// nothing to do here
+If (Sender is TCheckBox) and not fLoading then
+  case TCheckBox(Sender).Tag of
+    1261:   //cbBFActivate
+      begin
+        cbBFMultithreaded.Enabled := TCheckBox(Sender).Checked;
+        cbBFUseKnownPaths.Enabled := TCheckBox(Sender).Checked;
+        cbBFPrintableASCIIOnly.Enabled := TCheckBox(Sender).Checked;
+        cbBFLimitedAlphabet.Enabled := TCheckBox(Sender).Checked and cbBFPrintableASCIIOnly.Checked;
+        lblMaxPathLength.Enabled := TCheckBox(Sender).Checked;
+        seMaxPathLength.Enabled := TCheckBox(Sender).Checked;
+      end;
+    1264:   //cbBFPrintableASCIIOnly
+      cbBFLimitedAlphabet.Enabled := TCheckBox(Sender).Checked and cbBFActivate.Checked;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -297,7 +332,7 @@ begin
 If Sender is TGroupBox then
   begin
     Control := TGroupBox(Sender).ControlAtPos(Point(X,Y),True,True);
-    If Assigned(Control) and (Control is TCheckBox) then
+    If Assigned(Control) and ((Control is TCheckBox) or (Control is TSpinEdit)) then
       OptionMouseMove(Control,Shift,X,Y);
   end;
 end;
