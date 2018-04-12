@@ -43,7 +43,13 @@ const
         CustomPaths:                nil;
         HelpArchives:               nil;
         ParseContent:               False;
-        BruteForce:                 False))),
+        BruteForce: (
+          ActivateBruteForce:         False;
+          Multithreaded:              True;
+          UseKnownPaths:              False;
+          PrintableASCIIOnly:         True;
+          LimitedAlphabet:            False;
+          PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Archive mediately damaged';
     PresetData: (
@@ -59,7 +65,13 @@ const
         CustomPaths:                nil;
         HelpArchives:               nil;
         ParseContent:               False;
-        BruteForce:                 False))),
+        BruteForce: (
+          ActivateBruteForce:         False;
+          Multithreaded:              True;
+          UseKnownPaths:              False;
+          PrintableASCIIOnly:         True;
+          LimitedAlphabet:            False;
+          PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Archive severely damaged - parse content';
     PresetData: (
@@ -75,7 +87,13 @@ const
         CustomPaths:                nil;
         HelpArchives:               nil;
         ParseContent:               True;
-        BruteForce:                 False))),
+        BruteForce: (
+          ActivateBruteForce:         False;
+          Multithreaded:              True;
+          UseKnownPaths:              False;
+          PrintableASCIIOnly:         True;
+          LimitedAlphabet:            False;
+          PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Full retard mode';
     PresetData: (
@@ -91,7 +109,13 @@ const
         CustomPaths:                nil;
         HelpArchives:               nil;
         ParseContent:               True;
-        BruteForce:                 True))));
+        BruteForce: (
+          ActivateBruteForce:         True;
+          Multithreaded:              True;
+          UseKnownPaths:              False;
+          PrintableASCIIOnly:         True;
+          LimitedAlphabet:            False;
+          PathLengthLimit:            32)))));
 
 {===============================================================================
 --------------------------------------------------------------------------------
