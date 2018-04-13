@@ -414,6 +414,18 @@ try
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
     WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.HelpArchives[i]));
 
+  with APS.SCS.PathResolve.ContentParsing do
+    begin
+      WriteBool('SCS_PathResolve_ContentParsing','ParseContent',ParseContent);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseEverything',ParseEverything);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseHelpArchives',ParseHelpArchives);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
+      WriteBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
+      WriteBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
+      WriteInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100));
+      WriteInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
+    end;
+
   with APS.SCS.PathResolve.BruteForce do
     begin
       WriteBool('SCS_PathResolve_BruteForce','ActivateBruteForce',ActivateBruteForce);
@@ -472,7 +484,7 @@ try
       WriteBool('ZIP_LocalHeader','IgnoreDataDescriptor',IgnoreDataDescriptor);
     end;
 
-  // auxiliary settings is not saved - - - - - - - - - - - - - - - - - - - - - -
+  // auxiliary settings are not saved  - - - - - - - - - - - - - - - - - - - - -
 finally
   Free;
 end;
@@ -529,6 +541,18 @@ try
   SetLength(APS.SCS.PathResolve.HelpArchives,ReadInteger('SCS_PathResolve','HelpArchives',0));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
     APS.SCS.PathResolve.HelpArchives[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),''));
+
+  with APS.SCS.PathResolve.ContentParsing do
+    begin
+      ParseContent := ReadBool('SCS_PathResolve_ContentParsing','ParseContent',ParseContent);
+      ParseEverything := ReadBool('SCS_PathResolve_ContentParsing','ParseEverything',ParseEverything);
+      ParseHelpArchives := ReadBool('SCS_PathResolve_ContentParsing','ParseHelpArchives',ParseHelpArchives);
+      ParseEverythingInHlpArch := ReadBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
+      PrintableASCIIOnly := ReadBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
+      LimitedCharacterSet := ReadBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
+      BinaryThreshold := ReadInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100)) / 100;
+      MinPathLength := ReadInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
+    end;
 
   with APS.SCS.PathResolve.BruteForce do
     begin
