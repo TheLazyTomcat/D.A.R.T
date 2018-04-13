@@ -42,11 +42,12 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent: (
-          ActivateContentPasing:    False;
+        ContentParsing: (
+          ParseContent:             False;
           ParseEverything:          False;
           ParseHelpArchives:        False;
           ParseEverythingInHlpArch: False;
+          PrintableASCIIOnly:       True;
           LimitedCharacterSet:      True;
           BinaryThreshold:          0.0;
           MinPathLength:            2);
@@ -71,11 +72,12 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent: (
-          ActivateContentPasing:    False;
+        ContentParsing: (
+          ParseContent:             False;
           ParseEverything:          False;
           ParseHelpArchives:        False;
           ParseEverythingInHlpArch: False;
+          PrintableASCIIOnly:       True;
           LimitedCharacterSet:      True;
           BinaryThreshold:          0.0;
           MinPathLength:            2);
@@ -100,11 +102,12 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent: (
-          ActivateContentPasing:    True;
+        ContentParsing: (
+          ParseContent:             True;
           ParseEverything:          False;
           ParseHelpArchives:        False;
           ParseEverythingInHlpArch: False;
+          PrintableASCIIOnly:       True;
           LimitedCharacterSet:      True;
           BinaryThreshold:          0.0;
           MinPathLength:            2);
@@ -129,12 +132,13 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent: (
-          ActivateContentPasing:    True;
+        ContentParsing: (
+          ParseContent:             True;
           ParseEverything:          True;
           ParseHelpArchives:        True;
           ParseEverythingInHlpArch: True;
-          LimitedCharacterSet:      False;
+          PrintableASCIIOnly:       False;
+          LimitedCharacterSet:      False; 
           BinaryThreshold:          0.05;
           MinPathLength:            1);
         BruteForce: (

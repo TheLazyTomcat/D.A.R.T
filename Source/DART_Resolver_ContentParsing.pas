@@ -21,33 +21,45 @@ uses
 --------------------------------------------------------------------------------
 ===============================================================================}
 
+type
+  TDARTOrdinalExtension = (oeUnk,oeMAT,oeTOBJ,oeDDS,oePMA,oePMC,oePMD,oePMG);
+
+const
+  DART_OrdinalExtensionStrings: array[TDARTOrdinalExtension] of String =
+    ('','.mat','.tobj','.dds','.pma','.pmc','.pmd','.pmg');
+
 {===============================================================================
     TDARTResolver_ContentParsing - class declaration
 ===============================================================================}
 type
   TDARTResolver_ContentParsing = class(TDARTResolver)
   private
-    fContentPasingSettings: TDART_PS_SCS_PathResolve_ContentParsing;
+    fContentParsingSettings:  TDART_PS_SCS_PathResolve_ContentParsing;
     // processing
-    fData:                  Pointer;
-    fSize:                  TMemSize;
-    fDataStream:            TStaticMemoryStream;
+    fData:                    Pointer;
+    fSize:                    TMemSize;
+    fDataStream:              TStaticMemoryStream;
   protected
     Function CP_GetSignature: UInt32; virtual;
+    Function CP_ValidPathCharacter(Character: AnsiChar): Boolean; virtual;
+    Function CP_OrdinalExtension(const Ext: AnsiString): TDARTOrdinalExtension; virtual;
     procedure CP_SplitLineToBlocks(const Line: AnsiString; Blocks: TAnsiStringList); virtual;
+    Function CP_TryResolvePath(const Path: AnsiString): Integer; virtual;
     procedure CP_Parsing_Unknown; virtual;
     procedure CP_Parsing_Unknown_Text; virtual;
     procedure CP_Parsing_Unknown_Binary; virtual;
   public
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
-    procedure Run(const Data: Pointer; Size: TMemSize); reintroduce;
+    procedure Run(const Data: Pointer; Size: TMemSize); reintroduce; overload;
+    procedure Run(const Path: AnsiString); reintroduce; overload;
     procedure Stop; override;
   end;
 
 implementation
 
 uses
-  Classes,
+  SysUtils, Classes,
+  StrRect,
   DART_Auxiliary, DART_Format_SCS;
 
 {===============================================================================
@@ -55,6 +67,13 @@ uses
                           TDARTResolver_ContentParsing
 --------------------------------------------------------------------------------
 ===============================================================================}
+
+const
+  DART_RES_CP_LimitedCharSet = ['0'..'9','A'..'Z','a'..'z','_','.','-','/'];
+
+  // known file type signatures
+  DART_REP_CP_KTS_DDS = UInt32($20534444);  // DDS texture
+  DART_REP_CP_KTS_OGG = UInt32($5367674F);  // OGG sound
 
 {===============================================================================
     TDARTResolver_ContentParsing - class implementation
@@ -73,6 +92,35 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TDARTResolver_ContentParsing.CP_ValidPathCharacter(Character: AnsiChar): Boolean;
+begin
+If fContentParsingSettings.PrintableASCIIOnly then
+  begin
+    If fContentParsingSettings.LimitedCharacterSet then
+      Result := Character in DART_RES_CP_LimitedCharSet
+    else
+      Result := (Ord(Character) > 32) and (Ord(Character) < 128);
+  end
+else Result := Ord(Character) > 32;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTResolver_ContentParsing.CP_OrdinalExtension(const Ext: AnsiString): TDARTOrdinalExtension;
+var
+  i:  TDARTOrdinalExtension;
+begin
+Result := oeUnk;
+For i := Low(TDARTOrdinalExtension) to High(TDARTOrdinalExtension) do
+  If AnsiSameText(DART_OrdinalExtensionStrings[i],AnsiToStr(Ext)) then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
 // splits string on white spaces and quoted blocks (double quote)
 procedure TDARTResolver_ContentParsing.CP_SplitLineToBlocks(const Line: AnsiString; Blocks: TAnsiStringList);
 var
@@ -86,15 +134,7 @@ Len := 0;
 Quoted := False;
 For i := 1 to Length(Line) do
   begin
-    If ((Ord(Line[i]) <= 32) or ((Ord(Line[i]) > 127) and
-        fContentPasingSettings.LimitedCharacterSet)) and not Quoted then
-      begin
-        If Len > 0 then
-          Blocks.Add(Copy(Line,Start,Len));
-        Start := -1;
-        Len := 0;
-      end
-    else
+    If (CP_ValidPathCharacter(Line[i]) or (Line[i] = AnsiChar('"'))) or Quoted then
       begin
         If Line[i] = AnsiChar('"') then
           begin
@@ -119,6 +159,13 @@ For i := 1 to Length(Line) do
               Start := i;
             Inc(Len);
           end;
+      end
+    else
+      begin
+        If Len > 0 then
+          Blocks.Add(Copy(Line,Start,Len));
+        Start := -1;
+        Len := 0;
       end;
   end;
 If Len > 0 then
@@ -128,6 +175,15 @@ If Len > 0 then
     else
       Blocks.Add(Copy(Line,Start,Len));
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTResolver_ContentParsing.CP_TryResolvePath(const Path: AnsiString): Integer;
+begin
+Result := Unresolved_IndexOf(PathHash(Path,fHashType));
+If Result >= 0 then
+  Unresolved_MoveToResolved(Result,Path);
 end;
 
 //------------------------------------------------------------------------------
@@ -142,7 +198,7 @@ Counter := 0;
 For i := 0 to Pred(fSize) do
   If PByte(PtrUInt(fData) + PtrUInt(i))^ = 0 then
     Inc(Counter);
-If (Counter / fSize) > fContentPasingSettings.BinaryThreshold then
+If (Counter / fSize) > fContentParsingSettings.BinaryThreshold then
   // data will be treated as an unknown binary
   CP_Parsing_Unknown_Binary
 else
@@ -157,7 +213,6 @@ var
   Text:     TAnsiStringList;
   Line:     TAnsiStringList;
   i,j:      Integer;
-  Index:    Integer;
   TempStr:  AnsiString;
 begin
 Text := TAnsiStringList.Create;
@@ -171,15 +226,11 @@ try
         For j := 0 to Pred(Line.Count) do
           begin
             TempStr := DART_ExcludeOuterPathDelim(Line[j],DART_SCS_PathDelim);
-            If Length(TempStr) >= fContentPasingSettings.MinPathLength then
+            If Length(TempStr) >= fContentParsingSettings.MinPathLength then
               begin
-                Index := Unresolved_IndexOf(PathHash(TempStr,fHashType));
-                If Index >= 0 then
-                  begin
-                    Unresolved_MoveToResolved(Index,TempStr);
-                    If fUnresolved.Count <= 0 then
-                      Break{For j};
-                  end;
+                If CP_TryResolvePath(TempStr) >= 0 then
+                  If fUnresolved.Count <= 0 then
+                    Break{For j};
               end;
           end;
         If fUnresolved.Count <= 0 then
@@ -199,29 +250,24 @@ procedure TDARTResolver_ContentParsing.CP_Parsing_Unknown_Binary;
 var
   i:          TMemSize;
   Start,Len:  TMemSize;
-  CurrByte:   Byte;
+  CurrChar:   AnsiChar;
   TempStr:    AnsiString;
-  Index:      Integer;
 begin
 Start := 0;
 Len := 0;
 For i := 0 to Pred(fSize) do
   begin
-    CurrByte := PByte(PtrUInt(fData) + PtrUInt(i))^;
-    If (CurrByte < 32) or ((CurrByte > 127) and fContentPasingSettings.LimitedCharacterSet) then
+    CurrChar := PAnsiChar(PtrUInt(fData) + PtrUInt(i))^;
+    If not CP_ValidPathCharacter(CurrChar) then
       begin
-        If (Len > 0) and (Len >= TMemSize(fContentPasingSettings.MinPathLength)) then
+        If (Len > 0) and (Len >= TMemSize(fContentParsingSettings.MinPathLength)) then
           begin
             SetLength(TempStr,Len);
             Move(Pointer(PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
             TempStr := DART_ExcludeOuterPathDelim(TempStr,DART_SCS_PathDelim);
-            Index := Unresolved_IndexOf(PathHash(TempStr,fHashType));
-            If Index >= 0 then
-              begin
-                Unresolved_MoveToResolved(Index,TempStr);
-                If fUnresolved.Count <= 0 then
-                  Break{For i};
-              end;
+            If CP_TryResolvePath(TempStr) >= 0 then
+              If fUnresolved.Count <= 0 then
+                Break{For i}; 
           end;
         Start := i;
         Len := 0;
@@ -242,7 +288,7 @@ end;
 constructor TDARTResolver_ContentParsing.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
 begin
 inherited Create(PauseControlObject,ArchiveProcessingSettings);
-fContentPasingSettings := fArchiveProcessingSettings.SCS.PathResolve.ParseContent;
+fContentParsingSettings := fArchiveProcessingSettings.SCS.PathResolve.ContentParsing;
 end;
 
 //------------------------------------------------------------------------------
@@ -256,15 +302,41 @@ If Assigned(Data) and (Size > 0) then
     fDataStream := TStaticMemoryStream.Create(Data,Size);
     try
       // later implement parsers for known types (SII, SII/3nK, MAT, TOBJ, ....) 
-      //case CP_GetSignature of
-
-      //else
-        //If fContentPasingSettings.ParseEverything then
+      case CP_GetSignature of
+        DART_REP_CP_KTS_DDS,
+        DART_REP_CP_KTS_OGG:  
+          If fContentParsingSettings.ParseEverything then
+             CP_Parsing_Unknown;
+      else
+        If fContentParsingSettings.ParseEverything then
           CP_Parsing_Unknown;
-      //end;
+      end;
     finally
       fDataStream.Free;
     end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTResolver_ContentParsing.Run(const Path: AnsiString);
+begin
+// process known file series
+If Length(Path) > 0 then
+  case CP_OrdinalExtension(ExtractFileExt(Path)) of
+    oeMAT,oeTOBJ,oeDDS:
+      begin
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeMAT]));
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeTOBJ]));
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeDDS]));
+      end;
+    oePMA,oePMC,oePMD,oePMG:
+      begin
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMA]));
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMC]));
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMD]));
+        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMG]));
+      end;
   end;
 end;
 
