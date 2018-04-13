@@ -48,7 +48,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Archive mediately damaged';
@@ -70,7 +70,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Archive severely damaged - parse content';
@@ -92,7 +92,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    (PresetName: 'SCS Preset - Full retard mode';
@@ -114,7 +114,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)))));
 
 {===============================================================================

@@ -32,9 +32,6 @@ type
     Count:    Integer;
   end;
 
-const
-  DART_RES_BF_LimitedAlphabet: AnsiString = '0123456789abcdefghijklmnopqrstuvwxyz_.-/';
-
 {===============================================================================
     TDARTResolver_BruteForce - class declaration
 ===============================================================================}
@@ -49,6 +46,7 @@ type
     fUpdateCounter:             Integer;
     fProcessorShadow:           AnsiString;
     fProcessorBuffer:           AnsiString;
+    fProcessingTerminating:     Boolean;
     fProcessingTerminated:      Boolean;
   protected
     // single thread (local) processing
@@ -77,6 +75,9 @@ uses
                             TDARTBruteForceProcessor
 --------------------------------------------------------------------------------
 ===============================================================================}
+
+const
+  DART_RES_BF_LimitedCharSet: AnsiString = '0123456789abcdefghijklmnopqrstuvwxyz_.-/';
 
 {===============================================================================
     TDARTBruteForceProcessor - class declaration
@@ -399,6 +400,7 @@ If fUnresolved.Count > 0 then
     FillChar(PAnsiChar(fProcessorShadow)^,Length(fProcessorShadow),0);
     fProcessorBuffer := StrToAnsi(StringOfChar(#0,DART_RES_MultThrLength));
     fProcessingTerminated := False;
+    fProcessingTerminating := False;
     // create processors
     For i := 0 to Pred(fTasksManager.MaxConcurrentTasks) do
       If AdvanceProcessorBuffer then
@@ -489,7 +491,7 @@ If Processor.ResolvedCount > 0 then
       end;
     Inc(fUpdateCounter);
   end;
-If (fUnresolved.Count > 0) and AdvanceProcessorBuffer then
+If (fUnresolved.Count > 0) and AdvanceProcessorBuffer and not fProcessingTerminating then
   begin
     If Processor.LastUpdateCounter <> fUpdateCounter then
       Processor.Initialize(fUsedKnownPaths,fUnresolved,fHashType,fAlphabet);
@@ -545,12 +547,12 @@ If fBruteForceSettings.UseKnownPaths then
 // prepare alphabet
 If fBruteForceSettings.PrintableASCIIOnly then
   begin
-    If fBruteForceSettings.LimitedAlphabet then
+    If fBruteForceSettings.LimitedCharSet then
       begin
         // '0'..'9', 'a'..'z', '_', '.', '-', '/'
-        For i := Low(fAlphabet.Letters) to Pred(Length(DART_RES_BF_LimitedAlphabet)) do
-          fAlphabet.Letters[i] := DART_RES_BF_LimitedAlphabet[i + 1];
-        fAlphabet.Count := Length(DART_RES_BF_LimitedAlphabet);
+        For i := Low(fAlphabet.Letters) to Pred(Length(DART_RES_BF_LimitedCharSet)) do
+          fAlphabet.Letters[i] := DART_RES_BF_LimitedCharSet[i + 1];
+        fAlphabet.Count := Length(DART_RES_BF_LimitedCharSet);
       end
     else
       begin
@@ -588,10 +590,9 @@ procedure TDARTResolver_BruteForce.Stop;
 var
   i:  Integer;
 begin
-fProcessingTerminated := True;
+fProcessingTerminating := True;
 For i := 0 to Pred(fTasksManager.TaskCount) do
   fTasksManager.StopTask(i);
-fTasksManager.WaitForRunningTasksToComplete;
 end;
 
 
