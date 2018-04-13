@@ -12,7 +12,8 @@ unit DART_Format_ZIP;
 interface
 
 uses
-  AuxTypes, CRC32;
+  AuxTypes, CRC32,
+  DART_Common;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -142,6 +143,7 @@ type
   TDART_ZIP_ArchiveStructure = record
     Entries:                TDART_ZIP_Entries;
     EndOfCentralDirectory:  TDART_ZIP_EndOfCentralDirectory;
+    KnownPaths:             TDARTKnownPaths;
   end;
 
 //--- Bit flags ----------------------------------------------------------------

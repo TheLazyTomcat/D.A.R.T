@@ -43,6 +43,7 @@ type
 
   TDART_PS_Auxiliaty = record
     InMemoryProcessingAllowed:  Boolean;  // depends on available memory and size of input archive
+    HelpArchive:                Boolean;  // indicates whether the input archive is used as help archive
   end;
 
 //--- SCS#-specific processing settings ----------------------------------------
@@ -79,7 +80,6 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpArchives:               array of String;
-    // temporary fields, will be expanded as the functions are implemented
     ContentParsing:             TDART_PS_SCS_PathResolve_ContentParsing;
     BruteForce:                 TDART_PS_SCS_PathResolve_BruteForce;
   end;
@@ -231,7 +231,8 @@ const
         IgnoreExtraField:             True;
         IgnoreDataDescriptor:         False));
     Auxiliary: (
-      InMemoryProcessingAllowed: False));
+      InMemoryProcessingAllowed: False;
+      HelpArchive:               False));
 
 //==============================================================================
 
@@ -253,7 +254,8 @@ procedure LoadFromIniFile(const IniFileName: String; var APS: TDARTArchiveProces
 implementation
 
 uses
-  SysUtils, IniFiles, TypInfo;
+  SysUtils, IniFiles, TypInfo,
+  StrRect;
 
 procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings; RectifyInnerStructs: Boolean = False);
 begin
@@ -341,12 +343,14 @@ begin
 {$message 'later remove when parsers of known types are added'}
 SCS_PS.PathResolve.ContentParsing.ParseEverything := True;
 SCS_PS.PathResolve.ContentParsing.ParseEverythingInHlpArch := True;
+// content parsing
 If SCS_PS.PathResolve.ContentParsing.BinaryThreshold < 0.0 then
   SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 0.0
 else If SCS_PS.PathResolve.ContentParsing.BinaryThreshold > 1.0 then
   SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 1.0;
 If SCS_PS.PathResolve.ContentParsing.MinPathLength < 1 then
   SCS_PS.PathResolve.ContentParsing.MinPathLength := 1;
+// bruteforce resolve  
 If SCS_PS.PathResolve.BruteForce.PathLengthLimit < 1 then
   SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1
 else If SCS_PS.PathResolve.BruteForce.PathLengthLimit > 1024 then
@@ -405,10 +409,10 @@ try
   WriteBool('SCS_PathResolve','ExtractedUnresolvedEntries',APS.SCS.PathResolve.ExtractedUnresolvedEntries);
   WriteInteger('SCS_PathResolve','CustomPaths',Length(APS.SCS.PathResolve.CustomPaths));
   For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
-    WriteString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),APS.SCS.PathResolve.CustomPaths[i]);
+    WriteString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.CustomPaths[i]));
   WriteInteger('SCS_PathResolve','HelpArchives',Length(APS.SCS.PathResolve.HelpArchives));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),APS.SCS.PathResolve.HelpArchives[i]);
+    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.HelpArchives[i]));
 
   with APS.SCS.PathResolve.BruteForce do
     begin
@@ -521,10 +525,10 @@ try
   APS.SCS.PathResolve.ExtractedUnresolvedEntries := ReadBool('SCS_PathResolve','ExtractedUnresolvedEntries',APS.SCS.PathResolve.ExtractedUnresolvedEntries);
   SetLength(APS.SCS.PathResolve.CustomPaths,ReadInteger('SCS_PathResolve','CustomPaths',0));
   For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
-    APS.SCS.PathResolve.CustomPaths[i] := ReadString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),'');
+    APS.SCS.PathResolve.CustomPaths[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),''));
   SetLength(APS.SCS.PathResolve.HelpArchives,ReadInteger('SCS_PathResolve','HelpArchives',0));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    APS.SCS.PathResolve.HelpArchives[i] := ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),'');
+    APS.SCS.PathResolve.HelpArchives[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),''));
 
   with APS.SCS.PathResolve.BruteForce do
     begin
@@ -584,7 +588,7 @@ try
       IgnoreDataDescriptor := ReadBool('ZIP_LocalHeader','IgnoreDataDescriptor',IgnoreDataDescriptor);
     end;
 
-  // auxiliary settings is not saved - - - - - - - - - - - - - - - - - - - - - -
+  // auxiliary settings are not saved  - - - - - - - - - - - - - - - - - - - - -
 finally
   Free;
 end;

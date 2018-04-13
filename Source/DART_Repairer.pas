@@ -186,7 +186,10 @@ type
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
     // methods working with known paths
-    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; virtual;
+    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; overload; virtual;
+    Function IndexOfKnownPath(const Path: AnsiString): Integer; overload; virtual; abstract;
+    Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; overload; virtual; abstract;
+    Function AddKnownPath(const Path: AnsiString): Integer; overload; virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -209,6 +212,10 @@ implementation
 uses
   Windows, Math,
   StrRect, CRC32, ZLibUtils;
+
+{===============================================================================
+   Result information functions implementation
+===============================================================================}
 
 procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo);
 begin
@@ -653,11 +660,18 @@ PathHash := AnsiStringCRC32(AnsiLowerCase(Path));
 Result := -1;
 For i := Low(KnownPaths.Arr) to Pred(KnownPaths.Count) do
   If KnownPaths.Arr[i].Hash = PathHash then
-    If AnsiSameText(Path,KnownPaths.Arr[i].Path) then
+    If AnsiSameText(AnsiToStr(Path),AnsiToStr(KnownPaths.Arr[i].Path)) then
       begin
         Result := i;
         Break{For i};
       end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer.AddKnownPath(const Path: AnsiString): Integer;
+begin
+Result := AddKnownPath(Path,Length(ExtractFileExt(AnsiToStr(Path))) > 0);
 end;
 
 //------------------------------------------------------------------------------

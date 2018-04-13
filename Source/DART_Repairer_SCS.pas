@@ -82,11 +82,14 @@ type
     procedure InitializeProcessingSettings; override;
     procedure InitializeData; override;
     procedure InitializeProgress; override;
+    // flow control methods;
+    procedure DoTerminate; override;
     // methods for content parsing
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
-    // flow control methods;
-    procedure DoTerminate; override;
+    // methods working with known paths
+    Function IndexOfKnownPath(const Path: AnsiString): Integer; override;
+    Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; override;
     // processing methods
     procedure ArchiveProcessing; override;
     // scs specific routines
@@ -94,11 +97,9 @@ type
     Function SCS_HashName: String; virtual;
     Function SCS_IndexOfEntry(Hash: TDARTHash64): Integer; virtual;
     procedure SCS_SortEntries; virtual;
-    Function SCS_KnownPaths_IndexOf(const Path: AnsiString): Integer; virtual;
-    Function SCS_KnownPaths_Add(const Path: AnsiString; Directory: Boolean): Integer; virtual;
     procedure SCS_LoadArchiveHeader; virtual;
     procedure SCS_LoadEntries; virtual;
-    procedure SCS_AssignPaths; virtual;
+    procedure SCS_AssignPaths(OnlyCountUnresolved: Boolean = False); virtual;
     procedure SCS_DiscardDirectories; virtual;
     procedure SCS_ReconstructDirectories; virtual;
     procedure SCS_ResolvePaths; virtual; 
@@ -108,7 +109,7 @@ type
     procedure SCS_ResolvePaths_BruteForce; virtual;
     procedure SCS_ResolvePaths_Reconstruct; virtual;
     // progress handlers
-    procedure SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double); virtual;    
+    procedure SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double); virtual;
     procedure SCS_ResolvePaths_BruteForce_ProgressHandler(Sender: TObject; Progress: Double); virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
@@ -258,6 +259,14 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TDARTRepairer_SCS.DoTerminate;
+begin
+If Assigned(fResolver) then
+  fResolver.Stop;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TDARTRepairer_SCS.IndexOfEntry(const EntryFileName: AnsiString): Integer;
 begin
 Result := SCS_IndexOfEntry(SCS_EntryFileNameHash(EntryFileName));
@@ -308,10 +317,36 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer_SCS.DoTerminate;
+Function TDARTRepairer_SCS.IndexOfKnownPath(const Path: AnsiString): Integer;
+var
+  i:        Integer;
+  PathHash: TDARTHash64;
 begin
-If Assigned(fResolver) then
-  fResolver.Stop;
+Result := -1;
+PathHash := SCS_EntryFileNameHash(Path);
+For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
+  If HashCompare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_SCS.AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer;
+begin
+Result := IndexOfKnownPath(Path);
+If Result < 0 then
+  begin
+    If fArchiveStructure.KnownPaths.Count >= Length(fArchiveStructure.KnownPaths.Arr) then
+      SetLength(fArchiveStructure.KnownPaths.Arr,Length(fArchiveStructure.KnownPaths.Arr) + 1024);
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Path := Path;
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Directory := Directory;
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash64 := SCS_EntryFileNameHash(Path);
+    Inc(fArchiveStructure.KnownPaths.Count);
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -438,40 +473,6 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTRepairer_SCS.SCS_KnownPaths_IndexOf(const Path: AnsiString): Integer;
-var
-  i:        Integer;
-  PathHash: TDARTHash64;
-begin
-Result := -1;
-PathHash := SCS_EntryFileNameHash(Path);
-For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-  If HashCompare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
-    begin
-      Result := i;
-      Break{For i};
-    end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TDARTRepairer_SCS.SCS_KnownPaths_Add(const Path: AnsiString; Directory: Boolean): Integer;
-begin
-Result := SCS_KnownPaths_IndexOf(Path);
-If Result < 0 then
-  begin
-    If fArchiveStructure.KnownPaths.Count >= Length(fArchiveStructure.KnownPaths.Arr) then
-      SetLength(fArchiveStructure.KnownPaths.Arr,Length(fArchiveStructure.KnownPaths.Arr) + 1024);
-    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Path := Path;
-    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Directory := Directory;
-    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash := AnsiStringCRC32(AnsiLowerCase(Path));
-    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash64 := SCS_EntryFileNameHash(Path);
-    Inc(fArchiveStructure.KnownPaths.Count);
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
 procedure TDARTRepairer_SCS.SCS_LoadArchiveHeader;
 begin
 DoProgress(fProcessingProgNode,PSIDX_C_ArchiveHeaderLoading,0.0);
@@ -539,21 +540,22 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer_SCS.SCS_AssignPaths;
+procedure TDARTRepairer_SCS.SCS_AssignPaths(OnlyCountUnresolved: Boolean = False);
 var
   i,Index:  Integer;
 begin
-For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-  begin
-    Index := SCS_IndexOfEntry(fArchiveStructure.KnownPaths.Arr[i].Hash64);
-    If Index >= 0 then
-      If not fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved then
-        begin
-          fArchiveStructure.Entries.Arr[Index].FileName := fArchiveStructure.KnownPaths.Arr[i].Path;
-          fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
-        end;
-    DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
-  end;
+If not OnlyCountUnresolved then
+  For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
+    begin
+      Index := SCS_IndexOfEntry(fArchiveStructure.KnownPaths.Arr[i].Hash64);
+      If Index >= 0 then
+        If not fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved then
+          begin
+            fArchiveStructure.Entries.Arr[Index].FileName := fArchiveStructure.KnownPaths.Arr[i].Path;
+            fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+          end;
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
 // count unresolved entries
 fArchiveStructure.UtilityData.UnresolvedCount := 0;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
@@ -638,19 +640,21 @@ begin
 DoProgress(fProcessingProgNode,PSIDX_C_PathsResolving,0.0);
 fArchiveStructure.KnownPaths.Count := 0;
 // add root
-SCS_KnownPaths_Add(DART_SCS_PATHS_Root,True);
+AddKnownPath(DART_SCS_PATHS_Root,True);
 // add predefined paths
 If fProcessingSettings.PathResolve.UsePredefinedPaths then
   begin
     For i := Low(DART_SCS_PATHS_PredefinedDirs) to High(DART_SCS_PATHS_PredefinedDirs) do
-      SCS_KnownPaths_Add(DART_SCS_PATHS_PredefinedDirs[i],True);
+      AddKnownPath(DART_SCS_PATHS_PredefinedDirs[i],True);
     For i := Low(DART_SCS_PATHS_PredefinedFiles) to High(DART_SCS_PATHS_PredefinedFiles) do
-      SCS_KnownPaths_Add(DART_SCS_PATHS_PredefinedFiles[i],False);
+      AddKnownPath(DART_SCS_PATHS_PredefinedFiles[i],False);
   end;
 // add custom paths
 with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
-    SCS_KnownPaths_Add(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
+    AddKnownPath(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
+// assign any predefined or custom paths    
+SCS_AssignPaths;    
 // load all paths stored in the archive
 SCS_ResolvePaths_Local;
 // load paths from help archives
@@ -726,15 +730,15 @@ var
                         Directories.Add(Path + DART_SCS_PathDelim + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
                       else
                         Directories.Add(Copy(EntryLines[ii],2,Length(EntryLines[ii])));
-                      SCS_KnownPaths_Add(Directories[Pred(Directories.Count)],True);
+                      AddKnownPath(Directories[Pred(Directories.Count)],True);
                     end
                   else
                     begin
                       // file
                       If Path <> '' then
-                        SCS_KnownPaths_Add(Path + DART_SCS_PathDelim + EntryLines[ii],False)
+                        AddKnownPath(Path + DART_SCS_PathDelim + EntryLines[ii],False)
                       else
-                        SCS_KnownPaths_Add(EntryLines[ii],False)
+                        AddKnownPath(EntryLines[ii],False)
                     end;
                 end;
             Inc(ProcessedDirCount);
@@ -749,40 +753,43 @@ If SecondRound then
 else
   ProgressIndex := PSIDX_C_PathsRes_Local;
 DoProgress(fPathsResolveProcNode,ProgressIndex,0.0);
-DirectoryList := TAnsiStringList.Create;
-try
-  CurrentLevel := TAnsiStringList.Create;
-  try
-    DirectoryList.Capacity := fArchiveStructure.KnownPaths.Count;
-    For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-      DirectoryList.Add(fArchiveStructure.KnownPaths.Arr[i].Path);
-    EntryLines := TAnsiStringList.Create;
+If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
+  begin
+    DirectoryList := TAnsiStringList.Create;
     try
-      // count entries marked as directory (progress is using this number)
-      DirCount := 0;
-      ProcessedDirCount := 0;
-      For i := Low(fArchiveStructure.Entries.Arr) to PRed(fArchiveStructure.Entries.Count) do
-        If GetFlagState(fArchiveStructure.Entries.Arr[i].BinPart.Flags,DART_SCS_FLAG_Directory) then Inc(DirCount);
-      repeat
-        CurrentLevel.Assign(DirectoryList);
-        DirectoryList.Clear;
-        For i := 0 to Pred(CurrentLevel.Count) do
-          LoadPath(CurrentLevel[i],DirectoryList);
-        // remove duplicities
-        For i := Pred(DirectoryList.Count) downto 0 do
-          If CurrentLevel.IndexOf(DirectoryList[i]) >= 0 then
-            DirectoryList.Delete(i);
-      until DirectoryList.Count <= 0;
+      CurrentLevel := TAnsiStringList.Create;
+      try
+        DirectoryList.Capacity := fArchiveStructure.KnownPaths.Count;
+        For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
+          DirectoryList.Add(fArchiveStructure.KnownPaths.Arr[i].Path);
+        EntryLines := TAnsiStringList.Create;
+        try
+          // count entries marked as directory (progress is using this number)
+          DirCount := 0;
+          ProcessedDirCount := 0;
+          For i := Low(fArchiveStructure.Entries.Arr) to PRed(fArchiveStructure.Entries.Count) do
+            If GetFlagState(fArchiveStructure.Entries.Arr[i].BinPart.Flags,DART_SCS_FLAG_Directory) then Inc(DirCount);
+          repeat
+            CurrentLevel.Assign(DirectoryList);
+            DirectoryList.Clear;
+            For i := 0 to Pred(CurrentLevel.Count) do
+              LoadPath(CurrentLevel[i],DirectoryList);
+            // remove duplicities
+            For i := Pred(DirectoryList.Count) downto 0 do
+              If CurrentLevel.IndexOf(DirectoryList[i]) >= 0 then
+                DirectoryList.Delete(i);
+          until DirectoryList.Count <= 0;
+        finally
+          EntryLines.Free;
+        end;
+      finally
+        CurrentLevel.Free;
+      end;
     finally
-      EntryLines.Free;
+      DirectoryList.Free;
     end;
-  finally
-    CurrentLevel.Free;
+    SCS_AssignPaths;
   end;
-finally
-  DirectoryList.Free;
-end;
-SCS_AssignPaths;
 DoProgress(fPathsResolveProcNode,ProgressIndex,1.0);
 end;
 
@@ -813,6 +820,8 @@ var
     HelpArchiveProcSettings.Common.ArchivePath := FileName;
     // explicitly turn off in-memory processing, as we do not know size of the archive
     HelpArchiveProcSettings.Common.InMemoryProcessing := False;
+    // indicate help archive
+    HelpArchiveProcSettings.Auxiliary.HelpArchive := True;
     // do archive-type-specific processing
     case DART_GetFileSignature(FileName) of
       DART_SCS_ArchiveSignature:  // - - - - - - - - - - - - - - - - - - - - - -
@@ -839,7 +848,7 @@ var
             TempKnownPaths.Count := 0;
             If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
               For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
-                SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
+                AddKnownPath(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
           finally
             HelpArchiveRepairer.Free;
           end;
@@ -855,7 +864,7 @@ var
         TempKnownPaths.Count := 0;
         If HelpArchiveRepairer.GetAllKnownPaths(TempKnownPaths) > 0 then
           For ii := Low(TempKnownPaths.Arr) to Pred(TempKnownPaths.Count) do
-            SCS_KnownPaths_Add(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
+            AddKnownPath(TempKnownPaths.Arr[ii].Path,TempKnownPaths.Arr[ii].Directory);
       finally
         HelpArchiveRepairer.Free;
       end;
@@ -883,7 +892,7 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_ContentParsing;
 var
-  i,Index:    Integer;
+  i:          Integer;
   EntryData:  Pointer;
   EntrySize:  TMemSize;
 begin
@@ -905,24 +914,19 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
                   FreeMem(EntryData,EntrySize);
                 end;
             {
-              it is highly unlikely that processing of single entry will take much time,
+              it is highly unlikely that processing of any single entry will take much time,
               therefore there is no progress in the resolver and it is instead done here per entry
             }
               DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ContentParsing,(i + 1) / fArchiveStructure.Entries.Count);
               If fResolver.UnresolvedCount <= 0 then
                 Break{For i};
             end;
-          // get resolved
+          // store resolved paths to known
           For i := 0 to Pred(fResolver.ResolvedCount) do
-            begin
-              Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
-              If Index >= 0 then
-                begin
-                  fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
-                  fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
-                end;
-            end;
+            AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
         end;
+      // assign any newly found paths
+      SCS_AssignPaths;        
       // second round if needed, this time only already known paths are processed
       If fResolver.UnresolvedCount > 0 then
         begin
@@ -934,17 +938,12 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
               If fResolver.UnresolvedCount <= 0 then
                 Break{For i};                
             end;
-          // get resolved again
+          // store resolved paths to known
           For i := 0 to Pred(fResolver.ResolvedCount) do
-            begin
-              Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
-              If Index >= 0 then
-                begin
-                  fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
-                  fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
-                end;
-            end;
+            AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
         end;
+      // assign any newly found paths
+      SCS_AssignPaths;
     finally
       FreeAndNil(fResolver);
     end;
@@ -956,7 +955,7 @@ end;
 
 procedure TDARTRepairer_SCS.SCS_ResolvePaths_BruteForce;
 var
-  i,Index:  Integer;
+  i:  Integer;
 begin
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_BruteForce,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
@@ -969,14 +968,9 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
         fResolver.Run;
       // get resolved
       For i := 0 to Pred(fResolver.ResolvedCount) do
-        begin
-          Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
-          If Index >= 0 then
-            begin
-              fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
-              fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
-            end;
-        end;
+        AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
+      // assign any newly found paths
+      SCS_AssignPaths;
     finally
       FreeAndNil(fResolver);
     end;
@@ -994,6 +988,8 @@ fEntriesSorted := False;
 SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
+// count unresolved
+SCS_AssignPaths(True);
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
 end;
 

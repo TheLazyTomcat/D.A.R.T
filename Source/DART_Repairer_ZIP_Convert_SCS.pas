@@ -520,7 +520,7 @@ try
               try
                 // recompress data
               {$IFDEF DevelNotes}
-                {$MESSAGE 'read hare'}
+                {$MESSAGE 'read here'}
               {$ENDIF}
               {
                 This can be optimized - instead of recompression, do:

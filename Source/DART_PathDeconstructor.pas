@@ -93,6 +93,7 @@ implementation
 
 uses
   SysUtils,
+  StrRect,
   DART_Auxiliary;
 
 {===============================================================================
@@ -225,7 +226,7 @@ var
 begin
 Result := -1;
 For i := Low(fSubNodes.Arr) to Pred(fSubNodes.Count) do
-  If AnsiSameText(fSubNodes.Arr[i].Name,SubNodeName) then
+  If AnsiSameText(AnsiToStr(fSubNodes.Arr[i].Name),AnsiToStr(SubNodeName)) then
     begin
       Result := i;
       Break{For i};
@@ -366,7 +367,7 @@ procedure TDARTPathNode.Sort;
         Pivot := fSubNodes.Arr[RightIdx];
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If AnsiCompareStr(Pivot.Name,fSubNodes.Arr[i].Name) > 0 then
+          If AnsiCompareStr(AnsiToStr(Pivot.Name),AnsiToStr(fSubNodes.Arr[i].Name)) > 0 then
             begin
               ExchangeSubNodes(i,idx);
               Inc(Idx);
