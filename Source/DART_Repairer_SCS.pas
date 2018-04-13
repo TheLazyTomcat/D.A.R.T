@@ -27,43 +27,43 @@ uses
 ===============================================================================}
 
 var
-  DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading:  Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntriesLoading:        Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsResolving:        Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep:   Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntriesConverting:     Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntriesProcessing:     Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_ArchiveHeaderLoading:    Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesLoading:          Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsResolving:          Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesProgressPrep:     Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesConverting:       Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntriesProcessing:       Integer = -1;
 
-  DART_PROGSTAGE_IDX_SCS_PathsRes_Local:        Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives: Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent: Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond:  Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce:   Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct:  Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Local:          Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives:   Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_ContentParsing: Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond:    Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce:     Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct:    Integer = -1;
 
-  DART_PROGSTAGE_IDX_SCS_EntryProcessing:       Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntryLoading:          Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntryDecompression:    Integer = -1;
-  DART_PROGSTAGE_IDX_SCS_EntrySaving:           Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntryProcessing:         Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntryLoading:            Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntryDecompression:      Integer = -1;
+  DART_PROGSTAGE_IDX_SCS_EntrySaving:             Integer = -1;
 
-  PSIDX_C_ArchiveHeaderLoading:  Integer = -1;
-  PSIDX_C_EntriesLoading:        Integer = -1;
-  PSIDX_C_PathsResolving:        Integer = -1;
-  PSIDX_C_EntriesProgressPrep:   Integer = -1;
-  PSIDX_C_EntriesConverting:     Integer = -1;
-  PSIDX_C_EntriesProcessing:     Integer = -1;
+  PSIDX_C_ArchiveHeaderLoading:    Integer = -1;
+  PSIDX_C_EntriesLoading:          Integer = -1;
+  PSIDX_C_PathsResolving:          Integer = -1;
+  PSIDX_C_EntriesProgressPrep:     Integer = -1;
+  PSIDX_C_EntriesConverting:       Integer = -1;
+  PSIDX_C_EntriesProcessing:       Integer = -1;
 
-  PSIDX_C_PathsRes_Local:        Integer = -1;
-  PSIDX_C_PathsRes_HelpArchives: Integer = -1;
-  PSIDX_C_PathsRes_ParseContent: Integer = -1;
-  PSIDX_C_PathsRes_LocalSecond:  Integer = -1;
-  PSIDX_C_PathsRes_BruteForce:   Integer = -1;
-  PSIDX_C_PathsRes_Reconstruct:  Integer = -1;
+  PSIDX_C_PathsRes_Local:          Integer = -1;
+  PSIDX_C_PathsRes_HelpArchives:   Integer = -1;
+  PSIDX_C_PathsRes_ContentParsing: Integer = -1;
+  PSIDX_C_PathsRes_LocalSecond:    Integer = -1;
+  PSIDX_C_PathsRes_BruteForce:     Integer = -1;
+  PSIDX_C_PathsRes_Reconstruct:    Integer = -1;
 
-  PSIDX_C_EntryProcessing:       Integer = -1;
-  PSIDX_C_EntryLoading:          Integer = -1;
-  PSIDX_C_EntryDecompression:    Integer = -1;
-  PSIDX_C_EntrySaving:           Integer = -1;
+  PSIDX_C_EntryProcessing:         Integer = -1;
+  PSIDX_C_EntryLoading:            Integer = -1;
+  PSIDX_C_EntryDecompression:      Integer = -1;
+  PSIDX_C_EntrySaving:             Integer = -1;
 
 {===============================================================================
     TDARTRepairer_SCS - class declaration
@@ -104,10 +104,11 @@ type
     procedure SCS_ResolvePaths; virtual; 
     procedure SCS_ResolvePaths_Local(SecondRound: Boolean = False); virtual;
     procedure SCS_ResolvePaths_HelpArchives; virtual;
-    procedure SCS_ResolvePaths_ParseContent; virtual;
+    procedure SCS_ResolvePaths_ContentParsing; virtual;
     procedure SCS_ResolvePaths_BruteForce; virtual;
     procedure SCS_ResolvePaths_Reconstruct; virtual;
     // progress handlers
+    procedure SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double); virtual;    
     procedure SCS_ResolvePaths_BruteForce_ProgressHandler(Sender: TObject; Progress: Double); virtual;
   public
     class Function GetMethodNameFromIndex(MethodIndex: Integer): String; override;
@@ -142,7 +143,7 @@ uses
   City, BitOps, CRC32, StrRect, MemoryBuffer, ExplicitStringLists, ZLibCommon,
   StaticMemoryStream,
   DART_Auxiliary, DART_PathDeconstructor, DART_Repairer_ZIP,
-  DART_Resolver_BruteForce;
+  DART_Resolver_BruteForce, DART_Resolver_ContentParsing;
 
 
 {===============================================================================
@@ -231,12 +232,12 @@ try
   // help archives
   If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
     DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives := fPathsResolveProcNode.Add(20);
-  // parse content
-  If fProcessingSettings.PathResolve.ParseContent then
-    DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent := fPathsResolveProcNode.Add(20);
+  // content parsing
+  If fProcessingSettings.PathResolve.ContentParsing.ParseContent then
+    DART_PROGSTAGE_IDX_SCS_PathsRes_ContentParsing := fPathsResolveProcNode.Add(20);
   // second round of local resolve
   If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
-    fProcessingSettings.PathResolve.ParseContent then
+    fProcessingSettings.PathResolve.ContentParsing.ParseContent then
     DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond := fPathsResolveProcNode.Add(20);
   // brute force
   If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
@@ -244,12 +245,12 @@ try
   // reconstruct dirs
   DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct := fPathsResolveProcNode.Add(10);
   // assign obtained indices to shorter-named variables
-  PSIDX_C_PathsRes_Local        := DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
-  PSIDX_C_PathsRes_HelpArchives := DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
-  PSIDX_C_PathsRes_ParseContent := DART_PROGSTAGE_IDX_SCS_PathsRes_ParseContent;
-  PSIDX_C_PathsRes_LocalSecond  := DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond;
-  PSIDX_C_PathsRes_BruteForce   := DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
-  PSIDX_C_PathsRes_Reconstruct  := DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
+  PSIDX_C_PathsRes_Local          := DART_PROGSTAGE_IDX_SCS_PathsRes_Local;
+  PSIDX_C_PathsRes_HelpArchives   := DART_PROGSTAGE_IDX_SCS_PathsRes_HelpArchives;
+  PSIDX_C_PathsRes_ContentParsing := DART_PROGSTAGE_IDX_SCS_PathsRes_ContentParsing;
+  PSIDX_C_PathsRes_LocalSecond    := DART_PROGSTAGE_IDX_SCS_PathsRes_LocalSecond;
+  PSIDX_C_PathsRes_BruteForce     := DART_PROGSTAGE_IDX_SCS_PathsRes_BruteForce;
+  PSIDX_C_PathsRes_Reconstruct    := DART_PROGSTAGE_IDX_SCS_PathsRes_Reconstruct;
 finally
   fPathsResolveProcNode.EndUpdate;
 end;
@@ -656,11 +657,11 @@ SCS_ResolvePaths_Local;
 If Length(fProcessingSettings.PathResolve.HelpArchives) > 0 then
   SCS_ResolvePaths_HelpArchives;
 // parse content of processed archive
-If fProcessingSettings.PathResolve.ParseContent then
-  SCS_ResolvePaths_ParseContent;
+If fProcessingSettings.PathResolve.ContentParsing.ParseContent then
+  SCS_ResolvePaths_ContentParsing;
 // repeat local resolve (in case some paths were obtained from help archives or content parsing)
 If (Length(fProcessingSettings.PathResolve.HelpArchives) > 0) or
-  fProcessingSettings.PathResolve.ParseContent then
+  fProcessingSettings.PathResolve.ContentParsing.ParseContent then
   SCS_ResolvePaths_Local(True);
 // bruteforce resolve
 If fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce then
@@ -819,6 +820,13 @@ var
           // SCS# archive
           // archive signature must be checked because we assume it is SCS# format
           HelpArchiveProcSettings.Common.IgnoreArchiveSignature := False;
+          // set-up content parsing settings
+          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing := fProcessingSettings.PathResolve.ContentParsing;
+          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseContent :=
+            fProcessingSettings.PathResolve.ContentParsing.ParseHelpArchives;
+          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseEverything :=
+           fProcessingSettings.PathResolve.ContentParsing.ParseEverythingInHlpArch;
+          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseHelpArchives := False;
           // prepare all already known paths
           SetLength(HelpArchiveProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
           For ii := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
@@ -873,15 +881,75 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTRepairer_SCS.SCS_ResolvePaths_ParseContent;
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_ContentParsing;
+var
+  i,Index:    Integer;
+  EntryData:  Pointer;
+  EntrySize:  TMemSize;
 begin
-DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,0.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ContentParsing,0.0);
 If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
   begin
-    DoError(-1,'Content parsing is not implemented in this build.');
-    SCS_AssignPaths;
+    fResolver := TDARTResolver_ContentParsing.Create(fPauseControlObject,fArchiveProcessingSettings);
+    try
+      fResolver.OnProgress := SCS_ResolvePaths_ContentParsing_ProgressHandler;
+      fResolver.Initialize(fArchiveStructure);
+      If fResolver.UnresolvedCount > 0 then
+        begin
+          For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+            begin
+              If GetEntryData(i,EntryData,EntrySize) then
+                try
+                  TDARTResolver_ContentParsing(fResolver).Run(EntryData,EntrySize);
+                finally
+                  FreeMem(EntryData,EntrySize);
+                end;
+            {
+              it is highly unlikely that processing of single entry will take much time,
+              therefore there is no progress in the resolver and it is instead done here per entry
+            }
+              DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ContentParsing,(i + 1) / fArchiveStructure.Entries.Count);
+              If fResolver.UnresolvedCount <= 0 then
+                Break{For i};
+            end;
+          // get resolved
+          For i := 0 to Pred(fResolver.ResolvedCount) do
+            begin
+              Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
+              If Index >= 0 then
+                begin
+                  fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
+                  fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+                end;
+            end;
+        end;
+      // second round if needed, this time only already known paths are processed
+      If fResolver.UnresolvedCount > 0 then
+        begin
+          For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+            begin
+              If fArchiveStructure.Entries.Arr[i].UtilityData.Resolved and
+                (Length(fArchiveStructure.Entries.Arr[i].FileName) > 0) then
+                TDARTResolver_ContentParsing(fResolver).Run(fArchiveStructure.Entries.Arr[i].FileName);
+              If fResolver.UnresolvedCount <= 0 then
+                Break{For i};                
+            end;
+          // get resolved again
+          For i := 0 to Pred(fResolver.ResolvedCount) do
+            begin
+              Index := SCS_IndexOfEntry(fResolver.Resolved[i].Hash);
+              If Index >= 0 then
+                begin
+                  fArchiveStructure.Entries.Arr[Index].FileName := fResolver.Resolved[i].Path;
+                  fArchiveStructure.Entries.Arr[Index].UtilityData.Resolved := True;
+                end;
+            end;
+        end;
+    finally
+      FreeAndNil(fResolver);
+    end;
   end;
-DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ParseContent,1.0);
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ContentParsing,1.0);
 end;
 
 //------------------------------------------------------------------------------
@@ -927,6 +995,13 @@ SCS_DiscardDirectories;
 SCS_ReconstructDirectories;
 SCS_SortEntries;
 DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_Reconstruct,1.0);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer_SCS.SCS_ResolvePaths_ContentParsing_ProgressHandler(Sender: TObject; Progress: Double);
+begin
+DoProgress(fPathsResolveProcNode,PSIDX_C_PathsRes_ContentParsing,Progress);
 end;
 
 //------------------------------------------------------------------------------

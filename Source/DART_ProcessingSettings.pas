@@ -53,6 +53,17 @@ type
     IgnoreDictionaryID:     Boolean;
   end;
 
+  TDART_PS_SCS_PathResolve_ContentParsing = record
+    ParseContent:             Boolean;
+    ParseEverything:          Boolean;
+    ParseHelpArchives:        Boolean;
+    ParseEverythingInHlpArch: Boolean;
+    PrintableASCIIOnly:       Boolean;  // #32..#127, #32 is taken as a white space
+    LimitedCharacterSet:      Boolean;  // '0'..'9', 'a'..'z', 'A'..'Z', '_', '.', '-', '/'
+    BinaryThreshold:          Double;
+    MinPathLength:            Integer;
+  end;
+
   TDART_PS_SCS_PathResolve_BruteForce = record
     ActivateBruteForce: Boolean;
     Multithreaded:      Boolean;
@@ -69,7 +80,7 @@ type
     CustomPaths:                array of AnsiString;
     HelpArchives:               array of String;
     // temporary fields, will be expanded as the functions are implemented
-    ParseContent: Boolean;
+    ContentParsing:             TDART_PS_SCS_PathResolve_ContentParsing;
     BruteForce:                 TDART_PS_SCS_PathResolve_BruteForce;
   end;
 
@@ -166,7 +177,15 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               False;
+        ContentParsing: (
+          ParseContent:             False;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          PrintableASCIIOnly:       True;
+          LimitedCharacterSet:      True;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;
@@ -319,6 +338,15 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
+{$message 'later remove when parsers of known types are added'}
+SCS_PS.PathResolve.ContentParsing.ParseEverything := True;
+SCS_PS.PathResolve.ContentParsing.ParseEverythingInHlpArch := True;
+If SCS_PS.PathResolve.ContentParsing.BinaryThreshold < 0.0 then
+  SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 0.0
+else If SCS_PS.PathResolve.ContentParsing.BinaryThreshold > 1.0 then
+  SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 1.0;
+If SCS_PS.PathResolve.ContentParsing.MinPathLength < 1 then
+  SCS_PS.PathResolve.ContentParsing.MinPathLength := 1;
 If SCS_PS.PathResolve.BruteForce.PathLengthLimit < 1 then
   SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1
 else If SCS_PS.PathResolve.BruteForce.PathLengthLimit > 1024 then
