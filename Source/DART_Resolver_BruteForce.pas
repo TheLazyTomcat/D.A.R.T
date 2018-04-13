@@ -491,7 +491,7 @@ If Processor.ResolvedCount > 0 then
       end;
     Inc(fUpdateCounter);
   end;
-If (fUnresolved.Count > 0) and AdvanceProcessorBuffer and not fProcessingTerminating then
+If (fUnresolved.Count > 0) and BF_AdvanceProcessorBuffer and not fProcessingTerminating then
   begin
     If Processor.LastUpdateCounter <> fUpdateCounter then
       Processor.Initialize(fUsedKnownPaths,fUnresolved,fHashType,fAlphabet);
