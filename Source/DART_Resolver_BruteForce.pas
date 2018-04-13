@@ -32,9 +32,6 @@ type
     Count:    Integer;
   end;
 
-const
-  DART_RES_BF_LimitedAlphabet: AnsiString = '0123456789abcdefghijklmnopqrstuvwxyz_.-/';
-
 {===============================================================================
     TDARTResolver_BruteForce - class declaration
 ===============================================================================}
@@ -78,6 +75,9 @@ uses
                             TDARTBruteForceProcessor
 --------------------------------------------------------------------------------
 ===============================================================================}
+
+const
+  DART_RES_BF_LimitedCharSet: AnsiString = '0123456789abcdefghijklmnopqrstuvwxyz_.-/';
 
 {===============================================================================
     TDARTBruteForceProcessor - class declaration
@@ -547,12 +547,12 @@ If fBruteForceSettings.UseKnownPaths then
 // prepare alphabet
 If fBruteForceSettings.PrintableASCIIOnly then
   begin
-    If fBruteForceSettings.LimitedAlphabet then
+    If fBruteForceSettings.LimitedCharSet then
       begin
         // '0'..'9', 'a'..'z', '_', '.', '-', '/'
-        For i := Low(fAlphabet.Letters) to Pred(Length(DART_RES_BF_LimitedAlphabet)) do
-          fAlphabet.Letters[i] := DART_RES_BF_LimitedAlphabet[i + 1];
-        fAlphabet.Count := Length(DART_RES_BF_LimitedAlphabet);
+        For i := Low(fAlphabet.Letters) to Pred(Length(DART_RES_BF_LimitedCharSet)) do
+          fAlphabet.Letters[i] := DART_RES_BF_LimitedCharSet[i + 1];
+        fAlphabet.Count := Length(DART_RES_BF_LimitedCharSet);
       end
     else
       begin

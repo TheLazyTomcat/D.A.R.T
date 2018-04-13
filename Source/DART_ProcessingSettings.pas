@@ -58,7 +58,7 @@ type
     Multithreaded:      Boolean;
     UseKnownPaths:      Boolean;
     PrintableASCIIOnly: Boolean;  // #32..#127
-    LimitedAlphabet:    Boolean;  // '0'..'9', 'a'..'z', '_', '.', '-', '/'
+    LimitedCharSet:     Boolean;  // '0'..'9', 'a'..'z', '_', '.', '-', '/'
     PathLengthLimit:    Integer;
   end;
 
@@ -172,7 +172,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)));
     ZIP: (
       AssumeCompressionMethod:  False;
@@ -388,7 +388,7 @@ try
       WriteBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
       WriteBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
       WriteBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
-      WriteBool('SCS_PathResolve_BruteForce','LimitedAlphabet',LimitedAlphabet);
+      WriteBool('SCS_PathResolve_BruteForce','LimitedCharacterSet',LimitedCharSet);
       WriteInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
     end;
 
@@ -504,7 +504,7 @@ try
       Multithreaded := ReadBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
       UseKnownPaths := ReadBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
       PrintableASCIIOnly := ReadBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
-      LimitedAlphabet := ReadBool('SCS_PathResolve_BruteForce','LimitedAlphabet',LimitedAlphabet);
+      LimitedCharSet := ReadBool('SCS_PathResolve_BruteForce','LimitedCharacterSet',LimitedCharSet);
       PathLengthLimit := ReadInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
     end;
 
