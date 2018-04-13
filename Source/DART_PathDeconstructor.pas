@@ -277,7 +277,7 @@ inherited Create;
 fName := Name;
 If Assigned(Owner) then
   begin
-    If Owner.FullPath <> '' then
+    If Length(Owner.FullPath) > 0 then
       fFullPath := Owner.FullPath + PathDelimiter + fName
     else
       fFullPath := fName;

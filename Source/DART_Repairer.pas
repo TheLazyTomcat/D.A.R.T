@@ -656,7 +656,7 @@ var
   PathHash: TCRC32;
   i:        Integer;
 begin
-PathHash := AnsiStringCRC32(AnsiLowerCase(Path));
+PathHash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
 Result := -1;
 For i := Low(KnownPaths.Arr) to Pred(KnownPaths.Count) do
   If KnownPaths.Arr[i].Hash = PathHash then
@@ -671,7 +671,7 @@ end;
 
 Function TDARTRepairer.AddKnownPath(const Path: AnsiString): Integer;
 begin
-Result := AddKnownPath(Path,Length(ExtractFileExt(AnsiToStr(Path))) > 0);
+Result := AddKnownPath(Path,Length(ExtractFileExt(AnsiToStr(Path))) <= 0);
 end;
 
 //------------------------------------------------------------------------------

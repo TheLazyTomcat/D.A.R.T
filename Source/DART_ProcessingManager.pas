@@ -324,7 +324,7 @@ case CommonProcSett.RepairMethod of
     If AnsiSameText(ExtractFileName(CommonProcSett.ArchivePath),ExtractFileExt(CommonProcSett.ArchivePath)) then
       // archive does not have proper name (actual name starts with a dot - meaning it is seen as an extension)
       CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ExtractFilePath(CommonProcSett.ArchivePath) + 'repaired')
-    else If ExtractFileExt(CommonProcSett.ArchivePath) <> '' then
+    else If Length(ExtractFileExt(CommonProcSett.ArchivePath)) > 0 then
       // archive does have a proper name and extension
       CommonProcSett.TargetPath := IncludeTrailingPathDelimiter(ChangeFileExt(CommonProcSett.ArchivePath,''))
     else

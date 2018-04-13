@@ -35,6 +35,7 @@ type
   TDARTResolver_ContentParsing = class(TDARTResolver)
   private
     fContentParsingSettings:  TDART_PS_SCS_PathResolve_ContentParsing;
+    fPathDelimiter:           AnsiChar;
     // processing
     fData:                    Pointer;
     fSize:                    TMemSize;
@@ -53,6 +54,28 @@ type
     procedure Run(const Data: Pointer; Size: TMemSize); reintroduce; overload;
     procedure Run(const Path: AnsiString); reintroduce; overload;
     procedure Stop; override;
+    property PathDelimiter: AnsiChar read fPathDelimiter write fPathDelimiter;
+  end;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                   TDARTResolver_ContentParsing_HelpArchives
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTResolver_ContentParsing_HelpArchives - class declaration
+===============================================================================}
+
+  TDARTResolver_ContentParsing_HelpArchives = class(TDARTResolver_ContentParsing)
+  private
+    fParsedPaths: TDARTKnownPaths;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath;
+  protected
+    Function CP_TryResolvePath(const Path: AnsiString): Integer; override;
+  public
+    property ParsedPaths[Index: Integer]: TDARTKnownPath read GetKnownPath;
+    property ParsedPathCount: Integer read fParsedPaths.Count;
   end;
 
 implementation
@@ -225,7 +248,7 @@ try
         CP_SplitLineToBlocks(Text[i],Line);
         For j := 0 to Pred(Line.Count) do
           begin
-            TempStr := DART_ExcludeOuterPathDelim(Line[j],DART_SCS_PathDelim);
+            TempStr := DART_ExcludeOuterPathDelim(Line[j],fPathDelimiter);
             If Length(TempStr) >= fContentParsingSettings.MinPathLength then
               begin
                 If CP_TryResolvePath(TempStr) >= 0 then
@@ -264,7 +287,7 @@ For i := 0 to Pred(fSize) do
           begin
             SetLength(TempStr,Len);
             Move(Pointer(PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
-            TempStr := DART_ExcludeOuterPathDelim(TempStr,DART_SCS_PathDelim);
+            TempStr := DART_ExcludeOuterPathDelim(TempStr,fPathDelimiter);
             If CP_TryResolvePath(TempStr) >= 0 then
               If fUnresolved.Count <= 0 then
                 Break{For i}; 
@@ -289,6 +312,7 @@ constructor TDARTResolver_ContentParsing.Create(PauseControlObject: TDARTPauseOb
 begin
 inherited Create(PauseControlObject,ArchiveProcessingSettings);
 fContentParsingSettings := fArchiveProcessingSettings.SCS.PathResolve.ContentParsing;
+fPathDelimiter := DART_SCS_PathDelim;
 end;
 
 //------------------------------------------------------------------------------
@@ -346,5 +370,45 @@ procedure TDARTResolver_ContentParsing.Stop;
 begin
 // nothing to do here
 end;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+                   TDARTResolver_ContentParsing_HelpArchives
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{===============================================================================
+    TDARTResolver_ContentParsing_HelpArchives - class implementation
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+    TDARTResolver_ContentParsing_HelpArchives - private methods
+-------------------------------------------------------------------------------}
+
+Function TDARTResolver_ContentParsing_HelpArchives.GetKnownPath(Index: Integer): TDARTKnownPath;
+begin
+If (Index >= Low(fParsedPaths.Arr)) and (Index < fParsedPaths.Count) then
+  Result := fParsedPaths.Arr[Index]
+else
+  raise Exception.CreateFmt('TDARTResolver_ContentParsing_Helpers.GetKnownPath: Index (%d) out of bounds.',[Index]);
+end;
+
+{-------------------------------------------------------------------------------
+    TDARTResolver_ContentParsing_HelpArchives - protected methods
+-------------------------------------------------------------------------------}
+
+Function TDARTResolver_ContentParsing_HelpArchives.CP_TryResolvePath(const Path: AnsiString): Integer;
+begin
+{
+  Original behaviour is dropped and instead of searching the path hash in
+  unresolved, this function just stores all paths for later use.
+}
+If fParsedPaths.Count >= Length(fParsedPaths.Arr) then
+  SetLength(fParsedPaths.Arr,Length(fParsedPaths.Arr) + 4096);  // a LOT of paths is expected
+// only field "path" is set, other fields should be filled when that path is further processed
+fParsedPaths.Arr[fParsedPaths.Count].Path := Path;
+end;
+
 
 end.

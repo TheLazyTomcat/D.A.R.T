@@ -104,7 +104,7 @@ try
   ZIP_WriteEntryFileTime(ExtractFileDir(FullEntryFileName),LocalHeader.BinPart.LastModFileTime,LocalHeader.BinPart.LastModFileDate,True);
 
   // continue only if the entry is an actual file
-  If (ExtractFileName(FullEntryFileName) <> '') and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
+  If (Length(ExtractFileName(FullEntryFileName)) > 0) and ((CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0) then
     begin
       // entry contains actual file, not a directory -> process the data
       // create file stream where the entry data will be written

@@ -652,7 +652,7 @@ If fProcessingSettings.PathResolve.UsePredefinedPaths then
 // add custom paths
 with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
-    AddKnownPath(CustomPaths[i],ExtractFileExt(CustomPaths[i]) <> '');
+    AddKnownPath(CustomPaths[i],Length(ExtractFileExt(CustomPaths[i])) <= 0);
 // assign any predefined or custom paths    
 SCS_AssignPaths;    
 // load all paths stored in the archive
@@ -726,7 +726,7 @@ var
                   If EntryLines[ii][1] = DART_SCS_DirMark then
                     begin
                       // directory
-                      If Path <> '' then
+                      If Length(Path) > 0 then
                         Directories.Add(Path + DART_SCS_PathDelim + Copy(EntryLines[ii],2,Length(EntryLines[ii])))
                       else
                         Directories.Add(Copy(EntryLines[ii],2,Length(EntryLines[ii])));
@@ -735,7 +735,7 @@ var
                   else
                     begin
                       // file
-                      If Path <> '' then
+                      If Length(Path) > 0 then
                         AddKnownPath(Path + DART_SCS_PathDelim + EntryLines[ii],False)
                       else
                         AddKnownPath(EntryLines[ii],False)
@@ -923,7 +923,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
             end;
           // store resolved paths to known
           For i := 0 to Pred(fResolver.ResolvedCount) do
-            AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
+            AddKnownPath(fResolver.Resolved[i].Path,Length(ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path))) <= 0);
         end;
       // assign any newly found paths
       SCS_AssignPaths;        
@@ -940,7 +940,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
             end;
           // store resolved paths to known
           For i := 0 to Pred(fResolver.ResolvedCount) do
-            AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
+            AddKnownPath(fResolver.Resolved[i].Path,Length(ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path))) <= 0);
         end;
       // assign any newly found paths
       SCS_AssignPaths;
@@ -968,7 +968,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
         fResolver.Run;
       // get resolved
       For i := 0 to Pred(fResolver.ResolvedCount) do
-        AddKnownPath(fResolver.Resolved[i].Path,ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path)) <> '');
+        AddKnownPath(fResolver.Resolved[i].Path,Length(ExtractFileExt(AnsiToStr(fResolver.Resolved[i].Path))) <= 0);
       // assign any newly found paths
       SCS_AssignPaths;
     finally
@@ -1087,7 +1087,7 @@ If (EntryIdx >= Low(fArchiveStructure.Entries.Arr)) and (EntryIdx < fArchiveStru
           // raw data will be saved to a file
           DoWarning(Format('File name of entry #%d (0x%.16x) could not be resolved, extracting entry data.',
                            [EntryIdx,BinPart.Hash,BinPart.UncompressedSize]));
-          If ExtractFileName(fArchiveProcessingSettings.Common.TargetPath) <> '' then
+          If Length(ExtractFileName(fArchiveProcessingSettings.Common.TargetPath)) > 0 then
             // target is file
             EntryFileName := IncludeTrailingPathDelimiter(ExtractFilePath(fArchiveProcessingSettings.Common.TargetPath) + 'unresolved_' +
               ChangeFileExt(ExtractFileName(fArchiveProcessingSettings.Common.TargetPath),'')) + Format('%s(%.16x)',[SCS_HashName,BinPart.Hash])

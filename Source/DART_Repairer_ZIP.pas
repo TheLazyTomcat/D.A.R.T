@@ -472,7 +472,7 @@ var
           BinPart.InternalFileAttributes := 0;
         If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
           begin
-            If ExtractFileName(AnsiReplaceStr(AnsiToStr(FileName),DART_ZIP_PathDelim,PathDelim)) <> '' then
+            If Length(ExtractFileName(AnsiReplaceStr(AnsiToStr(FileName),DART_ZIP_PathDelim,PathDelim))) > 0 then
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
             else
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
@@ -856,7 +856,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           CentralDirectoryHeader.BinPart.Signature := DART_ZIP_CentralDirectoryFileHeaderSignature;
           CentralDirectoryHeader.BinPart.DiskNumberStart := 0;
           CentralDirectoryHeader.BinPart.InternalFileAttributes := 0;
-          If ExtractFileName(AnsiReplaceStr(AnsiToStr(LocalHeader.FileName),DART_ZIP_PathDelim,PathDelim)) <> '' then
+          If Length(ExtractFileName(AnsiReplaceStr(AnsiToStr(LocalHeader.FileName),DART_ZIP_PathDelim,PathDelim))) > 0 then
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
           else
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
@@ -946,7 +946,7 @@ try
     DeconstructPath(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName);
   DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
   For i := 0 to Pred(Count) do
-    If Nodes[i].FullPath <> '' then
+    If Length(Nodes[i].FullPath) > 0 then
       AddKnownPath(Nodes[i].FullPath,True);
 finally
   Free
