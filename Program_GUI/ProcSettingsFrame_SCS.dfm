@@ -286,7 +286,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
           Top = 72
           Width = 57
           Height = 22
-          MaxValue = 0
+          MaxValue = 1024
           MinValue = 0
           TabOrder = 7
           Value = 0
