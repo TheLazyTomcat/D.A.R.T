@@ -40,7 +40,7 @@ implementation
 uses
   SysUtils,
   AuxTypes, StrRect, BitOps, CRC32, MemoryBuffer, StaticMemoryStream,
-  ExplicitStringListsBase, ExplicitStringLists, ZLibCommon,
+  ExplicitStringListsBase, ExplicitStringLists, ProgressTracker, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer;
 
 {===============================================================================
@@ -188,7 +188,7 @@ try
         try
           TrailingLineBreak := False;
           LineBreakStyle := lbsLF;
-          AddStringsDef(UtilityData.DirContent);
+          AddStrings(UtilityData.DirContent);
           SaveToStream(DirBuffer);
         finally
           Free;

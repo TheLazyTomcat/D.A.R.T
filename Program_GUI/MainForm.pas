@@ -13,8 +13,8 @@ interface
 
 uses
   Windows, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, ExtCtrls, {$IFNDEF FPC}Messages, ImgList, XPMan,{$ENDIF}StdCtrls,
-  Menus,
+  ComCtrls, ExtCtrls, {$IFNDEF FPC}Messages, ImgList, XPMan,{$ENDIF}
+  StdCtrls, Menus,
   DART_ProcessingManager;
 
 type
@@ -105,7 +105,7 @@ implementation
 {$ENDIF}
 
 uses
-  ShellAPI,
+  ShellAPI, {$IFDEF Delphi_Inline_Helpers}UITypes ,{$ENDIF}
   StrRect, WinFileInfo, TaskbarProgress,
   DART_Auxiliary, DART_ProcessingSettings,
   ResultInfoForm, ProcSettingsForm;

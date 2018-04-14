@@ -69,7 +69,6 @@ type
     fFaultFunctionName: String;
   public
     constructor Create(const Text: String; ObjectRef: TObject; FunctionIdx: Integer; const FunctionName: String);
-  published
     property FaultObjectRef: TObject read fFaultObjectRef;
     property FaultObjectClass: String read fFaultObjectClass;
     property FaultFunctionIdx: Integer read fFaultFunctionIdx;

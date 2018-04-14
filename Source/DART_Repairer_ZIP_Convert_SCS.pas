@@ -126,8 +126,8 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       If (CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) = 0 then
         begin
           // copy only file entries, no directory entries (they will be reconstructed from file names)
-          FileName := AnsiReplaceText(DART_ExcludeLeadingPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim),
-                                      DART_ZIP_PathDelim,DART_SCS_PathDelim);
+          FileName := StrToAnsi(AnsiReplaceText(AnsiToStr(DART_ExcludeLeadingPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim)),
+                                                DART_ZIP_PathDelim,DART_SCS_PathDelim));
           UtilityData.Erroneous := False;                            
           UtilityData.DataOffset := UInt64(fArchiveStructure.Entries.Arr[i].UtilityData.DataOffset);
           UtilityData.Index := i;                                 // binds SCS# item to original ZIP item
@@ -427,7 +427,7 @@ try
         try
           TrailingLineBreak := False;
           LineBreakStyle := lbsLF;
-          AddStringsDef(UtilityData.DirContent);
+          AddStrings(UtilityData.DirContent);
           SaveToStream(DirBuffer);
         finally
           Free;

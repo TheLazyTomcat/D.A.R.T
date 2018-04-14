@@ -107,7 +107,7 @@ implementation
 {$ENDIF}
 
 uses
-  Registry,
+  Registry, Types,
   StrRect,
   DART_Auxiliary, DART_ProcessingSettings_Presets;
 
@@ -222,7 +222,7 @@ meCustomPaths.Lines.BeginUpdate;
 try
   meCustomPaths.Clear;
   For i := Low(fProcessingSettings.PathResolve.CustomPaths) to High(fProcessingSettings.PathResolve.CustomPaths) do
-    meCustomPaths.Lines.Add(fProcessingSettings.PathResolve.CustomPaths[i]);
+    meCustomPaths.Lines.Add(AnsiToStr(fProcessingSettings.PathResolve.CustomPaths[i]));
 finally
   meCustomPaths.Lines.EndUpdate;
 end;
@@ -275,7 +275,7 @@ SetLength(fProcessingSettings.PathResolve.CustomPaths,meCustomPaths.Lines.Count)
 For i := 0 to Pred(meCustomPaths.Lines.Count) do
   If Length(meCustomPaths.Lines[i]) > 0 then
     begin
-      fProcessingSettings.PathResolve.CustomPaths[Count] := meCustomPaths.Lines[i];
+      fProcessingSettings.PathResolve.CustomPaths[Count] := StrToAnsi(meCustomPaths.Lines[i]);
       Inc(Count);
     end;
 SetLength(fProcessingSettings.PathResolve.CustomPaths,Count);

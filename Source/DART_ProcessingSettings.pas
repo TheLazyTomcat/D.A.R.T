@@ -414,7 +414,7 @@ try
     WriteString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.CustomPaths[i]));
   WriteInteger('SCS_PathResolve','HelpArchives',Length(APS.SCS.PathResolve.HelpArchives));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.HelpArchives[i]));
+    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),APS.SCS.PathResolve.HelpArchives[i]);
 
   with APS.SCS.PathResolve.ContentParsing do
     begin
@@ -542,7 +542,7 @@ try
     APS.SCS.PathResolve.CustomPaths[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),''));
   SetLength(APS.SCS.PathResolve.HelpArchives,ReadInteger('SCS_PathResolve','HelpArchives',0));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    APS.SCS.PathResolve.HelpArchives[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),''));
+    APS.SCS.PathResolve.HelpArchives[i] := ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),'');
 
   with APS.SCS.PathResolve.ContentParsing do
     begin

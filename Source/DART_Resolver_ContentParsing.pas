@@ -360,19 +360,19 @@ procedure TDARTResolver_ContentParsing.Process(const Path: AnsiString);
 begin
 // process known file series
 If Length(Path) > 0 then
-  case CP_OrdinalExtension(ExtractFileExt(Path)) of
+  case CP_OrdinalExtension(StrToAnsi(ExtractFileExt(AnsiToStr(Path)))) of
     oeMAT,oeTOBJ,oeDDS:
       begin
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeMAT]));
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeTOBJ]));
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeDDS]));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeMAT])));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeTOBJ])));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oeDDS])));
       end;
     oePMA,oePMC,oePMD,oePMG:
       begin
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMA]));
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMC]));
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMD]));
-        CP_TryResolvePath(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMG]));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMA])));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMC])));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMD])));
+        CP_TryResolvePath(StrToAnsi(ChangeFileExt(AnsiToStr(Path),DART_OrdinalExtensionStrings[oePMG])));
       end;
   end;
 end;

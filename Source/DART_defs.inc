@@ -50,6 +50,10 @@
   {$UNDEF FPC_NonUnicode_NoUTF8RTL}
 {$IFEND}
 
+{$IF not Defined(FPC) and (CompilerVersion >= 17)}  // not sure about the version
+  {$DEFINE Delphi_Inline_Helpers}
+{$IFEND}
+
 //--- Others -------------------------------------------------------------------
 
 {.$DEFINE DevelNotes}

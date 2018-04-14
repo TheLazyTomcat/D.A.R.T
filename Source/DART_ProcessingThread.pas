@@ -54,7 +54,6 @@ type
     procedure ResumeProcessing; virtual;
     procedure StopProcessing; virtual;
     property ResultInfo: TDARTResultInfo read fResultInfo;
-  published
     property ProgressFactorCoefficient: Integer read fProgressFactorCoef write fProgressFactorCoef;
     property OnArchiveProgress: TDARTArchiveProgressEvent read fOnArchiveProgress write fOnArchiveProgress;
   end;

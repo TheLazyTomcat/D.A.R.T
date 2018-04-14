@@ -36,7 +36,7 @@ implementation
 
 uses
   SysUtils, Classes, StrUtils,
-  AuxTypes, StrRect, BitOps, MemoryBuffer, ZLibCommon,
+  AuxTypes, StrRect, BitOps, MemoryBuffer, ProgressTracker, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS;
 
 {===============================================================================

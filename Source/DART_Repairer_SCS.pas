@@ -700,7 +700,7 @@ If fProcessingSettings.PathResolve.UsePredefinedPaths then
 // add custom paths
 with fProcessingSettings.PathResolve do
   For i := Low(CustomPaths) to High(CustomPaths) do
-    AddKnownPath(CustomPaths[i],Length(ExtractFileExt(CustomPaths[i])) <= 0);
+    AddKnownPath(CustomPaths[i],Length(ExtractFileExt(AnsiToStr(CustomPaths[i]))) <= 0);
 // assign any predefined or custom paths    
 SCS_AssignPaths;    
 // load all paths stored in the archive

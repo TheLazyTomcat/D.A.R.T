@@ -109,7 +109,6 @@ type
     Function HeartbeatCheck: Boolean; virtual;
     property Pointers[Index: Integer]: PDARTArchiveListItem read GetArchivePtr;
     property Archives[Index: Integer]: TDARTArchiveListItem read GetArchive; default;
-  published
     property Status: TDARTProcessingManagerStatus read fStatus;
     property Count: Integer read fArchiveList.Count;
     property ProcessedArchiveIndex: Integer read fProcessedArchIdx;

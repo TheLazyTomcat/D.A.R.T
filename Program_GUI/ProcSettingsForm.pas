@@ -102,7 +102,8 @@ implementation
 {$ENDIF}
 
 uses
-  {$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON},
+  {$WARN UNIT_PLATFORM OFF} FileCtrl{$WARN UNIT_PLATFORM ON}, Types,
+  {$IFDEF Delphi_Inline_Helpers}UITypes ,{$ENDIF}
   StrRect, ExplicitStringLists,
   DART_Auxiliary, DART_ProcessingManager,
   ProcSettingsFrame_ZIP, ProcSettingsFrame_SCS;
@@ -148,7 +149,7 @@ begin
 SetLength(fOptionDescriptions,0,0);
 TempStrList := TAnsiStringList.Create;
 try
-  ResourceStream := TResourceStream.Create(hInstance,'OptsDescr',RT_RCDATA);
+  ResourceStream := TResourceStream.Create(hInstance,'OptsDescr',Windows.RT_RCDATA);
   try
     TempStrList.LoadFromStream(ResourceStream);
   finally

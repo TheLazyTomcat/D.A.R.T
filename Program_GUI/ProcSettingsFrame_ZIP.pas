@@ -98,6 +98,7 @@ implementation
 {$ENDIF}
 
 uses
+  Types,
   DART_ProcessingSettings_Presets;
 
 procedure TfrmProcSettingsFrame_ZIP.Initialize;

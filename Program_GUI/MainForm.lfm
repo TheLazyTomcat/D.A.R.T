@@ -112,7 +112,7 @@ object fMainForm: TfMainForm
   OnDropFiles = FormDropFiles
   OnResize = FormResize
   Position = poScreenCenter
-  LCLVersion = '1.4.4.0'
+  LCLVersion = '1.8.2.0'
   object lblArchiveList: TLabel
     Left = 8
     Height = 13

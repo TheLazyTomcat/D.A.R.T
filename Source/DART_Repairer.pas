@@ -208,7 +208,6 @@ type
     Function GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer; virtual; abstract;
     property Heartbeat: PInteger read fHeartbeat write fHeartbeat;
     property ResultInfo: TDARTResultInfo read fResultInfo;
-  published
     property Terminated: Boolean read GetTerminated write SetTerminated;
     property OnProgress: TDARTProgressEvent read fOnProgress write fOnProgress;
   end;
@@ -797,7 +796,9 @@ fResultInfo.RepairerInfo := Format('%s(0x%p)',[Self.ClassName,Pointer(Self)]);
 fOnProgress := nil;
 fHeartbeat := nil;
 {$WARN SYMBOL_PLATFORM OFF}
+{$WARN SYMBOL_DEPRECATED OFF}
 GetLocaleFormatSettings(LOCALE_USER_DEFAULT,{%H-}fLocalFormatSettings);
+{$WARN SYMBOL_DEPRECATED ON}
 {$WARN SYMBOL_PLATFORM ON}
 fPauseControlObject := PauseControlObject;
 fPauseControlObject.SetEvent;
