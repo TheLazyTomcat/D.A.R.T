@@ -22,11 +22,9 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object lblPresets: TLabel
       Left = 0
       Top = 8
-      Width = 321
+      Width = 203
       Height = 13
-      Caption = 
-        'SCS# archive processing settings presets (select preset to load ' +
-        'it):'
+      Caption = 'SCS# archive processing settings presets:'
     end
     object gbEntries: TGroupBox
       Tag = 1100
@@ -35,7 +33,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Width = 561
       Height = 49
       Caption = 'Entries'
-      TabOrder = 0
+      TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
       object cbIgnoreCRC32: TCheckBox
         Tag = 1101
@@ -78,7 +76,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Width = 561
       Height = 569
       Caption = 'Path resolving'
-      TabOrder = 1
+      TabOrder = 2
       OnMouseMove = GroupBoxMouseMove
       object lblCustomPaths: TLabel
         Left = 8
@@ -384,7 +382,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Width = 561
       Height = 49
       Caption = 'General'
-      TabOrder = 2
+      TabOrder = 3
       OnMouseMove = GroupBoxMouseMove
       object cbEntryTabInMem: TCheckBox
         Tag = 1001
@@ -406,7 +404,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Height = 21
       Style = csDropDownList
       ItemHeight = 13
-      TabOrder = 3
+      TabOrder = 0
       OnChange = cmbPresetsChange
     end
   end

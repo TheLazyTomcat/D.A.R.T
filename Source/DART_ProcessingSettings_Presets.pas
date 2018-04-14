@@ -29,7 +29,7 @@ type
 const
   DART_PS_SCS_Presets: array[0..3] of TDARTSCSPreset = (
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'SCS Preset - Archive mildly damaged (default)';
+   (PresetName: 'SCS# Preset - Archive slightly damaged (default)';
     PresetData: (
       EntryTabInMem:                True;     
       Entry: (
@@ -59,7 +59,7 @@ const
           LimitedCharSet:             True;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'SCS Preset - Archive mediately damaged';
+   (PresetName: 'SCS# Preset - Archive mediately damaged';
     PresetData: (
       EntryTabInMem:                True;
       Entry: (
@@ -89,7 +89,7 @@ const
           LimitedCharSet:             True;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'SCS Preset - Archive severely damaged - parse content';
+   (PresetName: 'SCS# Preset - Archive severely damaged - parse content';
     PresetData: (
       EntryTabInMem:                True;
       Entry: (
@@ -119,7 +119,7 @@ const
           LimitedCharSet:             True;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'SCS Preset - Full retard mode';
+   (PresetName: 'SCS# Preset - Full retard mode';
     PresetData: (
       EntryTabInMem:                True;
       Entry: (
@@ -164,7 +164,7 @@ type
 const
   DART_PS_ZIP_Presets: array[0..5] of TDARTZIPPreset = (
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'ZIP Preset - Archive mildly damaged';
+   (PresetName: 'ZIP Preset - Archive slightly damaged';
     PresetData: (
       AssumeCompressionMethod:  False;
       EndOfCentralDirectory: (

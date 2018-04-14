@@ -25,7 +25,8 @@ File where the rebuild or converted output will be written.
 
 You can select a file with standard dialog when you click on the button to the right of this editbox. You can also write/edit the path manually.
 
-WARNING - do not set output back into the input file!
+WARNING - do not set output back into the input
+          file!
 
 
 - Extraction is selected -
@@ -48,7 +49,13 @@ When active, errors raised while individual archive entries are processed are ig
 
 Takes effect only in the data processing, errors raised while archive metadata (headers) are loaded or processed still cause processing termination.
 
-WARNING - use this option with extreme caution and only if you are 100% sure what are you doing.
+WARNING - use this option with extreme caution
+          and only if you are 100% sure what
+          are you doing!
+#100
+List of presets for ZIP archive processing settings.
+
+To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside close it).
 #101
 If compression method loaded from the archive is set to store, then it is left unchanged, if it is set to any other value, it is changed to deflate.
 
@@ -58,7 +65,9 @@ When active, the end of central directory record is not searched for and loaded 
 
 All values of individual fields are reconstructed from other data loaded later from the archive or are filled with default values (zero, empty string).
 
-Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
+NOTE - ignoring all fields from the group does
+       NOT have the same effect as ignoring the
+       group entirely.
 #202
 Stored values of end of central directory record fields "NumberOfThisDisk" and "CentralDirectoryStartDiskNumber" are ignored and set to 0. Field "Entries" is set to be equal to value stored in field "EntriesOnDisk".
 #203
@@ -80,7 +89,9 @@ If active, the whole central directory structure is ignored (ie. is not loaded) 
 
 Local headers cannot be ignored when this option is active.
 
-Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
+NOTE - ignoring all fields from the group does
+       NOT have the same effect as ignoring the
+       group entirely.
 #302
 When active, the "Signature" field of loaded central directory header is not checked to match expected signature (0x02014b50).
 
@@ -152,7 +163,9 @@ When active, the local headers are completely ignored (not loaded from the input
 
 This option cannot be active when central directory is ignored or when local header offset stored in central directory header is ignored.
 
-Note - ignoring all fields from the group does NOT have the same effect as ignoring the group entirely.
+NOTE - ignoring all fields from the group does
+       NOT have the same effect as ignoring the
+       group entirely.
 #402
 When active, the "Signature" field of loaded local header is not checked to match expected signature (0x04034b50).
 
@@ -206,8 +219,12 @@ Extra field stored in the central directory header is ignored (data are discarde
 When active, the data descriptor, if indicated to be present by appropriate flag, is ignored and not loaded from the input stream. The data descriptor flag (bit 3) in general purpose bit flags is cleared.
 
 When not active and when data descriptor is indicated to be present, then data descriptor is read from the input stream - this reading is affected by individual settings for local header (see source code for details).
+#1000
+List of presets for SCS# archive processing settings.
+
+To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside close it).
 #1001
-When selected, entire entry table is loaded into memory and processed there. Also, when saving entry table, it is first constructed in memory and then saved as a whole. 
+When selected, entire entry table is loaded into memory and processed there. Also, when saving entry table, it is first constructed in memory and then saved as a whole.
 
 This can speed-up reading and saving of SCS# archives with very large number of entries.
 
@@ -223,7 +240,7 @@ Compression flag in entry metadata is ignored.
 Actual state of compression is determined from stored sizes. If compressed and uncompressed size matches, then compression flag is cleared, if they are different, then compression flag is set.
 #1103
 Dictionary ID in zlib stream is ignored if present. When this option is not active and dictionary ID is encountered, an error is raised.
- 
+
 This option has meaning only for conversion from SCS# archive to ZIP archive.
 #1201
 Algorithm used for hashing entry file name is assumed to be CityHash.
@@ -239,7 +256,9 @@ Names of individual files to which the entries are extracted are constructed fro
 
 The files are stored in the same folder as the output file, into subfolder "unresolved_filename", where filename is the name of output archive without the extension.
 
-Note - when this option is active during rebuilding, unresolved entries are also copied into output archive.
+NOTE - when this option is active during rebuilding,
+       unresolved entries are also copied into
+       output archive.
 
 
 - Extracting -
@@ -257,3 +276,85 @@ Note that when resolving these help archives, all previously resolved paths are 
 One file on each line, full absolute paths. Only SCS# and ZIP archives are allowed.
 
 Also note that processing of these archives is not included into progress, so when very large archive is loaded, the program might seemingly stop - just give it a time.
+#1241
+Activates parsing of archive content.
+
+Entries in the currently processed archive will be scanned for possible paths that can be used for path resolving.
+
+Also, currently known paths are scanned for known file name series (for example *.pmd - *.pmg)
+
+NOTE - content parsing does not have proper
+       progress reporting, so when the program
+       is processing it, it might seemingly
+       stop. This is normal, just be patient
+#1242
+When this option is selected, all entries in the currently processed archive will be scanned for paths. Otherwise, when not selected, only entries of known types will be parsed.
+
+When this option is not active, entry files that are known to not contain any paths (eg. image files, sound files, etc.) will be completely ignored.
+
+WARNING - when the archive is large, processing
+          of all entries might be extremely long,
+          use this option with caution!
+#1243
+Activates content parsing in all help archives (if any are selected) used.
+
+Works in all supported archive types.
+#1244
+All entries in help files will be parsed for possible paths.
+
+Has the same effect as in currently processed archive, so see option "Parse everything in the archive" for details.
+#1245
+Affects parsing of entries with unknown types.
+
+When active, paths extracted from entries can contain only printable ASCII characters, excluding space - that is, characters from #33 up to and including #127.
+#1246
+Expands on option "Printable ASCII characters only".
+
+Further limits what characters the path can contain, only following characters are allowed:
+
+  a..z (small letters)
+  A..Z (big letters)
+  0..9 (numbers)
+  _ (underscore)
+  . (dot)
+  - (dash)
+  / (forward slash)
+#1247
+When an entry of unknown type is parsed, this value is used to differentiate whether the data are textual or binary - this affects how are the data further processed and parsed.
+
+All bytes in the data are scanned, and when ratio between bytes considered to be nontextual and all bytes is larger than or equal to this value, the data are considered to be binary, otherwise they are seen as textual.
+
+Current implementation is extremely simplified, but seems to be sufficient for a given purpose - only zero bytes are counted as nontextual.
+#1248
+Minimal length of string parsed from the entry data that can be considered to be a path.
+
+When shorter string is obtained, it is, instead of checking in path resolving, discarded.
+#1261
+Activates process where every single possible path conforming to given rules is tried against hashes of unresolved entries.
+
+This option should be used only as a last resort, since the calculation will take extremely long time, even on powerful computers, and this processing is more or less experimental.
+#1262
+Enables use of multiple threads in the brute force calculation.
+
+There is no theoretical limit on the number of threads that can be spawned, but in current implementation, number of threads is set to the number of logical processors available to the process.
+
+Also, since there is nontrivial overhead, there is no guarantee of good scaling above four threads.
+#1263
+Already known paths are used when processing path produced by brute force calculation.
+
+This is done by appending produced path to every single known path and checking this conglomerate against unresolved entries.
+#1264
+Limits characters the produced path can contain to printable ASCII characters, that is, to characters #32 to #127.
+#1265
+Further limits set of characters that can be used to construct the path.
+
+Currently, following characters are used:
+
+  a..z (small letters)
+  0..9 (numbers)
+  _ (underscore)
+  . (dot)
+  - (dash)
+  / (forward slash)
+#1266
+Maximum length of constructed path.

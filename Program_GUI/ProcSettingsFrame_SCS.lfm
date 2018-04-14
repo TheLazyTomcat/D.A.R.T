@@ -1,424 +1,415 @@
 object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
   Left = 0
-  Height = 738
   Top = 0
   Width = 561
-  ClientHeight = 738
-  ClientWidth = 561
+  Height = 738
+  Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
+  Font.Style = []
   ParentFont = False
   TabOrder = 0
-  DesignLeft = 693
   object pnlBackground: TPanel
     Left = 0
-    Height = 738
     Top = 0
     Width = 561
+    Height = 738
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 738
-    ClientWidth = 561
     TabOrder = 0
     object lblPresets: TLabel
       Left = 0
-      Height = 13
       Top = 6
-      Width = 321
-      Caption = 'SCS# archive processing settings presets (select preset to load it):'
-      ParentColor = False
+      Width = 203
+      Height = 13
+      Caption = 'SCS# archive processing settings presets:'
     end
     object gbEntries: TGroupBox
       Tag = 1100
       Left = 0
-      Height = 49
       Top = 110
       Width = 561
+      Height = 49
       Caption = 'Entries'
-      ClientHeight = 31
-      ClientWidth = 557
-      TabOrder = 0
+      TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
       object cbIgnoreCRC32: TCheckBox
         Tag = 1101
         Left = 6
-        Height = 17
         Top = 10
-        Width = 86
+        Width = 89
+        Height = 17
         Caption = 'Ignore CRC32'
+        TabOrder = 0
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 0
       end
       object cbIgnoreCompressionFlag: TCheckBox
         Tag = 1102
         Left = 190
-        Height = 17
         Top = 10
-        Width = 133
+        Width = 137
+        Height = 17
         Caption = 'Ignore compression flag'
+        TabOrder = 1
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 1
       end
       object cbIgnoreDictID: TCheckBox
         Tag = 1103
         Left = 374
-        Height = 17
         Top = 10
-        Width = 114
+        Width = 121
+        Height = 17
         Caption = 'Ignore dictionary ID'
+        TabOrder = 2
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 2
       end
     end
     object gbPathResolve: TGroupBox
       Tag = 1200
       Left = 0
-      Height = 569
       Top = 166
       Width = 561
+      Height = 569
       Caption = 'Path resolving'
-      ClientHeight = 551
-      ClientWidth = 557
-      TabOrder = 1
+      TabOrder = 2
       OnMouseMove = GroupBoxMouseMove
       object lblCustomPaths: TLabel
         Left = 6
-        Height = 13
         Top = 34
         Width = 162
+        Height = 13
         Caption = 'Custom paths (one path per line):'
-        ParentColor = False
       end
       object lblHelpArchives: TLabel
         Left = 6
-        Height = 13
         Top = 194
         Width = 268
+        Height = 13
         Caption = 'Help archives (one archive per line, full absolute paths):'
-        ParentColor = False
       end
       object cbAssumeCityHash: TCheckBox
         Tag = 1201
         Left = 6
-        Height = 17
         Top = 10
-        Width = 107
+        Width = 113
+        Height = 17
         Caption = 'Assume CITY hash'
+        TabOrder = 0
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 0
       end
       object cbUsePredefinedPaths: TCheckBox
         Tag = 1202
         Left = 190
-        Height = 17
         Top = 10
-        Width = 121
+        Width = 129
+        Height = 17
         Caption = 'Use predefined paths'
+        TabOrder = 1
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 1
       end
       object cbExtractUnresolvedEntries: TCheckBox
         Tag = 1203
         Left = 374
-        Height = 17
         Top = 10
-        Width = 145
+        Width = 153
+        Height = 17
         Caption = 'Extract unresolved entries'
+        TabOrder = 2
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 2
       end
       object meCustomPaths: TMemo
         Tag = 1204
         Left = 6
-        Height = 137
         Top = 50
         Width = 545
+        Height = 137
+        Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -11
         Font.Name = 'Courier New'
-        OnKeyPress = meCustomPathsKeyPress
-        OnMouseMove = OptionMouseMove
+        Font.Style = []
         ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 3
         WordWrap = False
+        OnKeyPress = meCustomPathsKeyPress
+        OnMouseMove = OptionMouseMove
       end
       object meHelpArchives: TMemo
         Tag = 1205
         Left = 6
-        Height = 137
         Top = 210
         Width = 545
+        Height = 137
+        Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -11
         Font.Name = 'Courier New'
-        OnKeyPress = meHelpArchivesKeyPress
-        OnMouseMove = OptionMouseMove
+        Font.Style = []
         ParentFont = False
         ScrollBars = ssBoth
         TabOrder = 4
         WordWrap = False
+        OnKeyPress = meHelpArchivesKeyPress
+        OnMouseMove = OptionMouseMove
       end
       object btnHelpArchivesMenu: TButton
         Left = 526
-        Height = 21
         Top = 188
         Width = 25
+        Height = 21
         Caption = '6'
+        Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -19
         Font.Name = 'Webdings'
-        OnClick = btnHelpArchivesMenuClick
+        Font.Style = []
         ParentFont = False
         TabOrder = 5
+        OnClick = btnHelpArchivesMenuClick
       end
       object gbContentParsing: TGroupBox
         Left = 6
-        Height = 105
         Top = 354
         Width = 545
+        Height = 105
         Caption = 'Content parsing'
-        ClientHeight = 87
-        ClientWidth = 541
         TabOrder = 6
         OnMouseMove = GroupBoxMouseMove
         object lblBinaryThreshold: TLabel
           Left = 11
-          Height = 13
           Top = 61
           Width = 108
+          Height = 13
           Alignment = taRightJustify
           Caption = 'Binary threshold [‰]:'
-          ParentColor = False
         end
         object lblMinPathLength: TLabel
           Left = 207
-          Height = 13
           Top = 61
           Width = 96
+          Height = 13
           Alignment = taRightJustify
           Caption = 'Minimal path length:'
-          ParentColor = False
         end
         object cbCPParseContent: TCheckBox
           Tag = 1241
           Left = 6
-          Height = 17
           Top = 10
-          Width = 123
+          Width = 129
+          Height = 17
           Caption = 'Parse archive content'
+          TabOrder = 0
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 0
         end
         object cbCPParseEverything: TCheckBox
           Tag = 1242
           Left = 198
-          Height = 17
           Top = 10
-          Width = 168
+          Width = 169
+          Height = 17
           Caption = 'Parse everything in the archive'
+          TabOrder = 1
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 1
         end
         object cbCPParseHelpArch: TCheckBox
           Tag = 1243
           Left = 382
-          Height = 17
           Top = 10
-          Width = 111
+          Width = 121
+          Height = 17
           Caption = 'Parse help archives'
+          TabOrder = 2
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 2
         end
         object cbCPParseEverythingInHlpArch: TCheckBox
           Tag = 1244
           Left = 6
-          Height = 17
           Top = 34
           Width = 177
+          Height = 17
           Caption = 'Parse everything in help archives'
+          TabOrder = 3
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 3
         end
         object cbCPPrintableASCIIOnly: TCheckBox
           Tag = 1245
           Left = 198
-          Height = 17
           Top = 34
-          Width = 168
+          Width = 169
+          Height = 17
           Caption = 'Printable ASCII characters only'
+          TabOrder = 4
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 4
         end
         object cbCPLimitedCharSet: TCheckBox
           Tag = 1246
           Left = 382
-          Height = 17
           Top = 34
-          Width = 118
+          Width = 129
+          Height = 17
           Caption = 'Limited character set'
+          TabOrder = 5
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 5
         end
         object seBinaryThreshold: TSpinEdit
           Tag = 1247
           Left = 126
-          Height = 21
           Top = 58
           Width = 57
+          Height = 22
           MaxValue = 1000
-          OnMouseMove = OptionMouseMove
+          MinValue = 0
           TabOrder = 6
+          Value = 0
+          OnMouseMove = OptionMouseMove
         end
         object seMinPathLength: TSpinEdit
           Tag = 1248
           Left = 310
-          Height = 21
           Top = 58
           Width = 57
-          MaxValue = 0
-          OnMouseMove = OptionMouseMove
+          Height = 22
+          MaxValue = 1024
+          MinValue = 0
           TabOrder = 7
+          Value = 0
+          OnMouseMove = OptionMouseMove
         end
       end
       object gbBruteForce: TGroupBox
         Left = 6
-        Height = 81
         Top = 466
         Width = 545
+        Height = 81
         Caption = 'Brute force resolve'
-        ClientHeight = 63
-        ClientWidth = 541
         TabOrder = 7
         OnMouseMove = GroupBoxMouseMove
         object lblBFMaxPathLength: TLabel
           Left = 383
-          Height = 13
           Top = 37
           Width = 80
+          Height = 13
           Alignment = taRightJustify
           Caption = 'Path length limit:'
-          ParentColor = False
         end
         object cbBFActivate: TCheckBox
           Tag = 1261
           Left = 6
-          Height = 17
           Top = 10
-          Width = 161
+          Width = 169
+          Height = 17
           Caption = 'Activate brute force resolving'
+          TabOrder = 0
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 0
         end
         object cbBFMultithreaded: TCheckBox
           Tag = 1262
           Left = 198
-          Height = 17
           Top = 10
-          Width = 138
+          Width = 145
+          Height = 17
           Caption = 'Multithreaded processing'
+          TabOrder = 1
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 1
         end
         object cbBFUseKnownPaths: TCheckBox
           Tag = 1263
           Left = 382
-          Height = 17
           Top = 10
-          Width = 139
+          Width = 145
+          Height = 17
           Caption = 'Use already known paths'
+          TabOrder = 2
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 2
         end
         object cbBFPrintableASCIIOnly: TCheckBox
           Tag = 1264
           Left = 6
-          Height = 17
           Top = 34
-          Width = 168
+          Width = 177
+          Height = 17
           Caption = 'Printable ASCII characters only'
+          TabOrder = 3
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 3
         end
         object cbBFLimitedCharSet: TCheckBox
           Tag = 1265
           Left = 198
-          Height = 17
           Top = 34
-          Width = 118
+          Width = 121
+          Height = 17
           Caption = 'Limited character set'
+          TabOrder = 4
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
-          TabOrder = 4
         end
         object seBFMaxPathLength: TSpinEdit
           Tag = 1266
           Left = 470
-          Height = 21
           Top = 34
           Width = 57
+          Height = 22
           MaxValue = 1024
           MinValue = 1
-          OnMouseMove = OptionMouseMove
           TabOrder = 5
           Value = 32
+          OnMouseMove = OptionMouseMove
         end
       end
     end
     object gbGeneral: TGroupBox
       Left = 0
-      Height = 49
       Top = 54
       Width = 561
+      Height = 49
       Caption = 'General'
-      ClientHeight = 31
-      ClientWidth = 557
-      TabOrder = 2
+      TabOrder = 3
       OnMouseMove = GroupBoxMouseMove
       object cbEntryTabInMem: TCheckBox
         Tag = 1001
         Left = 6
-        Height = 17
         Top = 10
-        Width = 163
+        Width = 169
+        Height = 17
         Caption = 'Process entry table in memory'
+        TabOrder = 0
         OnClick = CheckBoxClick
         OnMouseMove = OptionMouseMove
-        TabOrder = 0
       end
     end
     object cmbPresets: TComboBox
       Tag = 1000
       Left = 0
-      Height = 21
       Top = 22
       Width = 561
-      ItemHeight = 13
-      OnChange = cmbPresetsChange
+      Height = 21
       Style = csDropDownList
-      TabOrder = 3
+      ItemHeight = 13
+      TabOrder = 0
+      OnChange = cmbPresetsChange
     end
   end
   object pmHelpArchivesMenu: TPopupMenu
-    left = 464
-    top = 368
+    Left = 464
+    Top = 368
     object mi_HAM_Browse: TMenuItem
       Caption = 'Browse for help archives...'
       OnClick = mi_HAM_BrowseClick
@@ -436,9 +427,11 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     end
   end
   object diaHelpArchivesOpen: TOpenDialog
-    Filter = 'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zip)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
+    Filter = 
+      'All supported files (*.scs; *.zip)|*.scs;*.zip|ZIP archive (*.zi' +
+      'p)|*.zip|SCS mod archive (*.scs)|*.scs|All files (*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
-    left = 496
-    top = 368
+    Left = 496
+    Top = 368
   end
 end

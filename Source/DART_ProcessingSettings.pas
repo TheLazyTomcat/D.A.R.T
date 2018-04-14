@@ -241,7 +241,7 @@ const
 procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings; RectifyInnerStructs: Boolean = False);
 
 procedure RectifyZIPProcessingSettings(var ZIP_PS: TDART_PS_ZIP);
-procedure RectifySCSProcessingSettings(var {%H-}SCS_PS: TDART_PS_SCS);
+procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 
 procedure EnsureThreadSafety(var APS: TDARTArchiveProcessingSettings); overload;
 

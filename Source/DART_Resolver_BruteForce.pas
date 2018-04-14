@@ -249,7 +249,7 @@ end;
 Function TDARTBruteForceProcessor.Main: Boolean;
 var
   PosInBuff:  Integer;
-  i, Index:   Integer;
+  i,j,Index:  Integer;
   Shadow:     AnsiString;
   Buffer:     AnsiString;
 begin
@@ -269,8 +269,17 @@ while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.
         Shadow[1] := AnsiChar(i);
         Buffer[1] := fAlphabet.Letters[i];
         Index := Unresolved_IndexOf(PathHash(Buffer,fHashType));
-        If Index >= 0 then
-          Unresolved_MoveToResolved(Index,Buffer);
+        If Index < 0 then
+          begin
+            // bare hash not found, search in combination with used known paths
+            For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
+              begin
+                Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
+                If Index >= 0 then
+                  Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j] + Buffer);
+              end;            
+          end
+        else Unresolved_MoveToResolved(Index,Buffer);
       end;
     // propagate cycle
     For i := 1 to DART_RES_MultThrLength do
@@ -338,7 +347,7 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
             // bare hash not found, search in combination with used known paths
             For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
               begin
-              Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
+                Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
                 If Index >= 0 then
                   Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j] + Buffer);
               end;
