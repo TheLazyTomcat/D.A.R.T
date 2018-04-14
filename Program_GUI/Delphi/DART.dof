@@ -111,7 +111,7 @@ AutoIncBuild=1
 MajorVer=2
 MinorVer=0
 Release=0
-Build=147
+Build=149
 Debug=0
 PreRelease=0
 Special=0
@@ -122,7 +122,7 @@ CodePage=1250
 [Version Info Keys]
 CompanyName=František Milt
 FileDescription=D.A.R.T - Damaged Archives Repair Tool
-FileVersion=2.0.0.147
+FileVersion=2.0.0.149
 InternalName=D.A.R.T 1.x
 LegalCopyright=© 2015 - 2018 František Milt
 LegalTrademarks=D.A.R.T

@@ -9,9 +9,9 @@
 
   Concurrent tasks
 
-  ©František Milt 2018-04-05
+  ©František Milt 2018-04-15
 
-  Version 1.1.1
+  Version 1.1.2
 
   To use this unit, create a descendant of class TCNTSTask and put the threaded
   code into method Main (override it). Then pass instance of this class to an
@@ -971,6 +971,7 @@ begin
 For i := Low(fTasks) to High(fTasks) do
   If fTasks[i].PublicPart.State = tsRunning then
     fTasks[i].AssignedThread.WaitFor;
+fCommEndpoint.Cycle(0);
 end;
 
 //------------------------------------------------------------------------------

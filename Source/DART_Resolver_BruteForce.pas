@@ -252,6 +252,8 @@ var
   i,j,Index:  Integer;
   Shadow:     AnsiString;
   Buffer:     AnsiString;
+  TempLen:    TStrSize;
+  TempStr:    AnsiString;
 begin
 //prepare data
 PosInBuff := 1;
@@ -274,10 +276,31 @@ while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.
             // bare hash not found, search in combination with used known paths
             For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
               begin
-                Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
+              {
+                simply passing concatenated string or using TempStr this way:
+
+                  TempStr := fUsedKnownPaths.Arr[j] + Buffer;
+
+                ...results in memory (re)allocation, which is synchronized in
+                memory manager. And since this part is executed rapidly in
+                tight loop, this is causing stalls and extensive performace drop
+                even below single-thread parformance.
+
+                Following, slightly convoluted, code reduces memory
+                reallocations and seems to be faster in threaded code.
+              }
+                TempLen := Length(fUsedKnownPaths.Arr[j]) + Length(Buffer);
+                If Length(TempStr) < TempLen then
+                  SetLength(TempStr,TempLen);
+                Move(PAnsiChar(fUsedKnownPaths.Arr[j])^,PAnsiChar(TempStr)^,Length(fUsedKnownPaths.Arr[j]));
+                Move(PAnsiChar(Buffer)^,Addr(TempStr[Length(fUsedKnownPaths.Arr[j]) + 1])^,Length(Buffer));
+                Index := Unresolved_IndexOf(PathHash(TempStr,fHashType,TempLen));
                 If Index >= 0 then
-                  Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j] + Buffer);
-              end;            
+                  begin
+                    SetLength(TempStr,TempLen);
+                    Unresolved_MoveToResolved(Index,TempStr);
+                  end;
+              end;
           end
         else Unresolved_MoveToResolved(Index,Buffer);
       end;
@@ -602,6 +625,7 @@ begin
 fProcessingTerminating := True;
 For i := 0 to Pred(fTasksManager.TaskCount) do
   fTasksManager.StopTask(i);
+fTasksManager.WaitForRunningTasksToComplete;
 end;
 
 

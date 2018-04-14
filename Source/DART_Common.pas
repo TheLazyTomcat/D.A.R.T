@@ -35,7 +35,7 @@ type
   end;
 
 Function HashCompare(A,B: TDARTHash64): Integer;
-Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
+Function PathHash(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
 
 {===============================================================================
     Progress stage information types and functions
@@ -133,10 +133,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function PathHash(const Path: AnsiString; HashType: UInt32): TDARTHash64;
+Function PathHash(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
 begin
+If Len < 0 then
+  Len := Length(PAth);
 case HashType of
-  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Length(Path) * SizeOf(AnsiChar)));
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Len * SizeOf(AnsiChar)));
 else
   Result := 0;
 end;
