@@ -63,9 +63,14 @@ type
     procedure InitializeData; override;
     procedure InitializeProgress; override;
     // methods for content parsing
+    Function LowEntryIndex: Integer; override;
+    Function HighEntryIndex: Integer; override;
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
     // methods working with known paths
+    Function LowKnownPathIndex: Integer; override;
+    Function HighKnownPathIndex: Integer; override;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath; override;
     Function IndexOfKnownPath(const Path: AnsiString): Integer; override;
     Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; override;
     // processing methods
@@ -123,6 +128,7 @@ uses
 const
   DART_METHOD_ID_ZIP_ARCHPROC = $00000100;
   DART_METHOD_ID_ZIP_GETENTRY = $00000101;
+  DART_METHOD_ID_ZIP_GETKNPTH = $00000102;
   DART_METHOD_ID_ZIP_ZLEOCD   = $00000110;
   DART_METHOD_ID_ZIP_ZLCD     = $00000111;
   DART_METHOD_ID_ZIP_ZLCDH    = $00000112;
@@ -204,6 +210,20 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TDARTRepairer_ZIP.LowEntryIndex: Integer;
+begin
+Result := Low(fArchiveStructure.Entries.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.HighEntryIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.Entries.Count);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TDARTRepairer_ZIP.IndexOfEntry(const EntryFileName: AnsiString): Integer;
 var
   i:  Integer;
@@ -256,6 +276,30 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
       end;
   end
 else DoError(DART_METHOD_ID_ZIP_GETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.LowKnownPathIndex: Integer;
+begin
+Result := Low(fArchiveStructure.KnownPaths.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.HighKnownPathIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.KnownPaths.Count);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.GetKnownPath(Index: Integer): TDARTKnownPath;
+begin
+If (Index >= Low(fArchiveStructure.KnownPaths.Arr)) and (Index < fArchiveStructure.KnownPaths.Count) then
+  Result := fArchiveStructure.KnownPaths.Arr[Index]
+else
+  DoError(DART_METHOD_ID_ZIP_GETKNPTH,'Index (%d) out of bounds.',[Index]);
 end;
 
 //------------------------------------------------------------------------------
@@ -316,6 +360,10 @@ ZIP_ReconstructEndOfCentralDirectory;
 ZIP_ReconstructFinal;
 If fArchiveStructure.Entries.Count <= 0 then
   DoError(DART_METHOD_ID_ZIP_ARCHPROC,'Input archive does not contain any valid entries.');
+// parse content for paths if used as help archive
+If fArchiveProcessingSettings.Auxiliary.HelpArchive and
+  fArchiveProcessingSettings.SCS.PathResolve.ContentParsing.ParseHelpArchives then
+  ParseContentForPaths;
 end;
 
 //------------------------------------------------------------------------------
@@ -962,6 +1010,7 @@ begin
 case MethodIndex of
   DART_METHOD_ID_ZIP_ARCHPROC:  Result := 'ArchiveProcessing';
   DART_METHOD_ID_ZIP_GETENTRY:  Result := 'GetEntryData(Index)';
+  DART_METHOD_ID_ZIP_GETKNPTH:  Result := 'GetKnownPath';
   DART_METHOD_ID_ZIP_ZLEOCD:    Result := 'ZIP_LoadEndOfCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCD:      Result := 'ZIP_LoadCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCDH:     Result := 'ZIP_LoadCentralDirectory.LoadCentralDirectoryHeader';

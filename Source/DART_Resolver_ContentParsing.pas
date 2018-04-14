@@ -74,6 +74,8 @@ type
   protected
     Function CP_TryResolvePath(const Path: AnsiString): Integer; override;
   public
+    constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+    procedure ClearParsedPaths; virtual;
     property ParsedPaths[Index: Integer]: TDARTKnownPath read GetKnownPath;
     property ParsedPathCount: Integer read fParsedPaths.Count;
   end;
@@ -325,6 +327,9 @@ If Assigned(Data) and (Size > 0) then
     fSize := Size;
     fDataStream := TStaticMemoryStream.Create(Data,Size);
     try
+{$IFDEF DevelNotes}
+  {$MESSAGE 'read here'}
+{$ENDIF}
       // later implement parsers for known types (SII, SII/3nK, MAT, TOBJ, ....) 
       case CP_GetSignature of
         DART_REP_CP_KTS_DDS,
@@ -408,7 +413,28 @@ If fParsedPaths.Count >= Length(fParsedPaths.Arr) then
   SetLength(fParsedPaths.Arr,Length(fParsedPaths.Arr) + 4096);  // a LOT of paths is expected
 // only field "path" is set, other fields should be filled when that path is further processed
 fParsedPaths.Arr[fParsedPaths.Count].Path := Path;
+Result := fParsedPaths.Count;
+Inc(fParsedPaths.Count);
 end;
 
+{-------------------------------------------------------------------------------
+    TDARTResolver_ContentParsing_HelpArchives - public methods
+-------------------------------------------------------------------------------}
+
+constructor TDARTResolver_ContentParsing_HelpArchives.Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
+begin
+inherited Create(PauseControlObject,ArchiveProcessingSettings);
+fArchiveProcessingSettings.SCS.PathResolve.ContentParsing.ParseEverything :=
+  fArchiveProcessingSettings.SCS.PathResolve.ContentParsing.ParseEverythingInHlpArch;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTResolver_ContentParsing_HelpArchives.ClearParsedPaths;
+begin
+// there might be a lot of paths stored, so do the real cleaning
+SetLength(fParsedPaths.Arr,0);
+fParsedPaths.Count := 0;
+end;
 
 end.

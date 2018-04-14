@@ -182,10 +182,16 @@ type
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     // methods for content parsing
+    Function LowEntryIndex: Integer; virtual; abstract;
+    Function HighEntryIndex: Integer; virtual; abstract;
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
+    procedure ParseContentForPaths; virtual;
     // methods working with known paths
+    Function LowKnownPathIndex: Integer; virtual; abstract;
+    Function HighKnownPathIndex: Integer; virtual; abstract;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath; virtual; abstract;
     class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; overload; virtual;
     Function IndexOfKnownPath(const Path: AnsiString): Integer; overload; virtual; abstract;
     Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; overload; virtual; abstract;
@@ -211,7 +217,8 @@ implementation
 
 uses
   Windows, Math,
-  StrRect, CRC32, ZLibUtils;
+  StrRect, CRC32, ZLibUtils,
+  DART_Resolver_ContentParsing;
 
 {===============================================================================
    Result information functions implementation
@@ -647,6 +654,46 @@ If Index >= 0 then
   Result := GetEntryData(Index,Data,Size)
 else
   Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTRepairer.ParseContentForPaths;
+var
+  Resolver:   TDARTResolver_ContentParsing_HelpArchives;
+  i:          Integer;
+  EntryData:  Pointer;
+  EntrySize:  TMemSize;
+begin
+// this is intended ONLY for help archives
+Resolver := TDARTResolver_ContentParsing_HelpArchives.Create(fPauseControlObject,fArchiveProcessingSettings);
+try
+  // resolver is not initialized and no progress handler is set
+  For i := LowEntryIndex to HighEntryIndex do
+    begin
+      If GetEntryData(i,EntryData,EntrySize) then
+        try
+          Resolver.Run(EntryData,EntrySize);
+        finally
+          FreeMem(EntryData,EntrySize);
+        end;
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
+  // now just copy whatever paths were found
+  For i := 0 to Pred(Resolver.ParsedPathCount) do
+    AddKnownPath(Resolver.ParsedPaths[i].Path);
+  // do second round for paths
+  For i := LowKnownPathIndex to HighKnownPathIndex do
+    begin
+      Resolver.Run(GetKnownPath(i).Path);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
+  // copy newly found paths if any
+  For i := 0 to Pred(Resolver.ParsedPathCount) do
+    AddKnownPath(Resolver.ParsedPaths[i].Path);
+finally
+  Resolver.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------

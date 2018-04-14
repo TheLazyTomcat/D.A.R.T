@@ -85,9 +85,14 @@ type
     // flow control methods;
     procedure DoTerminate; override;
     // methods for content parsing
+    Function LowEntryIndex: Integer; override;
+    Function HighEntryIndex: Integer; override;
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
     // methods working with known paths
+    Function LowKnownPathIndex: Integer; override;
+    Function HighKnownPathIndex: Integer; override;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath; override;
     Function IndexOfKnownPath(const Path: AnsiString): Integer; override;
     Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; override;
     // processing methods
@@ -159,11 +164,12 @@ uses
 
 const
   DART_METHOD_ID_SCS_ARCHPROC   = $00000200;
-  DART_METHOD_ID_SCS_SGETENTRY  = $00000201;
-  DART_METHOD_ID_SCS_SENTRFNHS  = $00000202;
-  DART_METHOD_ID_SCS_SSRTENQSEX = $00000203;
-  DART_METHOD_ID_SCS_SLDARHEAD  = $00000204;
-  DART_METHOD_ID_SCS_SLDPLOCLP  = $00000205;
+  DART_METHOD_ID_SCS_GETKNPTH   = $00000201;
+  DART_METHOD_ID_SCS_GETENTRY   = $00000202;
+  DART_METHOD_ID_SCS_SENTRFNHS  = $00000210;
+  DART_METHOD_ID_SCS_SSRTENQSEX = $00000211;
+  DART_METHOD_ID_SCS_SLDARHEAD  = $00000212;
+  DART_METHOD_ID_SCS_SLDPLOCLP  = $00000213;
 
 {===============================================================================
     TDARTRepairer_SCS - class implementation
@@ -267,6 +273,20 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TDARTRepairer_SCS.LowEntryIndex: Integer;
+begin
+Result := Low(fArchiveStructure.Entries.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_SCS.HighEntryIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.Entries.Count);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TDARTRepairer_SCS.IndexOfEntry(const EntryFileName: AnsiString): Integer;
 begin
 Result := SCS_IndexOfEntry(SCS_EntryFileNameHash(EntryFileName));
@@ -312,7 +332,31 @@ If (EntryIndex >= Low(fArchiveStructure.Entries.Arr)) and (EntryIndex < fArchive
       // entry is a directory
       else Result := False;
   end
-else DoError(DART_METHOD_ID_SCS_SGETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
+else DoError(DART_METHOD_ID_SCS_GETENTRY,'Entry index (%d) out of bounds.',[EntryIndex]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_SCS.LowKnownPathIndex: Integer;
+begin
+Result := Low(fArchiveStructure.KnownPaths.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_SCS.HighKnownPathIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.KnownPaths.Count);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_SCS.GetKnownPath(Index: Integer): TDARTKnownPath;
+begin
+If (Index >= Low(fArchiveStructure.KnownPaths.Arr)) and (Index < fArchiveStructure.KnownPaths.Count) then
+  Result := fArchiveStructure.KnownPaths.Arr[Index]
+else
+  DoError(DART_METHOD_ID_SCS_GETKNPTH,'Index (%d) out of bounds.',[Index]);
 end;
 
 //------------------------------------------------------------------------------
@@ -360,6 +404,10 @@ If fArchiveStructure.Entries.Count <= 0 then
 // following step is optional at this point, but provides better performance
 SCS_SortEntries;
 SCS_ResolvePaths;
+// parse content for paths if used as help archive
+If fArchiveProcessingSettings.Auxiliary.HelpArchive and
+  fArchiveProcessingSettings.SCS.PathResolve.ContentParsing.ParseHelpArchives then
+  ParseContentForPaths;
 end;
 
 //------------------------------------------------------------------------------
@@ -822,6 +870,9 @@ var
     HelpArchiveProcSettings.Common.InMemoryProcessing := False;
     // indicate help archive
     HelpArchiveProcSettings.Auxiliary.HelpArchive := True;
+    // set-up content parsing settings
+    HelpArchiveProcSettings.SCS.PathResolve.ContentParsing := fProcessingSettings.PathResolve.ContentParsing;
+    HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseContent := False;
     // do archive-type-specific processing
     case DART_GetFileSignature(FileName) of
       DART_SCS_ArchiveSignature:  // - - - - - - - - - - - - - - - - - - - - - -
@@ -829,13 +880,6 @@ var
           // SCS# archive
           // archive signature must be checked because we assume it is SCS# format
           HelpArchiveProcSettings.Common.IgnoreArchiveSignature := False;
-          // set-up content parsing settings
-          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing := fProcessingSettings.PathResolve.ContentParsing;
-          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseContent :=
-            fProcessingSettings.PathResolve.ContentParsing.ParseHelpArchives;
-          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseEverything :=
-           fProcessingSettings.PathResolve.ContentParsing.ParseEverythingInHlpArch;
-          HelpArchiveProcSettings.SCS.PathResolve.ContentParsing.ParseHelpArchives := False;
           // prepare all already known paths
           SetLength(HelpArchiveProcSettings.SCS.PathResolve.CustomPaths,fArchiveStructure.KnownPaths.Count);
           For ii := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
@@ -1015,7 +1059,8 @@ class Function TDARTRepairer_SCS.GetMethodNameFromIndex(MethodIndex: Integer): S
 begin
 case MethodIndex of
   DART_METHOD_ID_SCS_ARCHPROC:   Result := 'ArchiveProcessing';
-  DART_METHOD_ID_SCS_SGETENTRY:  Result := 'GetEntryData(Index)';
+  DART_METHOD_ID_SCS_GETENTRY:   Result := 'GetEntryData(Index)';
+  DART_METHOD_ID_SCS_GETKNPTH:   Result := 'GetKnownPath';
   DART_METHOD_ID_SCS_SENTRFNHS:  Result := 'SCS_EntryFileNameHash';
   DART_METHOD_ID_SCS_SSRTENQSEX: Result := 'SCS_SortEntries.QuickSort.ExchangeEntries';
   DART_METHOD_ID_SCS_SLDARHEAD:  Result := 'SCS_LoadArchiveHeader';

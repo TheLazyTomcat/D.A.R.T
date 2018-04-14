@@ -340,7 +340,9 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
-{$message 'later remove when parsers of known types are added'}
+{$IFDEF DevelNotes}
+  {$MESSAGE 'later remove when parsers of known types are added'}
+{$ENDIF}
 SCS_PS.PathResolve.ContentParsing.ParseEverything := True;
 SCS_PS.PathResolve.ContentParsing.ParseEverythingInHlpArch := True;
 // content parsing

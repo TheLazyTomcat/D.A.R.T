@@ -654,7 +654,7 @@ If Assigned(fProcessingThread) then
     fProcessingThread.StopProcessing;   // does not stop the thread, only sets a flag
     fProcessingThread.ResumeProcessing; // in case it is paused
   {$IFDEF DevelNotes}
-    {$MESSAGE 'read hare'}
+    {$MESSAGE 'read here'}
   {$ENDIF}
   {
     Following line might hung if there is problem in processing.
