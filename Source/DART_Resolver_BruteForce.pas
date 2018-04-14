@@ -54,7 +54,7 @@ type
     // multithreaded processing
     procedure BF_MainProcessing_MultiThreaded; virtual;
     Function BF_AdvanceProcessorBuffer: Boolean; virtual;
-    procedure BF_Processor_OnProgress(Sender: TObject; TaskIndex: Integer); virtual;
+    procedure BF_Processor_OnProgress(Sender: TObject; {%H-}TaskIndex: Integer); virtual;
     procedure BF_Processor_OnCompleted(Sender: TObject; TaskIndex: Integer); virtual;
   public
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);

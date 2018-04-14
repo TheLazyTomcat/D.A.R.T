@@ -17,10 +17,20 @@ uses
   DART_ProcessingSettings;
 
 type
+{$IFNDEF FPC}
+  // combobox in delphi does not have public OnMouseMove event
+  TComboBox = class(StdCtrls.TComboBox)
+  published
+    property OnMouseMove;
+  end;
+{$ENDIF}
+
   TOptionDescriptionEvent = procedure(Sender: TObject; DescriptionTag: Integer) of object;
 
   TfrmProcSettingsFrame_ZIP = class(TFrame)
     pnlBackground: TPanel;
+    cmbPresets: TComboBox;
+    lblPresets: TLabel;
     gbGeneral: TGroupBox;
     cbAssumeCompressionMethod: TCheckBox;
     gbEndOfCentralDirectory: TGroupBox;
@@ -60,8 +70,6 @@ type
     cbLHIgnoreExtraField: TCheckBox;
     bvlLHSplit: TBevel;
     cbLHIgnoreDataDescriptor: TCheckBox;
-    cmbPresets: TComboBox;
-    lblPresets: TLabel;
     procedure cmbPresetsChange(Sender: TObject);
   private
     fArchiveProcessingSettings: TDARTArchiveProcessingSettings;
@@ -107,6 +115,7 @@ try
 finally
   cmbPresets.Items.EndUpdate;
 end;
+cmbPresets.OnMouseMove := OptionMouseMove;
 end;  
 
 //------------------------------------------------------------------------------

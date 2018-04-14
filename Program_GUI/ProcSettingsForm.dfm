@@ -289,7 +289,7 @@ object fProcSettingsForm: TfProcSettingsForm
     OnClick = btnLoadSettingsClick
   end
   object btnDefaultSettings: TButton
-    Left = 424
+    Left = 432
     Top = 608
     Width = 177
     Height = 25

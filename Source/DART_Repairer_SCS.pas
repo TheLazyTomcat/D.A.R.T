@@ -953,7 +953,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
             begin
               If GetEntryData(i,EntryData,EntrySize) then
                 try
-                  TDARTResolver_ContentParsing(fResolver).Run(EntryData,EntrySize);
+                  TDARTResolver_ContentParsing(fResolver).Process(EntryData,EntrySize);
                 finally
                   FreeMem(EntryData,EntrySize);
                 end;
@@ -978,7 +978,7 @@ If fArchiveStructure.UtilityData.UnresolvedCount > 0 then
             begin
               If fArchiveStructure.Entries.Arr[i].UtilityData.Resolved and
                 (Length(fArchiveStructure.Entries.Arr[i].FileName) > 0) then
-                TDARTResolver_ContentParsing(fResolver).Run(fArchiveStructure.Entries.Arr[i].FileName);
+                TDARTResolver_ContentParsing(fResolver).Process(fArchiveStructure.Entries.Arr[i].FileName);
               If fResolver.UnresolvedCount <= 0 then
                 Break{For i};                
             end;

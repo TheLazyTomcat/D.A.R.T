@@ -2,7 +2,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
   Left = 0
   Top = 0
   Width = 561
-  Height = 714
+  Height = 738
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -14,7 +14,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     Left = 0
     Top = 0
     Width = 561
-    Height = 714
+    Height = 738
     Align = alClient
     BevelOuter = bvNone
     ParentBackground = True
@@ -22,11 +22,11 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
     object lblPresets: TLabel
       Left = 0
       Top = 8
-      Width = 313
+      Width = 321
       Height = 13
       Caption = 
-        'SCS archive processing settings presets (select preset to load i' +
-        't):'
+        'SCS# archive processing settings presets (select preset to load ' +
+        'it):'
     end
     object gbEntries: TGroupBox
       Tag = 1100
@@ -76,7 +76,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       Left = 0
       Top = 168
       Width = 561
-      Height = 545
+      Height = 569
       Caption = 'Path resolving'
       TabOrder = 1
       OnMouseMove = GroupBoxMouseMove
@@ -165,7 +165,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       end
       object btnHelpArchivesMenu: TButton
         Left = 528
-        Top = 203
+        Top = 202
         Width = 25
         Height = 21
         Caption = '6'
@@ -182,37 +182,127 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         Left = 8
         Top = 368
         Width = 545
-        Height = 81
+        Height = 105
         Caption = 'Content parsing'
         TabOrder = 6
-        object lblHint1: TLabel
-          Left = 2
-          Top = 15
-          Width = 541
-          Height = 64
-          Align = alClient
-          Alignment = taCenter
-          AutoSize = False
-          Caption = 'Not implemented'
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clGrayText
-          Font.Height = -11
-          Font.Name = 'Tahoma'
-          Font.Style = []
-          ParentFont = False
-          Layout = tlCenter
+        OnMouseMove = GroupBoxMouseMove
+        object lblBinaryThreshold: TLabel
+          Left = 13
+          Top = 75
+          Width = 108
+          Height = 13
+          Alignment = taRightJustify
+          Caption = 'Binary threshold ['#8240']:'
+        end
+        object lblMinPathLength: TLabel
+          Left = 209
+          Top = 75
+          Width = 96
+          Height = 13
+          Alignment = taRightJustify
+          Caption = 'Minimal path length:'
+        end
+        object cbCPParseContent: TCheckBox
+          Tag = 1241
+          Left = 8
+          Top = 24
+          Width = 129
+          Height = 17
+          Caption = 'Parse archive content'
+          TabOrder = 0
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbCPParseEverything: TCheckBox
+          Tag = 1242
+          Left = 200
+          Top = 24
+          Width = 169
+          Height = 17
+          Caption = 'Parse everything in the archive'
+          TabOrder = 1
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbCPParseHelpArch: TCheckBox
+          Tag = 1243
+          Left = 384
+          Top = 24
+          Width = 121
+          Height = 17
+          Caption = 'Parse help archives'
+          TabOrder = 2
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbCPParseEverythingInHlpArch: TCheckBox
+          Tag = 1244
+          Left = 8
+          Top = 48
+          Width = 177
+          Height = 17
+          Caption = 'Parse everything in help archives'
+          TabOrder = 3
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbCPPrintableASCIIOnly: TCheckBox
+          Tag = 1245
+          Left = 200
+          Top = 48
+          Width = 169
+          Height = 17
+          Caption = 'Printable ASCII characters only'
+          TabOrder = 4
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object cbCPLimitedCharSet: TCheckBox
+          Tag = 1246
+          Left = 384
+          Top = 48
+          Width = 129
+          Height = 17
+          Caption = 'Limited character set'
+          TabOrder = 5
+          OnClick = CheckBoxClick
+          OnMouseMove = OptionMouseMove
+        end
+        object seBinaryThreshold: TSpinEdit
+          Tag = 1247
+          Left = 128
+          Top = 72
+          Width = 57
+          Height = 22
+          MaxValue = 1000
+          MinValue = 0
+          TabOrder = 6
+          Value = 0
+          OnMouseMove = OptionMouseMove
+        end
+        object seMinPathLength: TSpinEdit
+          Tag = 1248
+          Left = 312
+          Top = 72
+          Width = 57
+          Height = 22
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
+          OnMouseMove = OptionMouseMove
         end
       end
       object gbBruteForce: TGroupBox
         Left = 8
-        Top = 456
+        Top = 480
         Width = 545
         Height = 81
         Caption = 'Brute force resolve'
         TabOrder = 7
         OnMouseMove = GroupBoxMouseMove
-        object lblMaxPathLength: TLabel
-          Left = 393
+        object lblBFMaxPathLength: TLabel
+          Left = 385
           Top = 51
           Width = 80
           Height = 13
@@ -232,7 +322,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         end
         object cbBFMultithreaded: TCheckBox
           Tag = 1262
-          Left = 192
+          Left = 200
           Top = 24
           Width = 145
           Height = 17
@@ -243,7 +333,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
         end
         object cbBFUseKnownPaths: TCheckBox
           Tag = 1263
-          Left = 376
+          Left = 384
           Top = 24
           Width = 145
           Height = 17
@@ -263,20 +353,20 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
         end
-        object cbBFLimitedAlphabet: TCheckBox
+        object cbBFLimitedCharSet: TCheckBox
           Tag = 1265
-          Left = 192
+          Left = 200
           Top = 48
-          Width = 105
+          Width = 121
           Height = 17
-          Caption = 'Limited alphabet'
+          Caption = 'Limited character set'
           TabOrder = 4
           OnClick = CheckBoxClick
           OnMouseMove = OptionMouseMove
         end
-        object seMaxPathLength: TSpinEdit
+        object seBFMaxPathLength: TSpinEdit
           Tag = 1266
-          Left = 480
+          Left = 472
           Top = 48
           Width = 57
           Height = 22
@@ -309,6 +399,7 @@ object frmProcSettingsFrame_SCS: TfrmProcSettingsFrame_SCS
       end
     end
     object cmbPresets: TComboBox
+      Tag = 1000
       Left = 0
       Top = 24
       Width = 561

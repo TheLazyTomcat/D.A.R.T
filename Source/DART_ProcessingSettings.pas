@@ -143,10 +143,10 @@ type
 //--- Main structure -----------------------------------------------------------
 
   TDARTArchiveProcessingSettings = record
-    Common:       TDART_PS_Common;
-    SCS:          TDART_PS_SCS;
-    ZIP:          TDART_PS_ZIP;
-    Auxiliary:    TDART_PS_Auxiliaty;    
+    Common:     TDART_PS_Common;
+    SCS:        TDART_PS_SCS;
+    ZIP:        TDART_PS_ZIP;
+    Auxiliary:  TDART_PS_Auxiliaty;
   end;
 
 //==============================================================================
@@ -191,7 +191,7 @@ const
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedCharSet:             False;
+          LimitedCharSet:             True;
           PathLengthLimit:            32)));
     ZIP: (
       AssumeCompressionMethod:  False;
@@ -424,7 +424,7 @@ try
       WriteBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
       WriteBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
       WriteBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
-      WriteInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100));
+      WriteInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 1000));
       WriteInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
     end;
 
@@ -552,7 +552,7 @@ try
       ParseEverythingInHlpArch := ReadBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
       PrintableASCIIOnly := ReadBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
       LimitedCharacterSet := ReadBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
-      BinaryThreshold := ReadInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100)) / 100;
+      BinaryThreshold := ReadInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 1000)) / 1000;
       MinPathLength := ReadInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
     end;
 

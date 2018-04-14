@@ -80,7 +80,7 @@ try
                   begin
                     lblProcessingResult.Caption := 'An error occurred during the processing';
                     meResultInfo.Lines.Add(sLineBreak + StringOfChar('-',80) + sLineBreak);
-                    If (FaultObjectClass <> '') and Assigned(FaultObjectRef) then
+                    If (Length(FaultObjectClass) > 0) and Assigned(FaultObjectRef) then
                       meResultInfo.Lines.Add(Format('       Function: %s(0x%p).%s [%d]',
                        [FaultObjectClass,Pointer(FaultObjectRef),FaultFunctionName,FaultFunctionIndex]))
                     else

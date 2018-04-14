@@ -113,7 +113,7 @@ implementation
 uses
   Windows, SysUtils, Classes, StrUtils, CRC32,
   StrRect, MemoryBuffer, ZLibCommon,
-  DART_Auxiliary, DART_PathDeconstructor;
+  DART_PathDeconstructor;
 
 {===============================================================================
 --------------------------------------------------------------------------------

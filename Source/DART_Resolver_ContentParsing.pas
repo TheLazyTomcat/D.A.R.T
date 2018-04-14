@@ -51,9 +51,10 @@ type
     procedure CP_Parsing_Unknown_Binary; virtual;
   public
     constructor Create(PauseControlObject: TDARTPauseObject; ArchiveProcessingSettings: TDARTArchiveProcessingSettings);
-    procedure Run(const Data: Pointer; Size: TMemSize); reintroduce; overload;
-    procedure Run(const Path: AnsiString); reintroduce; overload;
+    procedure Run; override;
     procedure Stop; override;
+    procedure Process(const Data: Pointer; Size: TMemSize); overload; virtual;
+    procedure Process(const Path: AnsiString); overload; virtual;
     property PathDelimiter: AnsiChar read fPathDelimiter write fPathDelimiter;
   end;
 
@@ -111,7 +112,7 @@ const
 Function TDARTResolver_ContentParsing.CP_GetSignature: UInt32;
 begin
 fDataStream.Seek(0,soBeginning);
-If fDataStream.Read(Result,SizeOf(UInt32)) < SizeOf(UInt32) then
+If fDataStream.Read(Result{%H-},SizeOf(UInt32)) < SizeOf(UInt32) then
   Result := 0;
 end;
 
@@ -221,7 +222,7 @@ begin
 //select if data are binary or text (atm. it simply counts zeroed bytes)
 Counter := 0;
 For i := 0 to Pred(fSize) do
-  If PByte(PtrUInt(fData) + PtrUInt(i))^ = 0 then
+  If {%H-}PByte({%H-}PtrUInt(fData) + PtrUInt(i))^ = 0 then
     Inc(Counter);
 If (Counter / fSize) > fContentParsingSettings.BinaryThreshold then
   // data will be treated as an unknown binary
@@ -282,13 +283,13 @@ Start := 0;
 Len := 0;
 For i := 0 to Pred(fSize) do
   begin
-    CurrChar := PAnsiChar(PtrUInt(fData) + PtrUInt(i))^;
+    CurrChar := {%H-}PAnsiChar({%H-}PtrUInt(fData) + PtrUInt(i))^;
     If not CP_ValidPathCharacter(CurrChar) then
       begin
         If (Len > 0) and (Len >= TMemSize(fContentParsingSettings.MinPathLength)) then
           begin
             SetLength(TempStr,Len);
-            Move(Pointer(PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
+            Move({%H-}Pointer({%H-}PtrUInt(fData) + PtrUInt(Start))^,PAnsiChar(TempStr)^,Len);
             TempStr := DART_ExcludeOuterPathDelim(TempStr,fPathDelimiter);
             If CP_TryResolvePath(TempStr) >= 0 then
               If fUnresolved.Count <= 0 then
@@ -319,7 +320,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTResolver_ContentParsing.Run(const Data: Pointer; Size: TMemSize);
+procedure TDARTResolver_ContentParsing.Run;
+begin
+// nothing to do here
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TDARTResolver_ContentParsing.Process(const Data: Pointer; Size: TMemSize);
 begin
 If Assigned(Data) and (Size > 0) then
   begin
@@ -346,9 +354,9 @@ If Assigned(Data) and (Size > 0) then
   end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-procedure TDARTResolver_ContentParsing.Run(const Path: AnsiString);
+procedure TDARTResolver_ContentParsing.Process(const Path: AnsiString);
 begin
 // process known file series
 If Length(Path) > 0 then

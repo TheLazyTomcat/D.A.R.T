@@ -446,6 +446,7 @@ object frmProcSettingsFrame_ZIP: TfrmProcSettingsFrame_ZIP
       end
     end
     object cmbPresets: TComboBox
+      Tag = 100
       Left = 0
       Top = 24
       Width = 561

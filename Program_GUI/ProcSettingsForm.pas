@@ -187,6 +187,12 @@ procedure TfProcSettingsForm.FrameOptionDescriptionHandler(Sender: TObject; Desc
 var
   GroupIdx: Integer;
   DescrIdx: Integer;
+
+  procedure ShowUnknown(Tag: Integer);
+  begin
+    meOptionDecription.Text := 'unknown #' + IntToStr(Tag);
+  end;
+
 begin
 If meOptionDecription.Tag <> DescriptionTag then
   begin
@@ -196,11 +202,15 @@ If meOptionDecription.Tag <> DescriptionTag then
       begin
         DescrIdx := DescriptionTag mod 100;
         If (DescrIdx >= Low(fOptionDescriptions[GroupIdx])) and (DescrIdx <= High(fOptionDescriptions[GroupIdx])) then
-          meOptionDecription.Text := fOptionDescriptions[GroupIdx,DescrIdx]
-        else
-          meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
+          begin
+            If Length(fOptionDescriptions[GroupIdx,DescrIdx]) > 0 then
+              meOptionDecription.Text := fOptionDescriptions[GroupIdx,DescrIdx]
+            else
+              ShowUnknown(DescriptionTag);
+          end
+        else ShowUnknown(DescriptionTag);
       end
-    else meOptionDecription.Text := 'unknown #' + IntToStr(DescriptionTag);
+    else ShowUnknown(DescriptionTag);
   end;
 end;
 
@@ -626,7 +636,7 @@ procedure TfProcSettingsForm.btnAcceptClick(Sender: TObject);
 var
   MsgStr: String;
 begin
-If lbleTarget.Text <> '' then
+If Length(lbleTarget.Text) > 0 then
   begin
     fAccepted := True;
     Close;

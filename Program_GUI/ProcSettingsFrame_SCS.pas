@@ -17,6 +17,14 @@ uses
   DART_ProcessingSettings, Spin;
 
 type
+{$IFNDEF FPC}
+  // combobox in delphi does not have public OnMouseMove event
+  TComboBox = class(StdCtrls.TComboBox)
+  published
+    property OnMouseMove;
+  end;
+{$ENDIF}
+
   TOptionDescriptionEvent = procedure(Sender: TObject; DescriptionTag: Integer) of object;
 
   TfrmProcSettingsFrame_SCS = class(TFrame)
@@ -39,21 +47,30 @@ type
     meHelpArchives: TMemo;
     btnHelpArchivesMenu: TButton;
     gbContentParsing: TGroupBox;
+    cbCPParseContent: TCheckBox;
+    cbCPParseEverything: TCheckBox;
+    cbCPParseHelpArch: TCheckBox;
+    cbCPParseEverythingInHlpArch: TCheckBox;
+    cbCPPrintableASCIIOnly: TCheckBox;
+    cbCPLimitedCharSet: TCheckBox;
+    lblBinaryThreshold: TLabel;
+    seBinaryThreshold: TSpinEdit;
+    seMinPathLength: TSpinEdit;
+    lblMinPathLength: TLabel;
     gbBruteForce: TGroupBox;
-    lblHint1: TLabel;
+    cbBFActivate: TCheckBox;
+    cbBFMultithreaded: TCheckBox;
+    cbBFUseKnownPaths: TCheckBox;
+    cbBFPrintableASCIIOnly: TCheckBox;
+    cbBFLimitedCharSet: TCheckBox;
+    lblBFMaxPathLength: TLabel;
+    seBFMaxPathLength: TSpinEdit;
     pmHelpArchivesMenu: TPopupMenu;
     mi_HAM_Browse: TMenuItem;
     mi_HAM_N1: TMenuItem;
     mi_HAM_ETS2: TMenuItem;
     mi_HAM_ATS: TMenuItem;
-    diaHelpArchivesOpen: TOpenDialog;
-    cbBFActivate: TCheckBox;
-    cbBFMultithreaded: TCheckBox;
-    cbBFUseKnownPaths: TCheckBox;
-    cbBFPrintableASCIIOnly: TCheckBox;
-    cbBFLimitedAlphabet: TCheckBox;
-    lblMaxPathLength: TLabel;
-    seMaxPathLength: TSpinEdit;
+    diaHelpArchivesOpen: TOpenDialog; 
     procedure meCustomPathsKeyPress(Sender: TObject; var Key: Char);
     procedure meHelpArchivesKeyPress(Sender: TObject; var Key: Char);
     procedure btnHelpArchivesMenuClick(Sender: TObject);
@@ -159,7 +176,7 @@ diaHelpArchivesOpen.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
 GetInstalledGames;
 // game files
 For i := Low(fGameInstallDirs) to High(fGameInstallDirs) do
-  If fGameInstallDirs[i] <> '' then
+  If Length(fGameInstallDirs[i]) > 0 then
     begin
       with GetGameFilesMenuItem(i) do
         begin
@@ -181,6 +198,7 @@ try
 finally
   cmbPresets.Items.EndUpdate;
 end;
+cmbPresets.OnMouseMove := OptionMouseMove;
 end;
 
 //------------------------------------------------------------------------------
@@ -217,13 +235,22 @@ try
 finally
   meHelpArchives.Lines.EndUpdate;
 end;
+// content parsing
+cbCPParseContent.Checked := fProcessingSettings.PathResolve.ContentParsing.ParseContent;
+cbCPParseEverything.Checked := fProcessingSettings.PathResolve.ContentParsing.ParseEverything;
+cbCPParseHelpArch.Checked := fProcessingSettings.PathResolve.ContentParsing.ParseHelpArchives;
+cbCPParseEverythingInHlpArch.Checked := fProcessingSettings.PathResolve.ContentParsing.ParseEverythingInHlpArch;
+cbCPPrintableASCIIOnly.Checked := fProcessingSettings.PathResolve.ContentParsing.PrintableASCIIOnly;
+cbCPLimitedCharSet.Checked := fProcessingSettings.PathResolve.ContentParsing.LimitedCharacterSet;
+seBinaryThreshold.Value := Trunc(fProcessingSettings.PathResolve.ContentParsing.BinaryThreshold * 1000);
+seMinPathLength.Value := fProcessingSettings.PathResolve.ContentParsing.MinPathLength;
 // brute force
 cbBFActivate.Checked := fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce;
 cbBFMultithreaded.Checked := fProcessingSettings.PathResolve.BruteForce.Multithreaded;
 cbBFUseKnownPaths.Checked := fProcessingSettings.PathResolve.BruteForce.UseKnownPaths;
 cbBFPrintableASCIIOnly.Checked := fProcessingSettings.PathResolve.BruteForce.PrintableASCIIOnly;
-cbBFLimitedAlphabet.Checked := fProcessingSettings.PathResolve.BruteForce.LimitedAlphabet;
-seMaxPathLength.Value := fProcessingSettings.PathResolve.BruteForce.PathLengthLimit;
+cbBFLimitedCharSet.Checked := fProcessingSettings.PathResolve.BruteForce.LimitedCharSet;
+seBFMaxPathLength.Value := fProcessingSettings.PathResolve.BruteForce.PathLengthLimit;
 end;
 
 //------------------------------------------------------------------------------
@@ -262,13 +289,22 @@ For i := 0 to Pred(meHelpArchives.Lines.Count) do
       Inc(Count);
     end;
 SetLength(fProcessingSettings.PathResolve.HelpArchives,Count);
+// content parsing
+fProcessingSettings.PathResolve.ContentParsing.ParseContent := cbCPParseContent.Checked;
+fProcessingSettings.PathResolve.ContentParsing.ParseEverything := cbCPParseEverything.Checked;
+fProcessingSettings.PathResolve.ContentParsing.ParseHelpArchives := cbCPParseHelpArch.Checked;
+fProcessingSettings.PathResolve.ContentParsing.ParseEverythingInHlpArch := cbCPParseEverythingInHlpArch.Checked;
+fProcessingSettings.PathResolve.ContentParsing.PrintableASCIIOnly := cbCPPrintableASCIIOnly.Checked;
+fProcessingSettings.PathResolve.ContentParsing.LimitedCharacterSet := cbCPLimitedCharSet.Checked;
+fProcessingSettings.PathResolve.ContentParsing.BinaryThreshold := seBinaryThreshold.Value / 1000;
+fProcessingSettings.PathResolve.ContentParsing.MinPathLength := seMinPathLength.Value;
 // brute force
 fProcessingSettings.PathResolve.BruteForce.ActivateBruteForce := cbBFActivate.Checked;
 fProcessingSettings.PathResolve.BruteForce.Multithreaded := cbBFMultithreaded.Checked;
 fProcessingSettings.PathResolve.BruteForce.UseKnownPaths := cbBFUseKnownPaths.Checked;
 fProcessingSettings.PathResolve.BruteForce.PrintableASCIIOnly := cbBFPrintableASCIIOnly.Checked;
-fProcessingSettings.PathResolve.BruteForce.LimitedAlphabet := cbBFLimitedAlphabet.Checked;
-fProcessingSettings.PathResolve.BruteForce.PathLengthLimit := seMaxPathLength.Value;
+fProcessingSettings.PathResolve.BruteForce.LimitedCharSet := cbBFLimitedCharSet.Checked;
+fProcessingSettings.PathResolve.BruteForce.PathLengthLimit := seBFMaxPathLength.Value;
 end;
 
 //------------------------------------------------------------------------------
@@ -283,6 +319,9 @@ try
 finally
   fLoading := False;
 end;
+cbCPParseContent.OnClick(cbCPParseContent);
+cbCPParseHelpArch.OnClick(cbCPParseHelpArch);
+cbCPPrintableASCIIOnly.OnClick(cbCPPrintableASCIIOnly);
 cbBFActivate.OnClick(cbBFActivate);
 cbBFPrintableASCIIOnly.OnClick(cbBFPrintableASCIIOnly);
 end;
@@ -301,17 +340,33 @@ procedure TfrmProcSettingsFrame_SCS.CheckBoxClick(Sender: TObject);
 begin
 If (Sender is TCheckBox) and not fLoading then
   case TCheckBox(Sender).Tag of
+    1241,   //cbCPParseContent
+    1243:   //cbCPParseHelpArch
+      begin
+        cbCPParseEverything.Enabled := cbCPParseContent.Checked;
+        cbCPParseEverythingInHlpArch.Enabled := cbCPParseHelpArch.Checked;
+        cbCPPrintableASCIIOnly.Enabled := cbCPParseContent.Checked or cbCPParseHelpArch.Checked;
+        cbCPLimitedCharSet.Enabled := (cbCPParseContent.Checked or cbCPParseHelpArch.Checked) and
+                                      cbCPPrintableASCIIOnly.Checked;
+        lblBinaryThreshold.Enabled := cbCPParseContent.Checked or cbCPParseHelpArch.Checked;
+        seBinaryThreshold.Enabled := cbCPParseContent.Checked or cbCPParseHelpArch.Checked;
+        lblMinPathLength.Enabled := cbCPParseContent.Checked or cbCPParseHelpArch.Checked;
+        seMinPathLength.Enabled := cbCPParseContent.Checked or cbCPParseHelpArch.Checked;
+      end;
+    1245:   //cbCPPrintableASCIIOnly
+      cbCPLimitedCharSet.Enabled := TCheckBox(Sender).Checked and
+        (cbCPParseContent.Checked or cbCPParseHelpArch.Checked);
     1261:   //cbBFActivate
       begin
         cbBFMultithreaded.Enabled := TCheckBox(Sender).Checked;
         cbBFUseKnownPaths.Enabled := TCheckBox(Sender).Checked;
         cbBFPrintableASCIIOnly.Enabled := TCheckBox(Sender).Checked;
-        cbBFLimitedAlphabet.Enabled := TCheckBox(Sender).Checked and cbBFPrintableASCIIOnly.Checked;
-        lblMaxPathLength.Enabled := TCheckBox(Sender).Checked;
-        seMaxPathLength.Enabled := TCheckBox(Sender).Checked;
+        cbBFLimitedCharSet.Enabled := TCheckBox(Sender).Checked and cbBFPrintableASCIIOnly.Checked;
+        lblBFMaxPathLength.Enabled := TCheckBox(Sender).Checked;
+        seBFMaxPathLength.Enabled := TCheckBox(Sender).Checked;
       end;
     1264:   //cbBFPrintableASCIIOnly
-      cbBFLimitedAlphabet.Enabled := TCheckBox(Sender).Checked and cbBFActivate.Checked;
+      cbBFLimitedCharSet.Enabled := TCheckBox(Sender).Checked and cbBFActivate.Checked;
   end;
 end;
 

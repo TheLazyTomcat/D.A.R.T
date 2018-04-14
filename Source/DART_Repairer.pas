@@ -673,7 +673,7 @@ try
     begin
       If GetEntryData(i,EntryData,EntrySize) then
         try
-          Resolver.Run(EntryData,EntrySize);
+          Resolver.Process(EntryData,EntrySize);
         finally
           FreeMem(EntryData,EntrySize);
         end;
@@ -685,7 +685,7 @@ try
   // do second round for paths
   For i := LowKnownPathIndex to HighKnownPathIndex do
     begin
-      Resolver.Run(GetKnownPath(i).Path);
+      Resolver.Process(GetKnownPath(i).Path);
       DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
     end;
   // copy newly found paths if any
