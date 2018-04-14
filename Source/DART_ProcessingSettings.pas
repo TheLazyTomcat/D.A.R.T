@@ -43,6 +43,7 @@ type
 
   TDART_PS_Auxiliaty = record
     InMemoryProcessingAllowed:  Boolean;  // depends on available memory and size of input archive
+    HelpArchive:                Boolean;  // indicates whether the input archive is used as help archive
   end;
 
 //--- SCS#-specific processing settings ----------------------------------------
@@ -53,12 +54,23 @@ type
     IgnoreDictionaryID:     Boolean;
   end;
 
+  TDART_PS_SCS_PathResolve_ContentParsing = record
+    ParseContent:             Boolean;
+    ParseEverything:          Boolean;
+    ParseHelpArchives:        Boolean;
+    ParseEverythingInHlpArch: Boolean;
+    PrintableASCIIOnly:       Boolean;  // #32..#127, #32 is taken as a white space
+    LimitedCharacterSet:      Boolean;  // '0'..'9', 'a'..'z', 'A'..'Z', '_', '.', '-', '/'
+    BinaryThreshold:          Double;
+    MinPathLength:            Integer;
+  end;
+
   TDART_PS_SCS_PathResolve_BruteForce = record
     ActivateBruteForce: Boolean;
     Multithreaded:      Boolean;
     UseKnownPaths:      Boolean;
     PrintableASCIIOnly: Boolean;  // #32..#127
-    LimitedAlphabet:    Boolean;  // '0'..'9', 'a'..'z', '_', '.', '-', '/'
+    LimitedCharSet:     Boolean;  // '0'..'9', 'a'..'z', '_', '.', '-', '/'
     PathLengthLimit:    Integer;
   end;
 
@@ -68,8 +80,7 @@ type
     ExtractedUnresolvedEntries: Boolean;
     CustomPaths:                array of AnsiString;
     HelpArchives:               array of String;
-    // temporary fields, will be expanded as the functions are implemented
-    ParseContent: Boolean;
+    ContentParsing:             TDART_PS_SCS_PathResolve_ContentParsing;
     BruteForce:                 TDART_PS_SCS_PathResolve_BruteForce;
   end;
 
@@ -166,13 +177,21 @@ const
         ExtractedUnresolvedEntries: False;
         CustomPaths:                nil;
         HelpArchives:               nil;
-        ParseContent:               False;
+        ContentParsing: (
+          ParseContent:             False;
+          ParseEverything:          False;
+          ParseHelpArchives:        False;
+          ParseEverythingInHlpArch: False;
+          PrintableASCIIOnly:       True;
+          LimitedCharacterSet:      True;
+          BinaryThreshold:          0.0;
+          MinPathLength:            2);
         BruteForce: (
           ActivateBruteForce:         False;
           Multithreaded:              True;
           UseKnownPaths:              False;
           PrintableASCIIOnly:         True;
-          LimitedAlphabet:            False;
+          LimitedCharSet:             False;
           PathLengthLimit:            32)));
     ZIP: (
       AssumeCompressionMethod:  False;
@@ -212,7 +231,8 @@ const
         IgnoreExtraField:             True;
         IgnoreDataDescriptor:         False));
     Auxiliary: (
-      InMemoryProcessingAllowed: False));
+      InMemoryProcessingAllowed: False;
+      HelpArchive:               False));
 
 //==============================================================================
 
@@ -234,7 +254,8 @@ procedure LoadFromIniFile(const IniFileName: String; var APS: TDARTArchiveProces
 implementation
 
 uses
-  SysUtils, IniFiles, TypInfo;
+  SysUtils, IniFiles, TypInfo,
+  StrRect;
 
 procedure RectifyArchiveProcessingSettings(var APS: TDARTArchiveProcessingSettings; RectifyInnerStructs: Boolean = False);
 begin
@@ -319,7 +340,23 @@ end;
 
 procedure RectifySCSProcessingSettings(var SCS_PS: TDART_PS_SCS);
 begin
-// nothing to do here
+{$IFDEF DevelNotes}
+  {$MESSAGE 'later remove when parsers of known types are added'}
+{$ENDIF}
+SCS_PS.PathResolve.ContentParsing.ParseEverything := True;
+SCS_PS.PathResolve.ContentParsing.ParseEverythingInHlpArch := True;
+// content parsing
+If SCS_PS.PathResolve.ContentParsing.BinaryThreshold < 0.0 then
+  SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 0.0
+else If SCS_PS.PathResolve.ContentParsing.BinaryThreshold > 1.0 then
+  SCS_PS.PathResolve.ContentParsing.BinaryThreshold := 1.0;
+If SCS_PS.PathResolve.ContentParsing.MinPathLength < 1 then
+  SCS_PS.PathResolve.ContentParsing.MinPathLength := 1;
+// bruteforce resolve  
+If SCS_PS.PathResolve.BruteForce.PathLengthLimit < 1 then
+  SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1
+else If SCS_PS.PathResolve.BruteForce.PathLengthLimit > 1024 then
+  SCS_PS.PathResolve.BruteForce.PathLengthLimit := 1024;
 end;
 
 //------------------------------------------------------------------------------
@@ -374,10 +411,32 @@ try
   WriteBool('SCS_PathResolve','ExtractedUnresolvedEntries',APS.SCS.PathResolve.ExtractedUnresolvedEntries);
   WriteInteger('SCS_PathResolve','CustomPaths',Length(APS.SCS.PathResolve.CustomPaths));
   For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
-    WriteString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),APS.SCS.PathResolve.CustomPaths[i]);
+    WriteString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.CustomPaths[i]));
   WriteInteger('SCS_PathResolve','HelpArchives',Length(APS.SCS.PathResolve.HelpArchives));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),APS.SCS.PathResolve.HelpArchives[i]);
+    WriteString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),AnsiToStr(APS.SCS.PathResolve.HelpArchives[i]));
+
+  with APS.SCS.PathResolve.ContentParsing do
+    begin
+      WriteBool('SCS_PathResolve_ContentParsing','ParseContent',ParseContent);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseEverything',ParseEverything);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseHelpArchives',ParseHelpArchives);
+      WriteBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
+      WriteBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
+      WriteBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
+      WriteInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100));
+      WriteInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
+    end;
+
+  with APS.SCS.PathResolve.BruteForce do
+    begin
+      WriteBool('SCS_PathResolve_BruteForce','ActivateBruteForce',ActivateBruteForce);
+      WriteBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
+      WriteBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
+      WriteBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
+      WriteBool('SCS_PathResolve_BruteForce','LimitedCharacterSet',LimitedCharSet);
+      WriteInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
+    end;
 
   // ZIP settings  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -427,7 +486,7 @@ try
       WriteBool('ZIP_LocalHeader','IgnoreDataDescriptor',IgnoreDataDescriptor);
     end;
 
-  // auxiliary settings is not saved - - - - - - - - - - - - - - - - - - - - - -
+  // auxiliary settings are not saved  - - - - - - - - - - - - - - - - - - - - -
 finally
   Free;
 end;
@@ -480,10 +539,32 @@ try
   APS.SCS.PathResolve.ExtractedUnresolvedEntries := ReadBool('SCS_PathResolve','ExtractedUnresolvedEntries',APS.SCS.PathResolve.ExtractedUnresolvedEntries);
   SetLength(APS.SCS.PathResolve.CustomPaths,ReadInteger('SCS_PathResolve','CustomPaths',0));
   For i := Low(APS.SCS.PathResolve.CustomPaths) to High(APS.SCS.PathResolve.CustomPaths) do
-    APS.SCS.PathResolve.CustomPaths[i] := ReadString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),'');
+    APS.SCS.PathResolve.CustomPaths[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('CustomPaths[%d]',[i]),''));
   SetLength(APS.SCS.PathResolve.HelpArchives,ReadInteger('SCS_PathResolve','HelpArchives',0));
   For i := Low(APS.SCS.PathResolve.HelpArchives) to High(APS.SCS.PathResolve.HelpArchives) do
-    APS.SCS.PathResolve.HelpArchives[i] := ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),'');
+    APS.SCS.PathResolve.HelpArchives[i] := StrToAnsi(ReadString('SCS_PathResolve',Format('HelpArchives[%d]',[i]),''));
+
+  with APS.SCS.PathResolve.ContentParsing do
+    begin
+      ParseContent := ReadBool('SCS_PathResolve_ContentParsing','ParseContent',ParseContent);
+      ParseEverything := ReadBool('SCS_PathResolve_ContentParsing','ParseEverything',ParseEverything);
+      ParseHelpArchives := ReadBool('SCS_PathResolve_ContentParsing','ParseHelpArchives',ParseHelpArchives);
+      ParseEverythingInHlpArch := ReadBool('SCS_PathResolve_ContentParsing','ParseEverythingInHlpArch',ParseEverythingInHlpArch);
+      PrintableASCIIOnly := ReadBool('SCS_PathResolve_ContentParsing','PrintableASCIIOnly',PrintableASCIIOnly);
+      LimitedCharacterSet := ReadBool('SCS_PathResolve_ContentParsing','LimitedCharacterSet',LimitedCharacterSet);
+      BinaryThreshold := ReadInteger('SCS_PathResolve_ContentParsing','BinaryThreshold',Trunc(BinaryThreshold * 100)) / 100;
+      MinPathLength := ReadInteger('SCS_PathResolve_ContentParsing','MinPathLength',MinPathLength);
+    end;
+
+  with APS.SCS.PathResolve.BruteForce do
+    begin
+      ActivateBruteForce := ReadBool('SCS_PathResolve_BruteForce','ActivateBruteForce',ActivateBruteForce);
+      Multithreaded := ReadBool('SCS_PathResolve_BruteForce','Multithreaded',Multithreaded);
+      UseKnownPaths := ReadBool('SCS_PathResolve_BruteForce','UseKnownPaths',UseKnownPaths);
+      PrintableASCIIOnly := ReadBool('SCS_PathResolve_BruteForce','PrintableASCIIOnly',PrintableASCIIOnly);
+      LimitedCharSet := ReadBool('SCS_PathResolve_BruteForce','LimitedCharacterSet',LimitedCharSet);
+      PathLengthLimit := ReadInteger('SCS_PathResolve_BruteForce','PathLengthLimit',PathLengthLimit);
+    end;
 
   // ZIP settings  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -533,7 +614,7 @@ try
       IgnoreDataDescriptor := ReadBool('ZIP_LocalHeader','IgnoreDataDescriptor',IgnoreDataDescriptor);
     end;
 
-  // auxiliary settings is not saved - - - - - - - - - - - - - - - - - - - - - -
+  // auxiliary settings are not saved  - - - - - - - - - - - - - - - - - - - - -
 finally
   Free;
 end;

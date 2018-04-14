@@ -63,8 +63,16 @@ type
     procedure InitializeData; override;
     procedure InitializeProgress; override;
     // methods for content parsing
+    Function LowEntryIndex: Integer; override;
+    Function HighEntryIndex: Integer; override;
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; override;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; override;
+    // methods working with known paths
+    Function LowKnownPathIndex: Integer; override;
+    Function HighKnownPathIndex: Integer; override;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath; override;
+    Function IndexOfKnownPath(const Path: AnsiString): Integer; override;
+    Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; override;
     // processing methods
     procedure ArchiveProcessing; override;
     // zip specific routines
@@ -120,6 +128,7 @@ uses
 const
   DART_METHOD_ID_ZIP_ARCHPROC = $00000100;
   DART_METHOD_ID_ZIP_GETENTRY = $00000101;
+  DART_METHOD_ID_ZIP_GETKNPTH = $00000102;
   DART_METHOD_ID_ZIP_ZLEOCD   = $00000110;
   DART_METHOD_ID_ZIP_ZLCD     = $00000111;
   DART_METHOD_ID_ZIP_ZLCDH    = $00000112;
@@ -149,6 +158,8 @@ SetLength(fArchiveStructure.Entries.Arr,0);
 fArchiveStructure.Entries.Count := 0;
 FillChar(fArchiveStructure.EndOfCentralDirectory.BinPart,SizeOf(TDART_ZIP_EndOfCentralDirectoryRecord),0);
 fArchiveStructure.EndOfCentralDirectory.Comment := '';
+SetLength(fArchiveStructure.KnownPaths.Arr,0);
+fArchiveStructure.KnownPaths.Count := 0;
 end;
 
 //------------------------------------------------------------------------------
@@ -199,13 +210,27 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TDARTRepairer_ZIP.LowEntryIndex: Integer;
+begin
+Result := Low(fArchiveStructure.Entries.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.HighEntryIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.Entries.Count);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TDARTRepairer_ZIP.IndexOfEntry(const EntryFileName: AnsiString): Integer;
 var
   i:  Integer;
 begin
 Result := -1;
 For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  If AnsiSameText(EntryFileName,fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName) then
+  If AnsiSameText(AnsiToStr(EntryFileName),AnsiToStr(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName)) then
     begin
       Result := i;
       Break{For i};
@@ -255,6 +280,65 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TDARTRepairer_ZIP.LowKnownPathIndex: Integer;
+begin
+Result := Low(fArchiveStructure.KnownPaths.Arr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.HighKnownPathIndex: Integer;
+begin
+Result := Pred(fArchiveStructure.KnownPaths.Count);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.GetKnownPath(Index: Integer): TDARTKnownPath;
+begin
+If (Index >= Low(fArchiveStructure.KnownPaths.Arr)) and (Index < fArchiveStructure.KnownPaths.Count) then
+  Result := fArchiveStructure.KnownPaths.Arr[Index]
+else
+  DoError(DART_METHOD_ID_ZIP_GETKNPTH,'Index (%d) out of bounds.',[Index]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.IndexOfKnownPath(const Path: AnsiString): Integer;
+var
+  PathHash: TCRC32;
+  i:        Integer;
+begin
+Result := -1;
+PathHash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
+For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
+  If fArchiveStructure.KnownPaths.Arr[i].Hash = PathHash then
+    If AnsiSameText(AnsiToStr(Path),AnsiToStr(fArchiveStructure.KnownPaths.Arr[i].Path)) then
+      begin
+        Result := i;
+        Break{For i};
+      end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer_ZIP.AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer;
+begin
+Result := IndexOfKnownPath(Path);
+If Result < 0 then
+  begin
+    If fArchiveStructure.KnownPaths.Count >= Length(fArchiveStructure.KnownPaths.Arr) then
+      SetLength(fArchiveStructure.KnownPaths.Arr,Length(fArchiveStructure.KnownPaths.Arr) + 1024);
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Path := Path;
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Directory := Directory;
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
+    fArchiveStructure.KnownPaths.Arr[fArchiveStructure.KnownPaths.Count].Hash64 := 0;
+    Inc(fArchiveStructure.KnownPaths.Count);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TDARTRepairer_ZIP.ArchiveProcessing;
 begin
 If not fProcessingSettings.EndOfCentralDirectory.IgnoreEndOfCentralDirectory then
@@ -276,6 +360,10 @@ ZIP_ReconstructEndOfCentralDirectory;
 ZIP_ReconstructFinal;
 If fArchiveStructure.Entries.Count <= 0 then
   DoError(DART_METHOD_ID_ZIP_ARCHPROC,'Input archive does not contain any valid entries.');
+// parse content for paths if used as help archive
+If fArchiveProcessingSettings.Auxiliary.HelpArchive and
+  fArchiveProcessingSettings.SCS.PathResolve.ContentParsing.ParseHelpArchives then
+  ParseContentForPaths;
 end;
 
 //------------------------------------------------------------------------------
@@ -432,7 +520,7 @@ var
           BinPart.InternalFileAttributes := 0;
         If fProcessingSettings.CentralDirectory.IgnoreExternalFileAttributes then
           begin
-            If ExtractFileName(AnsiReplaceStr(FileName,DART_ZIP_PathDelim,PathDelim)) <> '' then
+            If Length(ExtractFileName(AnsiReplaceStr(AnsiToStr(FileName),DART_ZIP_PathDelim,PathDelim))) > 0 then
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
             else
               BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
@@ -653,7 +741,7 @@ If fArchiveStructure.Entries.Count > 0 then
           LoadLocalHeader(i);
           DoProgress(fProcessingProgNode,PSIDX_Z_LocalHeadersLoading,(i + 1) / fArchiveStructure.Entries.Count);
           If not fProcessingSettings.CentralDirectory.IgnoreCentralDirectory and
-             not AnsiSameText(FileName,fArchiveStructure.Entries.Arr[i].LocalHeader.FileName) then
+             not AnsiSameText(AnsiToStr(FileName),AnsiToStr(fArchiveStructure.Entries.Arr[i].LocalHeader.FileName)) then
             DoError(DART_METHOD_ID_ZIP_ZLLH,'Mismatch in local and central directory file name for entry #%d ("%s").',[i,AnsiToStr(FileName)]);
         end;
   end
@@ -816,7 +904,7 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
           CentralDirectoryHeader.BinPart.Signature := DART_ZIP_CentralDirectoryFileHeaderSignature;
           CentralDirectoryHeader.BinPart.DiskNumberStart := 0;
           CentralDirectoryHeader.BinPart.InternalFileAttributes := 0;
-          If ExtractFileName(AnsiReplaceStr(LocalHeader.FileName,DART_ZIP_PathDelim,PathDelim)) <> '' then
+          If Length(ExtractFileName(AnsiReplaceStr(AnsiToStr(LocalHeader.FileName),DART_ZIP_PathDelim,PathDelim))) > 0 then
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_ARCHIVE
           else
             CentralDirectoryHeader.BinPart.ExternalFileAttributes := FILE_ATTRIBUTE_DIRECTORY;
@@ -895,8 +983,22 @@ For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Co
       fArchiveStructure.Entries.Arr[i].UtilityData.NeedsSizes :=
         (fProcessingSettings.LocalHeader.IgnoreLocalHeaders or fProcessingSettings.LocalHeader.IgnoreSizes) and
         (fProcessingSettings.CentralDirectory.IgnoreCentralDirectory or fProcessingSettings.CentralDirectory.IgnoreSizes);
-      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+      // store to known paths
+      AddKnownPath(CentralDirectoryHeader.FileName,(CentralDirectoryHeader.BinPart.ExternalFileAttributes and FILE_ATTRIBUTE_DIRECTORY) <> 0);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);      
     end;
+// in case any directory is not explicitly stored, deconstruct all paths and add them as known
+with TDARTPathDeconstructor.Create(DART_ZIP_PathDelim) do
+try
+  For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
+    DeconstructPath(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName);
+  DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+  For i := 0 to Pred(Count) do
+    If Length(Nodes[i].FullPath) > 0 then
+      AddKnownPath(Nodes[i].FullPath,True);
+finally
+  Free
+end;
 end;
 
 {-------------------------------------------------------------------------------
@@ -908,6 +1010,7 @@ begin
 case MethodIndex of
   DART_METHOD_ID_ZIP_ARCHPROC:  Result := 'ArchiveProcessing';
   DART_METHOD_ID_ZIP_GETENTRY:  Result := 'GetEntryData(Index)';
+  DART_METHOD_ID_ZIP_GETKNPTH:  Result := 'GetKnownPath';
   DART_METHOD_ID_ZIP_ZLEOCD:    Result := 'ZIP_LoadEndOfCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCD:      Result := 'ZIP_LoadCentralDirectory';
   DART_METHOD_ID_ZIP_ZLCDH:     Result := 'ZIP_LoadCentralDirectory.LoadCentralDirectoryHeader';
@@ -931,43 +1034,17 @@ end;
 Function TDARTRepairer_ZIP.GetAllKnownPaths(var KnownPaths: TDARTKnownPaths): Integer;
 var
   i:  Integer;
-
-  procedure AddToKnownPaths(const Path: AnsiString; Direcotry: Boolean);
-  begin
-    If KnownPaths.Count >= Length(KnownPaths.Arr) then
-      SetLength(KnownPaths.Arr,Length(KnownPaths.Arr) + 1024);
-    KnownPaths.Arr[KnownPaths.Count].Path := Path;
-    KnownPaths.Arr[KnownPaths.Count].Directory := Direcotry;
-    KnownPaths.Arr[KnownPaths.Count].Hash := CRC32.AnsiStringCRC32(AnsiLowerCase(Path));
-    Inc(KnownPaths.Count);
-  end;
-
 begin
+If (KnownPaths.Count + fArchiveStructure.KnownPaths.Count) > Length(KnownPaths.Arr) then
+  SetLength(KnownPaths.Arr,KnownPaths.Count + fArchiveStructure.KnownPaths.Count);
 Result := 0;
-For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-  with fArchiveStructure.Entries.Arr[i] do
-    If IndexOfKnownPath(DART_ExcludeOuterPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim),KnownPaths) < 0 then
-      begin
-        AddToKnownPaths(DART_ExcludeOuterPathDelim(CentralDirectoryHeader.FileName,DART_ZIP_PathDelim),
-                        CentralDirectoryHeader.BinPart.ExternalFileAttributes = FILE_ATTRIBUTE_DIRECTORY);
-        Inc(Result);
-      end;
-DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
-// in case any directory is not explicitly stored, deconstruct all paths and add them
-with TDARTPathDeconstructor.Create(DART_ZIP_PathDelim) do
-try
-  For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-    DeconstructPath(fArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName);
-  DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
-  For i := 0 to Pred(Count) do
-    If (Nodes[i].FullPath <> '') and (IndexOfKnownPath(Nodes[i].FullPath,KnownPaths) < 0) then
-      begin
-        AddToKnownPaths(Nodes[i].FullPath,True);
-        Inc(Result);
-      end
-finally
-  Free
-end;
+For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
+  If IndexOfKnownPath(fArchiveStructure.KnownPaths.Arr[i].Path,KnownPaths) < 0 then
+    begin
+      KnownPaths.Arr[KnownPaths.Count] := fArchiveStructure.KnownPaths.Arr[i];
+      Inc(Result);
+      Inc(KnownPaths.Count);
+    end;
 end;
 
 

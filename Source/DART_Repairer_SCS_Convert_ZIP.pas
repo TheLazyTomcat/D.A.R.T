@@ -249,7 +249,7 @@ procedure TDARTRepairer_SCS_Convert_ZIP.SCS_Conv_ZIP_SortConvertedEntries;
         Pivot := fZIPArchiveStructure.Entries.Arr[RightIdx].CentralDirectoryHeader.FileName;
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If AnsiCompareText(Pivot,fZIPArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName) > 0 then
+          If AnsiCompareText(AnsiToStr(Pivot),AnsiToStr(fZIPArchiveStructure.Entries.Arr[i].CentralDirectoryHeader.FileName)) > 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);

@@ -193,8 +193,26 @@ end;
 //------------------------------------------------------------------------------
 
 Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+var
+  Start, Len: Integer;
 begin
-Result := DART_ExcludeLeadingPathDelim(DART_ExcludeTralingPathDelim(Path,Delim),Delim);
+Start := 1;
+Len := Length(Path);
+If Length(Path) > 0 then
+  begin
+    If Path[1] = Delim then
+      begin
+        Inc(Start);
+        Dec(Len);
+      end;
+    If (Length(Path) > 1) and (Path[Length(Path)] = Delim) then
+      Dec(Len);
+    If (Start <> 1) or (Len <> Length(Path)) then
+      Result := Copy(Path,Start,Len)
+    else
+      Result := Path;
+  end
+else Result := '';
 end;
 
 //==============================================================================

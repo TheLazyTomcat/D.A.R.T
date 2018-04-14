@@ -182,11 +182,20 @@ type
     procedure ProgressedDecompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     procedure ProgressedCompressBuffer(InBuff: Pointer; InSize: TMemSize; out OutBuff: Pointer; out OutSize: TMemSize; WindowBits: Integer; ProgressInfo: TDART_PSI); virtual;
     // methods for content parsing
+    Function LowEntryIndex: Integer; virtual; abstract;
+    Function HighEntryIndex: Integer; virtual; abstract;
     Function IndexOfEntry(const EntryFileName: AnsiString): Integer; virtual; abstract;
     Function GetEntryData(EntryIndex: Integer; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual; abstract;
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
+    procedure ParseContentForPaths; virtual;
     // methods working with known paths
-    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; virtual;
+    Function LowKnownPathIndex: Integer; virtual; abstract;
+    Function HighKnownPathIndex: Integer; virtual; abstract;
+    Function GetKnownPath(Index: Integer): TDARTKnownPath; virtual; abstract;
+    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; overload; virtual;
+    Function IndexOfKnownPath(const Path: AnsiString): Integer; overload; virtual; abstract;
+    Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; overload; virtual; abstract;
+    Function AddKnownPath(const Path: AnsiString): Integer; overload; virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -208,7 +217,12 @@ implementation
 
 uses
   Windows, Math,
-  StrRect, CRC32, ZLibUtils;
+  StrRect, CRC32, ZLibUtils,
+  DART_Resolver_ContentParsing;
+
+{===============================================================================
+   Result information functions implementation
+===============================================================================}
 
 procedure EnsureThreadSafety(var ResultInfo: TDARTResultInfo);
 begin
@@ -644,20 +658,67 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TDARTRepairer.ParseContentForPaths;
+var
+  Resolver:   TDARTResolver_ContentParsing_HelpArchives;
+  i:          Integer;
+  EntryData:  Pointer;
+  EntrySize:  TMemSize;
+begin
+// this is intended ONLY for help archives
+Resolver := TDARTResolver_ContentParsing_HelpArchives.Create(fPauseControlObject,fArchiveProcessingSettings);
+try
+  // resolver is not initialized and no progress handler is set
+  For i := LowEntryIndex to HighEntryIndex do
+    begin
+      If GetEntryData(i,EntryData,EntrySize) then
+        try
+          Resolver.Run(EntryData,EntrySize);
+        finally
+          FreeMem(EntryData,EntrySize);
+        end;
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
+  // now just copy whatever paths were found
+  For i := 0 to Pred(Resolver.ParsedPathCount) do
+    AddKnownPath(Resolver.ParsedPaths[i].Path);
+  // do second round for paths
+  For i := LowKnownPathIndex to HighKnownPathIndex do
+    begin
+      Resolver.Run(GetKnownPath(i).Path);
+      DoProgress(DART_PROGSTAGE_IDX_NoProgress,0.0);
+    end;
+  // copy newly found paths if any
+  For i := 0 to Pred(Resolver.ParsedPathCount) do
+    AddKnownPath(Resolver.ParsedPaths[i].Path);
+finally
+  Resolver.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 class Function TDARTRepairer.IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer;
 var
   PathHash: TCRC32;
   i:        Integer;
 begin
-PathHash := AnsiStringCRC32(AnsiLowerCase(Path));
+PathHash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
 Result := -1;
 For i := Low(KnownPaths.Arr) to Pred(KnownPaths.Count) do
   If KnownPaths.Arr[i].Hash = PathHash then
-    If AnsiSameText(Path,KnownPaths.Arr[i].Path) then
+    If AnsiSameText(AnsiToStr(Path),AnsiToStr(KnownPaths.Arr[i].Path)) then
       begin
         Result := i;
         Break{For i};
       end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TDARTRepairer.AddKnownPath(const Path: AnsiString): Integer;
+begin
+Result := AddKnownPath(Path,Length(ExtractFileExt(AnsiToStr(Path))) <= 0);
 end;
 
 //------------------------------------------------------------------------------
