@@ -296,7 +296,7 @@ WARNING - when the archive is large, processing
           of all entries might be extremely long,
           use this option with caution!
 #1243
-Activates content parsing in all help archives (if any are selected) used.
+Activates content parsing in all used help archives (if any are selected).
 
 Works in all supported archive types.
 #1244
@@ -304,7 +304,7 @@ All entries in help files will be parsed for possible paths.
 
 Has the same effect as in currently processed archive, so see option "Parse everything in the archive" for details.
 #1245
-Affects parsing of entries with unknown types.
+Affects parsing of entries with unknown type.
 
 When active, paths extracted from entries can contain only printable ASCII characters, excluding space - that is, characters from #33 up to and including #127.
 #1246
@@ -320,7 +320,7 @@ Further limits what characters the path can contain, only following characters a
   - (dash)
   / (forward slash)
 #1247
-When an entry of unknown type is parsed, this value is used to differentiate whether the data are textual or binary - this affects how are the data further processed and parsed.
+When an entry of unknown type is parsed, this value is used to differentiate whether the data are textual or binary - this affects how the data are further processed and parsed.
 
 All bytes in the data are scanned, and when ratio between bytes considered to be nontextual and all bytes is larger than or equal to this value, the data are considered to be binary, otherwise they are seen as textual.
 

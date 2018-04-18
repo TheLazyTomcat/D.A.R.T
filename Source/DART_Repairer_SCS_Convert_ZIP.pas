@@ -299,14 +299,14 @@ var
                   else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d compressed data stream contains a dictionary ID (0x%.8x).',
                                [Index,{%H-}PUInt32({%H-}PtrUInt(fBuffer_Entry.Memory) + 2)^]);
                 end
-              else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d is too small (%d) to contain a valid zlib dictionary ID.',
+              else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d is too small (%d bytes) to contain a valid zlib dictionary ID.',
                            [Index,LocalHeader.BinPart.CompressedSize]);
             end
           // dictionary ID is not present
           else ProgressedStreamWrite(fConvertedArchiveStream,{%H-}Pointer({%H-}PtrUInt(fBuffer_Entry.Memory) + 2),
                  LocalHeader.BinPart.CompressedSize - 6,ProgressStageInfo(fEntryProcessingProgNode,DART_PROGSTAGE_IDX_SCS_EntrySaving));
         end
-      else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d is too small (%d) to be a valid zlib stream.',
+      else DoError(DART_METHOD_ID_SCS_CONV_ZIP_WRCNVEN,'Entry #%d is too small (%d bytes) to be a valid zlib stream.',
                    [Index,LocalHeader.BinPart.CompressedSize]);
   end;
 
