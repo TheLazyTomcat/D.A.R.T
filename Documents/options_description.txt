@@ -55,7 +55,7 @@ WARNING - use this option with extreme caution
 #100
 List of presets for ZIP archive processing settings.
 
-To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside close it).
+To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside to close it).
 #101
 If compression method loaded from the archive is set to store, then it is left unchanged, if it is set to any other value, it is changed to deflate.
 
@@ -222,7 +222,7 @@ When not active and when data descriptor is indicated to be present, then data d
 #1000
 List of presets for SCS# archive processing settings.
 
-To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside close it).
+To load a preset, select one in the list (if you open the list and don't want to select any preset, click anywhere outside to close it).
 #1001
 When selected, entire entry table is loaded into memory and processed there. Also, when saving entry table, it is first constructed in memory and then saved as a whole.
 
