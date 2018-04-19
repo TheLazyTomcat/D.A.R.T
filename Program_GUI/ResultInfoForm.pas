@@ -80,12 +80,12 @@ try
                   begin
                     lblProcessingResult.Caption := 'An error occurred during the processing';
                     meResultInfo.Lines.Add(sLineBreak + StringOfChar('-',80) + sLineBreak);
+                    meResultInfo.Lines.Add('Exception class: ' + ExceptionClass);
                     If (Length(FaultObjectClass) > 0) and Assigned(FaultObjectRef) then
-                      meResultInfo.Lines.Add(Format('       Function: %s(0x%p).%s [%d]',
+                      meResultInfo.Lines.Add(Format('       Function: %s(0x%p).%s [0x%.8x]',
                        [FaultObjectClass,Pointer(FaultObjectRef),FaultFunctionName,FaultFunctionIndex]))
                     else
-                      meResultInfo.Lines.Add(Format('       Function: %s [%d]',[FaultFunctionName,FaultFunctionIndex]));
-                    meResultInfo.Lines.Add('Exception class: ' + ExceptionClass);
+                      meResultInfo.Lines.Add(Format('       Function: %s [0x%.8x]',[FaultFunctionName,FaultFunctionIndex]));
                     meResultInfo.Lines.Add(sLineBreak + 'Exception text: ');
                     meResultInfo.Lines.Add(sLineBreak + '  ' + ExceptionText);
                   end;

@@ -286,6 +286,10 @@ object fMainForm: TfMainForm
       Caption = 'Clear completed items'
       OnClick = pmiAL_ClearCompletedClick
     end
+    object pmiAL_ResetStates: TMenuItem
+      Caption = 'Reset processing states'
+      OnClick = pmiAL_ResetStatesClick
+    end
     object N3: TMenuItem
       Caption = '-'
     end
@@ -306,7 +310,7 @@ object fMainForm: TfMainForm
   object ilArchiveList: TImageList
     Left = 696
     Bitmap = {
-      494C010116001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101160018000C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000F8F8FC00F8F8FC0000000000000000000000

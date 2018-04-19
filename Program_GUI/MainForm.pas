@@ -52,6 +52,7 @@ type
     pmiAL_ResultInfo: TMenuItem;
     N2: TMenuItem;
     pmiAL_ClearCompleted: TMenuItem;
+    pmiAL_ResetStates: TMenuItem;    
     N3: TMenuItem;
     pmiAL_Tools: TMenuItem;
   {$IFNDEF FPC}
@@ -70,6 +71,7 @@ type
     procedure pmiAL_ProcessingSettingsClick(Sender: TObject);
     procedure pmiAL_ResultInfoClick(Sender: TObject);
     procedure pmiAL_ClearCompletedClick(Sender: TObject);
+    procedure pmiAL_ResetStatesClick(Sender: TObject);    
     procedure btnStartProcessingClick(Sender: TObject);
     procedure btnPauseProcessingClick(Sender: TObject);
     procedure btnStopProcessingClick(Sender: TObject);
@@ -316,6 +318,7 @@ diaOpenArchive.InitialDir := ExtractFileDir(RTLToStr(ParamStr(0)));
 pmiAL_ProcessingSettings.ShortCut := ShortCut(Ord('S'),[ssAlt]);
 pmiAL_ResultInfo.ShortCut := ShortCut(Ord('R'),[ssAlt]);
 pmiAL_ClearCompleted.ShortCut := ShortCut(Ord('C'),[ssAlt]);
+pmiAL_ResetStates.ShortCut := ShortCut(Ord('P'),[ssAlt]);
 LoadFilesFromParams;
 SetDropAccept(True);
 end;
@@ -395,6 +398,7 @@ If Assigned(ProcessingManager) then
     else
       pmiAL_ResultInfo.Enabled := False;
     pmiAL_ClearCompleted.Enabled := (ProcessingManager.Status = pmsReady) and (ProcessingManager.CompletedItemCount > 0);
+    pmiAL_ResetStates.Enabled := (ProcessingManager.Status = pmsReady) and (ProcessingManager.CompletedItemCount(False) > 0);
   end;
 end;
  
@@ -476,6 +480,14 @@ procedure TfMainForm.pmiAL_ClearCompletedClick(Sender: TObject);
 begin
 If (ProcessingManager.Status = pmsReady) then
   ProcessingManager.ClearCompleted;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.pmiAL_ResetStatesClick(Sender: TObject);
+begin
+If (ProcessingManager.Status = pmsReady) then
+  ProcessingManager.ResetItemStates;
 end;
 
 //------------------------------------------------------------------------------

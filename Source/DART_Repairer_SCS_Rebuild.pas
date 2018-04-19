@@ -40,7 +40,7 @@ implementation
 uses
   SysUtils,
   AuxTypes, StrRect, BitOps, CRC32, MemoryBuffer, StaticMemoryStream,
-  ExplicitStringListsBase, ExplicitStringLists, ProgressTracker, ZLibCommon,
+  ExplicitStringListsBase, ExplicitStringLists, {%H-}ProgressTracker, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer;
 
 {===============================================================================

@@ -39,7 +39,7 @@ implementation
 
 uses
   Windows, SysUtils, Classes, StrUtils,
-  AuxTypes, StrRect, MemoryBuffer, ProgressTracker, ZLibCommon,
+  AuxTypes, StrRect, MemoryBuffer, {%H-}ProgressTracker, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_ZIP, DART_Repairer;
 
 {===============================================================================

@@ -59,7 +59,7 @@ const
           LimitedCharSet:             True;
           PathLengthLimit:            32)))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'SCS# Preset - Archive mediately damaged';
+   (PresetName: 'SCS# Preset - Archive moderately damaged';
     PresetData: (
       EntryTabInMem:                True;
       Entry: (
@@ -203,7 +203,7 @@ const
         IgnoreExtraField:             False;
         IgnoreDataDescriptor:         False))),
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   (PresetName: 'ZIP Preset - Archive mediately damaged';
+   (PresetName: 'ZIP Preset - Archive moderately damaged';
     PresetData: (
       AssumeCompressionMethod:  False;
       EndOfCentralDirectory: (

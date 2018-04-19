@@ -262,6 +262,7 @@ FillChar(PAnsiChar(Shadow)^,Length(Shadow),0);
 Buffer := fBuffer;
 For i := 1 to DART_RES_MultThrLength do
   Buffer[i] := fAlphabet.Letters[0];
+TempStr := '';
 // main cycle
 while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.Count > 0)  do
   begin

@@ -99,7 +99,8 @@ type
     procedure Delete(Index: Integer); virtual;
     procedure Clear; virtual;
     procedure ClearCompleted; virtual;
-    Function CompletedItemCount: Integer; virtual;
+    Function CompletedItemCount(SuccessOnly: Boolean = True): Integer; virtual;
+    procedure ResetItemStates; virtual;
     procedure StartProcessing; virtual;
     procedure PauseProcessing; virtual;
     procedure ResumeProcessing; virtual;
@@ -520,14 +521,33 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTProcessingManager.CompletedItemCount: Integer;
+Function TDARTProcessingManager.CompletedItemCount(SuccessOnly: Boolean = True): Integer;
 var
   i:  Integer;
 begin
 Result := 0;
 For i := Low(fArchiveList.Arr) to Pred(fArchiveList.Count) do
-  If fArchiveList.Arr[i].ProcessingStatus = apsSuccess then
+  If ((fArchiveList.Arr[i].ProcessingStatus in [apsSuccess,apsWarning,apsError]) and not SuccessOnly) or
+     (fArchiveList.Arr[i].ProcessingStatus = apsSuccess) then
     Inc(Result);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TDARTProcessingManager.ResetItemStates;
+var
+  i:  Integer;
+begin
+If fStatus = pmsReady then
+  begin
+    For i := Low(fArchiveList.Arr) to Pred(fArchiveList.Count) do
+      If fArchiveList.Arr[i].ProcessingStatus in [apsSuccess,apsWarning,apsError] then
+        begin
+          fArchiveList.Arr[i].ProcessingStatus := apsReady;
+          DoArchiveStatus(i);
+        end;
+  end
+else raise Exception.CreateFmt('TDARTProcessingManager.ResetItemStates: Manager status (%d) prevents item status change.',[Ord(fStatus)]);
 end;
 
 //------------------------------------------------------------------------------

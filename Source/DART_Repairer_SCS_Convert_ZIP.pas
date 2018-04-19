@@ -42,7 +42,7 @@ implementation
 
 uses
   Windows, SysUtils, Classes,
-  AuxTypes, BitOps, CRC32, StrRect, MemoryBuffer, ProgressTracker, ZLibCommon,
+  AuxTypes, BitOps, CRC32, StrRect, MemoryBuffer, {%H-}ProgressTracker, ZLibCommon,
   DART_Auxiliary, DART_Common, DART_Format_SCS, DART_Repairer, DART_Repairer_SCS;
 
 {===============================================================================
