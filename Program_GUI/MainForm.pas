@@ -108,7 +108,7 @@ implementation
 
 uses
   ShellAPI, {$IFDEF Delphi_Inline_Helpers}UITypes ,{$ENDIF}
-  StrRect, WinFileInfo, TaskbarProgress,
+  StrRect, WinFileInfo, WinTaskbarProgress,
   DART_Auxiliary, DART_ProcessingSettings,
   ResultInfoForm, ProcSettingsForm;
 
