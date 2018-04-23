@@ -569,33 +569,30 @@ end;
 procedure TfProcSettingsForm.btnSaveSettingsClick(Sender: TObject);
 begin
 If diaProcSettSave.Execute then
-  SaveToIniFile(diaProcSettSave.FileName,fArchiveProcessingSettings);
+  begin
+    FormToSettings;
+    SaveToIniFile(diaProcSettSave.FileName,fArchiveProcessingSettings);
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TfProcSettingsForm.btnLoadSettingsClick(Sender: TObject);
 var
-  TempArchiveProcessingSettings:  TDARTArchiveProcessingSettings;
+  OldArchiveProcessingSettings: TDARTArchiveProcessingSettings;
 begin
 If diaProcSettOpen.Execute then
   If MessageDlg('Replace current processing settings with settings stored in the selected file?',mtWarning,[mbYes,mbNo],0) = mrYes then
     begin
-      TempArchiveProcessingSettings := DART_DefaultArchiveProcessingSettings;
-      LoadFromIniFile(diaProcSettSave.FileName,TempArchiveProcessingSettings);
-      RectifyArchiveProcessingSettings(TempArchiveProcessingSettings,True);
-      fArchiveProcessingSettings.SCS := TempArchiveProcessingSettings.SCS;
-      fArchiveProcessingSettings.ZIP := TempArchiveProcessingSettings.ZIP;
-      fArchiveProcessingSettings.Common.RepairMethod :=
-        TempArchiveProcessingSettings.Common.RepairMethod;
-      fArchiveProcessingSettings.Common.ConvertTo :=
-        TempArchiveProcessingSettings.Common.ConvertTo;
-      fArchiveProcessingSettings.Common.IgnoreArchiveSignature :=
-        TempArchiveProcessingSettings.Common.IgnoreArchiveSignature;
-      fArchiveProcessingSettings.Common.InMemoryProcessing :=
-        TempArchiveProcessingSettings.Common.InMemoryProcessing;
-      fArchiveProcessingSettings.Common.IgnoreErroneousEntries :=
-          TempArchiveProcessingSettings.Common.IgnoreErroneousEntries;
+      FormToSettings;
+      OldArchiveProcessingSettings := fArchiveProcessingSettings;
+      LoadFromIniFile(diaProcSettOpen.FileName,fArchiveProcessingSettings);
+      RectifyArchiveProcessingSettings(fArchiveProcessingSettings,True);  
+      // preserve input archive file name and original type
+      fArchiveProcessingSettings.Common.ArchivePath :=
+        OldArchiveProcessingSettings.Common.ArchivePath;
+      fArchiveProcessingSettings.Common.OriginalArchiveType :=
+        OldArchiveProcessingSettings.Common.OriginalArchiveType;
       fLoading := True;
       try
         SettingsToForm;
