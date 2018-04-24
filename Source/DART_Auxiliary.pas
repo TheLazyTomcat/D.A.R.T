@@ -35,7 +35,12 @@ Function DART_DirectoryExists(const Path: String): Boolean; {$IFDEF CanInline}in
 
 Function DART_ExcludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 Function DART_ExcludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
-Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString; {$IFDEF CanInline}inline;{$ENDIF}
+Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+
+Function DART_IncludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+
+Function DART_ReplaceChars(const Path: AnsiString; FromChar, ToChar: AnsiChar): AnsiString;
+Function DART_PathIsFile(const Path: AnsiString; PathDelim: AnsiChar; ExtDelim: AnsiChar = '.'; DefaultsToFile: Boolean = True): Boolean;
 
 //--- System information -------------------------------------------------------
 
@@ -213,6 +218,51 @@ If Length(Path) > 0 then
       Result := Path;
   end
 else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_IncludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+If Length(Path) > 0 then
+  begin
+    Result := Path;
+    If Result[Length(Result)] <> Delim then
+      Result := Result + Delim;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_ReplaceChars(const Path: AnsiString; FromChar, ToChar: AnsiChar): AnsiString;
+var
+  i:  Integer;
+begin
+Result := Path;
+For i := 1 to Length(Result) do
+  If Result[i] = FromChar then
+    Result[i] := ToChar;
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_PathIsFile(const Path: AnsiString; PathDelim: AnsiChar; ExtDelim: AnsiChar = '.'; DefaultsToFile: Boolean = True): Boolean;
+var
+  i:  Integer;
+begin
+Result := DefaultsToFile;
+For i := Length(Path) downto 1 do
+  If Path[i] = ExtDelim then
+    begin
+      Result := True;
+      Break{For i};
+    end
+  else If Path[i] = PathDelim then
+    begin
+      Result := False;
+      Break{For i};
+    end;             
 end;
 
 //==============================================================================

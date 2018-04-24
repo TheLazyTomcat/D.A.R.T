@@ -207,7 +207,7 @@ end;
 
 Function TDARTResolver_ContentParsing.CP_TryResolvePath(const Path: AnsiString): Integer;
 begin
-Result := Unresolved_IndexOf(PathHash(Path,fHashType));
+Result := Unresolved_IndexOf(PathHash64(Path,fHashType));
 If Result >= 0 then
   Unresolved_MoveToResolved(Result,Path);
 end;

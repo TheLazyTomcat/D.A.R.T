@@ -155,7 +155,7 @@ If Max < 10 then
   begin
     // for short lists use normal linear search
     For i := 0 to Max do
-      If HashCompare(fUnresolved.Arr[i],Hash) = 0 then
+      If Hash64Compare(fUnresolved.Arr[i],Hash) = 0 then
         begin
           Result := i;
           Break{For i};
@@ -167,9 +167,9 @@ else
     begin
       i := ((max - Min) shr 1) + Min;
       // i-th entry has lower hash than is requested
-      If HashCompare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
+      If Hash64Compare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
         // i-th entry has higher hash than is requested
-        else If HashCompare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
+        else If Hash64Compare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
           else begin
             // i-th entry has the requested hash
             Result := i;
@@ -271,7 +271,7 @@ while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.
       begin
         Shadow[1] := AnsiChar(i);
         Buffer[1] := fAlphabet.Letters[i];
-        Index := Unresolved_IndexOf(PathHash(Buffer,fHashType));
+        Index := Unresolved_IndexOf(PathHash64(Buffer,fHashType));
         If Index < 0 then
           begin
             // bare hash not found, search in combination with used known paths
@@ -295,7 +295,7 @@ while not Terminated and (PosInBuff <= DART_RES_MultThrLength) and (fUnresolved.
                   SetLength(TempStr,TempLen);
                 Move(PAnsiChar(fUsedKnownPaths.Arr[j])^,PAnsiChar(TempStr)^,Length(fUsedKnownPaths.Arr[j]));
                 Move(PAnsiChar(Buffer)^,Addr(TempStr[Length(fUsedKnownPaths.Arr[j]) + 1])^,Length(Buffer));
-                Index := Unresolved_IndexOf(PathHash(TempStr,fHashType,TempLen));
+                Index := Unresolved_IndexOf(PathHash64(TempStr,fHashType,TempLen));
                 If Index >= 0 then
                   begin
                     SetLength(TempStr,TempLen);
@@ -365,13 +365,13 @@ while (Length(Buffer) <= fBruteForceSettings.PathLengthLimit) and (fUnresolved.C
         Shadow[1] := AnsiChar(i);
         Buffer[1] := fAlphabet.Letters[i];
         // check hash of the buffer itself
-        Index := Unresolved_IndexOf(PathHash(Buffer,fHashType));
+        Index := Unresolved_IndexOf(PathHash64(Buffer,fHashType));
         If Index < 0 then
           begin
             // bare hash not found, search in combination with used known paths
             For j := Low(fUsedKnownPaths.Arr) to Pred(fUsedKnownPaths.Count) do
               begin
-                Index := Unresolved_IndexOf(PathHash(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
+                Index := Unresolved_IndexOf(PathHash64(fUsedKnownPaths.Arr[j] + Buffer,fHashType));
                 If Index >= 0 then
                   Unresolved_MoveToResolved(Index,fUsedKnownPaths.Arr[j] + Buffer);
               end;

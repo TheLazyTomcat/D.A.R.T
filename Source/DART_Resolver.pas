@@ -130,7 +130,7 @@ If (Max < 10) or not fUnresSorted then
   begin
     // for short lists use normal linear search
     For i := 0 to Max do
-      If HashCompare(fUnresolved.Arr[i],Hash) = 0 then
+      If Hash64Compare(fUnresolved.Arr[i],Hash) = 0 then
         begin
           Result := i;
           Break{For i};
@@ -142,9 +142,9 @@ else
     begin
       i := ((max - Min) shr 1) + Min;
       // i-th entry has lower hash than is requested
-      If HashCompare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
+      If Hash64Compare(fUnresolved.Arr[i],Hash) > 0 then Min := i + 1
         // i-th entry has higher hash than is requested
-        else If HashCompare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
+        else If Hash64Compare(fUnresolved.Arr[i],Hash) < 0 then Max := i - 1
           else begin
             // i-th entry has the requested hash
             Result := i;
@@ -202,7 +202,7 @@ procedure TDARTResolver.Unresolved_SortEntries;
         Pivot := fUnresolved.Arr[RightIdx];
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If HashCompare(Pivot,fUnresolved.Arr[i]) < 0 then
+          If Hash64Compare(Pivot,fUnresolved.Arr[i]) < 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);

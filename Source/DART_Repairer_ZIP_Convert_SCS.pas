@@ -251,7 +251,7 @@ procedure TDARTRepairer_ZIP_Convert_SCS.ZIP_Conv_SCS_SortConvertedEntries;
         Pivot := fSCSArchiveStructure.Entries.Arr[RightIdx].BinPart.Hash;
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If HashCompare(Pivot,fSCSArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
+          If Hash64Compare(Pivot,fSCSArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);

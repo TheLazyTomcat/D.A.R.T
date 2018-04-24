@@ -195,6 +195,7 @@ SetLength(fArchiveStructure.Entries.Arr,0);
 fArchiveStructure.Entries.Count := 0;
 SetLength(fArchiveStructure.KnownPaths.Arr,0);
 fArchiveStructure.KnownPaths.Count := 0;
+fArchiveStructure.KnownPaths.Sorted := False;
 fArchiveStructure.UtilityData.UnresolvedCount := 0;
 fResolver := nil;
 end;
@@ -369,7 +370,7 @@ begin
 Result := -1;
 PathHash := SCS_EntryFileNameHash(Path);
 For i := Low(fArchiveStructure.KnownPaths.Arr) to Pred(fArchiveStructure.KnownPaths.Count) do
-  If HashCompare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
+  If Hash64Compare(PathHash,fArchiveStructure.KnownPaths.Arr[i].Hash64) = 0 then
     begin
       Result := i;
       Break{For i};
@@ -448,9 +449,9 @@ If fEntriesSorted then
       begin
         i := ((max - Min) shr 1) + Min;
         // i-th entry has lower hash than is requested
-        If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) > 0 then Min := i + 1
+        If Hash64Compare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) > 0 then Min := i + 1
           // i-th entry has higher hash than is requested
-          else If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) < 0 then Max := i - 1
+          else If Hash64Compare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) < 0 then Max := i - 1
             else begin
               // i-th entry has the requested hash
               Result := i;
@@ -461,7 +462,7 @@ If fEntriesSorted then
 else
   begin
     For i := Low(fArchiveStructure.Entries.Arr) to Pred(fArchiveStructure.Entries.Count) do
-      If HashCompare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) = 0 then
+      If Hash64Compare(fArchiveStructure.Entries.Arr[i].BinPart.Hash,Hash) = 0 then
         begin
           Result := i;
           Break{For i};
@@ -502,7 +503,7 @@ procedure TDARTRepairer_SCS.SCS_SortEntries;
         Pivot := fArchiveStructure.Entries.Arr[RightIdx].BinPart.Hash;
         Idx := LeftIdx;
         For i := LeftIdx to Pred(RightIdx) do
-          If HashCompare(Pivot,fArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
+          If Hash64Compare(Pivot,fArchiveStructure.Entries.Arr[i].BinPart.Hash) < 0 then
             begin
               ExchangeEntries(i,idx);
               Inc(Idx);

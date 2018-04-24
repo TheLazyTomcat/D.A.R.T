@@ -75,7 +75,7 @@ type
     class Function CharPos(Chr: AnsiChar; const Str: AnsiString): Integer; virtual;
     constructor Create(const Name: AnsiString; Deconstructor: TDARTPathDeconstructor; PathDelimiter: AnsiChar; Owner: TDARTPathNode = nil);
     destructor Destroy; override;
-    procedure DeconstructPath(const FilePath: AnsiString); virtual;
+    procedure DeconstructPath(FilePath: AnsiString); virtual;
     procedure Clear; virtual;
     procedure Sort; virtual;
     property SubNodes[Index: Integer]: TDARTPathNode read GetSubNode;
@@ -158,7 +158,7 @@ end;
 
 procedure TDARTPathDeconstructor.DeconstructPath(const FilePath: AnsiString);
 begin
-fRootNode.DeconstructPath(DART_ExcludeOuterPathDelim(FilePath,fPathDelimiter));
+fRootNode.DeconstructPath(FilePath);
 end;
 
 //------------------------------------------------------------------------------
@@ -304,11 +304,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TDARTPathNode.DeconstructPath(const FilePath: AnsiString);
+procedure TDARTPathNode.DeconstructPath(FilePath: AnsiString);
 var
   DelimPos: Integer;
   Idx:      Integer;
 begin
+FilePath := DART_ExcludeOuterPathDelim(FilePath,fPathDelimiter);
 // process only paths that are not empty
 If Length(FilePath) > 0 then
   begin

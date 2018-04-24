@@ -12,8 +12,17 @@ unit DART_Format_SCS;
 interface
 
 uses
-  AuxTypes, CRC32,
-  DART_Common;
+  AuxTypes, CRC32;
+
+{===============================================================================
+    Hash types and functions
+===============================================================================}
+
+type
+  TDARTHash64 = UInt64;
+
+Function Hash64Compare(A,B: TDARTHash64): Integer;
+Function PathHash64(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -79,7 +88,6 @@ type
   TDART_SCS_ArchiveStructure = record
     ArchiveHeader:  TDART_SCS_ArchiveHeader;
     Entries:        TDART_SCS_Entries;
-    KnownPaths:     TDARTKnownPaths;
     UtilityData:    TDART_SCS_UtilityData;
   end;
 
@@ -140,5 +148,50 @@ const
   DART_SCS_MaxUncompDirEntrySize = 32;
 
 implementation
+
+uses
+  SysUtils,
+  City;
+
+{===============================================================================
+    Hash functions implementation
+===============================================================================}
+
+Function Hash64Compare(A,B: TDARTHash64): Integer;
+begin
+If AuxTypes.NativeUInt64 then
+  begin
+    If A < B then Result := 1
+      else If A > B then Result := -1
+        else Result := 0;
+  end
+else
+  begin{%H-}
+    If Int64Rec(A).Hi <> Int64Rec(B).Hi then
+      begin
+        If Int64Rec(A).Hi < Int64Rec(B).Hi then Result := 2
+          else Result := -2
+      end
+    else
+      begin
+        If Int64Rec(A).Lo < Int64Rec(B).Lo then Result := 1
+          else If Int64Rec(A).Lo > Int64Rec(B).Lo then Result := -1
+            else Result := 0;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PathHash64(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
+begin
+If Len < 0 then
+  Len := Length(PAth);
+case HashType of
+  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Len * SizeOf(AnsiChar)));
+else
+  Result := 0;
+end;
+end;
 
 end.

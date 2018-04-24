@@ -153,6 +153,9 @@ type
     fProcessingProgNode:        TProgressTracker;
     fEntriesProcessingProgNode: TProgressTracker;
     fEntryProcessingProgNode:   TProgressTracker;
+    // known paths
+    fKnownPathsPathDelim:       AnsiChar;
+    fKnownPaths:                TDARTKnownPaths;
     // initialization methods
     procedure InitializeProcessingSettings; virtual;
     procedure InitializeData; virtual; abstract;
@@ -189,13 +192,7 @@ type
     Function GetEntryData(const EntryFileName: AnsiString; out Data: Pointer; out Size: TMemSize): Boolean; overload; virtual;
     procedure ParseContentForPaths; virtual;
     // methods working with known paths
-    Function LowKnownPathIndex: Integer; virtual; abstract;
-    Function HighKnownPathIndex: Integer; virtual; abstract;
-    Function GetKnownPath(Index: Integer): TDARTKnownPath; virtual; abstract;
-    class Function IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer; overload; virtual;
-    Function IndexOfKnownPath(const Path: AnsiString): Integer; overload; virtual; abstract;
-    Function AddKnownPath(const Path: AnsiString; Directory: Boolean): Integer; overload; virtual; abstract;
-    Function AddKnownPath(const Path: AnsiString): Integer; overload; virtual;
+    Function DeconstructAndAddKnownPath(const Path: AnsiString): Integer; virtual;
     // processing methods
     procedure MainProcessing; virtual;
     procedure ArchiveProcessing; virtual; abstract; // <- specific for each archive type, all the fun must happen here
@@ -217,7 +214,8 @@ implementation
 uses
   Windows, Math,
   StrRect, CRC32, ZLibUtils,
-  DART_Resolver_ContentParsing;
+  DART_PathDeconstructor;
+  //DART_Resolver_ContentParsing;
 
 {===============================================================================
    Result information functions implementation
@@ -659,11 +657,12 @@ end;
 
 procedure TDARTRepairer.ParseContentForPaths;
 var
-  Resolver:   TDARTResolver_ContentParsing_HelpArchives;
+  //Resolver:   TDARTResolver_ContentParsing_HelpArchives;
   i:          Integer;
   EntryData:  Pointer;
   EntrySize:  TMemSize;
 begin
+(*
 // this is intended ONLY for help archives
 Resolver := TDARTResolver_ContentParsing_HelpArchives.Create(fPauseControlObject,fArchiveProcessingSettings);
 try
@@ -693,31 +692,25 @@ try
 finally
   Resolver.Free;
 end;
+*)
 end;
 
 //------------------------------------------------------------------------------
 
-class Function TDARTRepairer.IndexOfKnownPath(const Path: AnsiString; const KnownPaths: TDARTKnownPaths): Integer;
+Function TDARTRepairer.DeconstructAndAddKnownPath(const Path: AnsiString): Integer;
 var
-  PathHash: TCRC32;
-  i:        Integer;
+  Deconstructor:  TDARTPathDeconstructor;
+  i:              Integer;
 begin
-PathHash := StringCRC32(AnsiLowerCase(AnsiToStr(Path)));
-Result := -1;
-For i := Low(KnownPaths.Arr) to Pred(KnownPaths.Count) do
-  If KnownPaths.Arr[i].Hash = PathHash then
-    If AnsiSameText(AnsiToStr(Path),AnsiToStr(KnownPaths.Arr[i].Path)) then
-      begin
-        Result := i;
-        Break{For i};
-      end;
+fKnownPaths.Add(Path);
+Deconstructor := TDARTPathDeconstructor.Create(fKnownPathsPathDelim);
+try
+  Deconstructor.DeconstructPath(Path);
+  For i := 0 to Pred(Deconstructor.Count) do
+    fKnownPaths.Add(Deconstructor[i].FullPath);
+finally
+  Deconstructor. Free;
 end;
-
-//------------------------------------------------------------------------------
-
-Function TDARTRepairer.AddKnownPath(const Path: AnsiString): Integer;
-begin
-Result := AddKnownPath(Path,Length(ExtractFileExt(AnsiToStr(Path))) <= 0);
 end;
 
 //------------------------------------------------------------------------------
@@ -810,6 +803,8 @@ fProgressTracker.LimitedRange := True;
 fTerminating := False;
 fExpectedSignature := 0;
 fCompProgressStageInfo := DART_PROGSTAGE_INFO_NoProgress;
+fKnownPathsPathDelim := '/';
+fKnownPaths := TDARTKnownPaths.Create;
 InitializeProcessingSettings;
 InitializeProgress;
 InitializeData;
@@ -819,6 +814,7 @@ end;
 
 destructor TDARTRepairer.Destroy;
 begin
+fKnownPaths.Free;
 fProgressTracker.Free;
 inherited;
 end;

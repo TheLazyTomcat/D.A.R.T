@@ -160,6 +160,7 @@ FillChar(fArchiveStructure.EndOfCentralDirectory.BinPart,SizeOf(TDART_ZIP_EndOfC
 fArchiveStructure.EndOfCentralDirectory.Comment := '';
 SetLength(fArchiveStructure.KnownPaths.Arr,0);
 fArchiveStructure.KnownPaths.Count := 0;
+fArchiveStructure.KnownPaths.Sorted := False;
 end;
 
 //------------------------------------------------------------------------------
