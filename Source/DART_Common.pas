@@ -48,19 +48,22 @@ type
     Path:       AnsiString;
     Directory:  Boolean;
     Hash:       TCRC32;
-    Hash64:     TDARTHash64;
+    Hash64:     TDART_SCS_Hash;
   end;
+
+const
+  DART_DefaultPathDelim = '/';
 
 {===============================================================================
     TDARTKnownPaths - class declaration
 ===============================================================================}
-
+type
   TDARTKnownPaths = class(TObject)
   private
     fList:        array of TDARTKnownPath;
     fCount:       Integer;
     fSorted:      Boolean;
-    fHash64Type:  UInt32;
+    fSCSHashType: UInt32;
     Function GetCapacity: Integer;
     Function GetItem(Index: Integer): TDARTKnownPath;
   protected
@@ -71,7 +74,7 @@ type
     Function LowIndex: Integer; virtual;
     Function HighIndex: Integer; virtual;
     Function IndexOf(const Path: AnsiString): Integer; virtual;
-    Function IndexOfHash64(Hash: TDARTHash64): Integer; virtual;
+    Function IndexOfSCSHash(Hash: TDART_SCS_Hash): Integer; virtual;
     Function Add(const Path: AnsiString; Directory: Boolean): Integer; overload; virtual;
     Function Add(const Path: AnsiString): Integer; overload; virtual;
     Function Add(Paths: TDARTKnownPaths): Integer; overload; virtual;
@@ -82,7 +85,7 @@ type
     property Capacity: Integer read GetCapacity;
     property Count: Integer read fCount;
     property Sorted: Boolean read fSorted;
-    property Hash64Type: UInt32 read fHash64Type write fHash64Type;
+    property SCSHashType: UInt32 read fSCSHashType write fSCSHashType;
   end;
 
 {===============================================================================
@@ -208,7 +211,7 @@ inherited Create;
 SetLength(fList,0);
 fCount := 0;
 fSorted := False;
-fHash64Type := DART_SCS_HASH_City;
+SCSHashType := DART_SCS_HASH_City;
 end;
 
 //------------------------------------------------------------------------------
@@ -274,13 +277,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TDARTKnownPaths.IndexOfHash64(Hash: TDARTHash64): Integer;
+Function TDARTKnownPaths.IndexOfSCSHash(Hash: TDART_SCS_Hash): Integer;
 var
   i:  Integer;
 begin
 Result := -1;
 For i := LowIndex to HighIndex do
-  If Hash64Compare(fList[i].Hash64,Hash) = 0 then
+  If SCSHashCompare(fList[i].Hash64,Hash) = 0 then
     begin
       Result := i;
       Break{For i};
@@ -298,7 +301,7 @@ If Result < 0 then
     fList[fCount].Path := DART_ExcludeOuterPathDelim(Path,DART_SCS_PathDelim);
     fList[fCount].Directory := Directory;
     fList[fCount].Hash := PathHash(Path);
-    fList[fCount].Hash64 := PathHash64(Path,fHash64Type);
+    fList[fCount].Hash64 := PathSCSHash(Path,fSCSHashType);
     Result := fCount;
     Inc(fCount);
     fSorted := False;

@@ -19,10 +19,10 @@ uses
 ===============================================================================}
 
 type
-  TDARTHash64 = UInt64;
+  TDART_SCS_Hash = UInt64;
 
-Function Hash64Compare(A,B: TDARTHash64): Integer;
-Function PathHash64(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
+Function SCSHashCompare(A,B: TDART_SCS_Hash): Integer;
+Function PathSCSHash(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDART_SCS_Hash;
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ type
 //--- Entry record (table item) ------------------------------------------------
 
   TDART_SCS_EntryRecord = packed record
-    Hash:             TDARTHash64;
+    Hash:             TDART_SCS_Hash;
     DataOffset:       UInt64;
     Flags:            UInt32;
     CRC32:            TCRC32;
@@ -157,10 +157,10 @@ uses
     Hash functions implementation
 ===============================================================================}
 
-Function Hash64Compare(A,B: TDARTHash64): Integer;
+Function SCSHashCompare(A,B: TDART_SCS_Hash): Integer;
 begin
 If AuxTypes.NativeUInt64 then
-  begin
+  begin{%H-}
     If A < B then Result := 1
       else If A > B then Result := -1
         else Result := 0;
@@ -183,12 +183,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function PathHash64(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDARTHash64;
+Function PathSCSHash(const Path: AnsiString; HashType: UInt32; Len: TStrSize = -1): TDART_SCS_Hash;
 begin
 If Len < 0 then
   Len := Length(PAth);
 case HashType of
-  DART_SCS_HASH_City: Result := TDARTHash64(CityHash64(PAnsiChar(Path),Len * SizeOf(AnsiChar)));
+  DART_SCS_HASH_City: Result := TDART_SCS_Hash(CityHash64(PAnsiChar(Path),Len * SizeOf(AnsiChar)));
 else
   Result := 0;
 end;

@@ -18,7 +18,7 @@ uses
 //--- Files --------------------------------------------------------------------
 
 Function DART_GetFileSize(const FilePath: String): Int64;
-Function DART_GetFileSignature(const FilePath: String): UInt32;
+Function DART_GetFileSignature(const FilePath: String; Default: UInt32 = 0): UInt32;
 Function DART_FileExists(const FilePath: String): Boolean; {$IFDEF CanInline}inline;{$ENDIF}
 Function DART_ExpandFileName(const FilePath: String): String; {$IFDEF CanInline}inline;{$ENDIF}
 
@@ -38,6 +38,8 @@ Function DART_ExcludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): 
 Function DART_ExcludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 
 Function DART_IncludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+Function DART_IncludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+Function DART_IncludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
 
 Function DART_ReplaceChars(const Path: AnsiString; FromChar, ToChar: AnsiChar): AnsiString;
 Function DART_PathIsFile(const Path: AnsiString; PathDelim: AnsiChar; ExtDelim: AnsiChar = '.'; DefaultsToFile: Boolean = True): Boolean;
@@ -78,13 +80,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function DART_GetFileSignature(const FilePath: String): UInt32;
+Function DART_GetFileSignature(const FilePath: String; Default: UInt32 = 0): UInt32;
 begin
-Result := 0;
+Result := Default;
 with TFileStream.Create(StrToRTL(FilePath),fmOpenRead or fmShareDenyWrite) do
 try
   If Read(Result,SizeOf(Result)) < SizeOf(Result) then
-    Result := 0;
+    Result := Default;
 finally
   Free;
 end;
@@ -226,11 +228,43 @@ Function DART_IncludeTralingPathDelim(const Path: AnsiString; Delim: AnsiChar): 
 begin
 If Length(Path) > 0 then
   begin
+    If Path[Length(Path)] <> Delim then
+      Result := Path + Delim
+    else
+      Result := Path;
+  end
+else Result := Delim;
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_IncludeLeadingPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+If Length(Path) > 0 then
+  begin
+    If Path[1] <> Delim then
+      Result := Path + Delim
+    else
+      Result := Path;
+  end
+else Result := Delim;
+end;
+
+//------------------------------------------------------------------------------
+
+Function DART_IncludeOuterPathDelim(const Path: AnsiString; Delim: AnsiChar): AnsiString;
+begin
+If Length(Path) > 0 then
+  begin
     Result := Path;
+    // leading delimiter
+    If Result[1] <> Delim then
+      Result := Delim + Result;
+    // trailing delimiter
     If Result[Length(Result)] <> Delim then
       Result := Result + Delim;
   end
-else Result := '';
+else Result := Delim;
 end;
 
 //------------------------------------------------------------------------------
