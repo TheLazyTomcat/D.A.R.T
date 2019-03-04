@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="11"/>
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
@@ -19,7 +19,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
       <MinorVersionNr Value="1"/>
-      <BuildNr Value="49"/>
+      <BuildNr Value="58"/>
       <Language Value="0405"/>
       <StringTable Comments="Tool for repairing *.zip archives with damaged headers" CompanyName="František Milt" FileDescription="D.A.R.T - Damaged Archives Repair Tool" InternalName="D.A.R.T 1.x" LegalCopyright="© 2015 - 2016 František Milt" LegalTrademarks="D.A.R.T" OriginalFilename="DART.exe" ProductName="D.A.R.T" ProductVersion="1.1.0"/>
     </VersionInfo>
@@ -154,9 +154,10 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
     </RunParams>
     <RequiredPackages Count="1">
       <Item1>
@@ -247,17 +248,4 @@
 -dDebug"/>
     </Other>
   </CompilerOptions>
-  <Debugging>
-    <Exceptions Count="3">
-      <Item1>
-        <Name Value="EAbort"/>
-      </Item1>
-      <Item2>
-        <Name Value="ECodetoolError"/>
-      </Item2>
-      <Item3>
-        <Name Value="EFOpenError"/>
-      </Item3>
-    </Exceptions>
-  </Debugging>
 </CONFIG>

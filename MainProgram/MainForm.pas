@@ -35,6 +35,11 @@ type
     prbOverallProgress: TProgressBar;
     lblFileProgress: TLabel;
     prbFileProgress: TProgressBar;
+    bvlDonate_split: TBevel;
+    shpDonate_Background: TShape;
+    lblDonate_Text: TLabel;
+    imgDonate_Logo: TImage;
+    lblDonate_Overlay: TLabel;    
     stbStatusBar: TStatusBar;
   {$IFNDEF FPC}
     oXPManifest: TXPManifest;
@@ -65,6 +70,7 @@ type
     procedure mfClearCompletedClick(Sender: TObject);
     procedure btnProcessingClick(Sender: TObject);
     procedure tmrAnimTimerTimer(Sender: TObject);
+    procedure lblDonate_OverlayClick(Sender: TObject);
   {$IFDEF FPC}
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
   {$ENDIF}
@@ -95,7 +101,8 @@ uses
   ErrorForm, PrcsSettingsForm, Repairer, WinFileInfo, TaskbarProgress
 {$IF Defined(FPC) and not Defined(Unicode) and (FPC_FULLVERSION < 20701)}
   , LazFileUtils, LazUTF8
-{$IFEND};
+{$IFEND},
+  StrRect;
 
 {$IFDEF FPC}
   {$R *.lfm}
@@ -563,5 +570,12 @@ If FilesManager.Status = mstReady then
       end;
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure TfMainForm.lblDonate_OverlayClick(Sender: TObject);
+begin
+ShellExecuteW(Handle,PWideChar(StrToWide('open')),PWideChar(StrToWide('https://www.paypal.me/FMilt')),nil,nil,SW_SHOWNORMAL);
+end;
 
 end.
